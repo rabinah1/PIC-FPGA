@@ -9,10 +9,10 @@ entity ALU is
 			input_mux : in std_logic_vector(N-1 downto 0);
 			operation : in std_logic_vector(5 downto 0);
 			status_in : in std_logic_vector(7 downto 0);
-			status_out : out std_logic_vector(7 downto 0);
-			ALU_output : out std_logic_vector(N-1 downto 0);
 			clk : in std_logic;
-			reset : in std_logic);
+			reset : in std_logic;
+			status_out : out std_logic_vector(7 downto 0);
+			ALU_output : out std_logic_vector(N-1 downto 0));
 end ALU;
 
 architecture rtl of ALU is
@@ -34,12 +34,12 @@ begin
 	
 		if (reset = '1') then
 			ALU_output <= (others => '0');
+			skipNext <= '0';
+			status_out <= (others => '0');
 			decTemp := (others => '0');
 			incTemp := (others => '0');
-			skipNext <= '0';
 			opTemp := (others => '0');
 			status_carry := '0';
-			status_out <= (others => '0');
 			
 		elsif (rising_edge(clk)) then
 			if (skipNext = '1') then
@@ -103,6 +103,9 @@ begin
 				
 				when "000010" => -- SUBWF
 					ALU_output <= input_mux - input_W;
+					
+				when "000110" => -- XORWF
+					ALU_output <= input_w xor input_mux;
 				
 				when "111110" => -- ADDLW
 					ALU_output <= input_W + input_mux;
