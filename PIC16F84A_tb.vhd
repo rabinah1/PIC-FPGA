@@ -48,7 +48,6 @@ architecture behavior of PIC16F84A_tb is
 			
 		stimulus : process is
 			file stimulus_file : text open read_mode is "C:\Users\henry\Documents\PIC-FPGA\Input.txt";
-			--variable data_in_W : std_logic_vector(7 downto 0);
 			variable data_in_mux : std_logic_vector(7 downto 0);
 			variable data_in_oper : std_logic_vector(5 downto 0);
 			variable comma : character;
@@ -63,15 +62,11 @@ architecture behavior of PIC16F84A_tb is
 				while (not endfile(stimulus_file)) loop
 					wait until falling_edge(clk);
 					readline(stimulus_file, linein);
-					--read(linein, data_in_W);
-					--read(linein, comma);
 					read(linein, data_in_mux);
 					read(linein, comma);
 					read(linein, data_in_oper);
-					--input_W <= data_in_W;
 					input_mux <= data_in_mux;
 					operation <= data_in_oper;
-					--wait until falling_edge(clk);
 				end loop;
 				file_close(stimulus_file);
 				check <= 1;

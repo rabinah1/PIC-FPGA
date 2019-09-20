@@ -1,0 +1,96 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 2018  Intel Corporation. All rights reserved.
+# Your use of Intel Corporation's design tools, logic functions 
+# and other software and tools, and its AMPP partner logic 
+# functions, and any output files from any of the foregoing 
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject 
+# to the terms and conditions of the Intel Program License 
+# Subscription Agreement, the Intel Quartus Prime License Agreement,
+# the Intel FPGA IP License Agreement, or other applicable license
+# agreement, including, without limitation, that your use is for
+# the sole purpose of programming logic devices manufactured by
+# Intel and sold by Intel or its authorized distributors.  Please
+# refer to the applicable agreement for further details.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 18.1.0 Build 625 09/12/2018 SJ Lite Edition
+# Date created = 10:43:46  March 17, 2019
+#
+# -------------------------------------------------------------------------- #
+#
+# Notes:
+#
+# 1) The default values for assignments are stored in the file:
+#		PIC16F84A_assignment_defaults.qdf
+#    If this file doesn't exist, see file:
+#		assignment_defaults.qdf
+#
+# 2) Altera recommends that you do not modify this file. This
+#    file is updated automatically by the Quartus Prime software
+#    and any changes you make may be lost or overwritten.
+#
+# -------------------------------------------------------------------------- #
+
+
+set_global_assignment -name FAMILY "Cyclone V"
+set_global_assignment -name DEVICE 5CSEBA6U23I7
+set_global_assignment -name TOP_LEVEL_ENTITY PIC16F84A
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 18.1.0
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "10:43:46  MARCH 17, 2019"
+set_global_assignment -name LAST_QUARTUS_VERSION "18.1.0 Lite Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP "-40"
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 256
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
+set_global_assignment -name VHDL_SHOW_LMF_MAPPING_MESSAGES OFF
+set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (VHDL)"
+set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
+set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_location_assignment PIN_AA4 -to ALU_output[7]
+set_location_assignment PIN_V11 -to clk
+set_location_assignment PIN_AA11 -to ALU_output[6]
+set_location_assignment PIN_AA13 -to ALU_output[5]
+set_location_assignment PIN_AA18 -to ALU_output[4]
+set_location_assignment PIN_AA15 -to ALU_output[3]
+set_location_assignment PIN_AA19 -to ALU_output[2]
+set_location_assignment PIN_AA20 -to ALU_output[1]
+set_location_assignment PIN_AA23 -to ALU_output[0]
+set_location_assignment PIN_AA24 -to input_mux[7]
+set_location_assignment PIN_AA26 -to input_mux[6]
+set_location_assignment PIN_AB4 -to input_mux[5]
+set_location_assignment PIN_AC4 -to input_mux[4]
+set_location_assignment PIN_AB23 -to input_mux[3]
+set_location_assignment PIN_AB25 -to input_mux[2]
+set_location_assignment PIN_AB26 -to input_mux[1]
+set_location_assignment PIN_AC22 -to input_mux[0]
+set_location_assignment PIN_AC23 -to input_W[7]
+set_location_assignment PIN_AC24 -to input_W[6]
+set_location_assignment PIN_AD4 -to input_W[5]
+set_location_assignment PIN_AD5 -to input_W[4]
+set_location_assignment PIN_AD10 -to input_W[3]
+set_location_assignment PIN_AD11 -to input_W[2]
+set_location_assignment PIN_AD12 -to input_W[1]
+set_location_assignment PIN_AD17 -to input_W[0]
+set_location_assignment PIN_AD19 -to operation[5]
+set_location_assignment PIN_AD20 -to operation[4]
+set_location_assignment PIN_AD23 -to operation[3]
+set_location_assignment PIN_AD26 -to operation[2]
+set_location_assignment PIN_AE4 -to operation[1]
+set_location_assignment PIN_AE6 -to operation[0]
+set_location_assignment PIN_AE7 -to reset
+set_global_assignment -name SDC_FILE PIC16F84A.sdc
+set_global_assignment -name VHDL_FILE ALU.vhd
+set_global_assignment -name VHDL_FILE PIC16F84A.vhd
+set_global_assignment -name VHDL_FILE W_register.vhd
+set_global_assignment -name NUM_PARALLEL_PROCESSORS 1
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
