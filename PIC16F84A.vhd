@@ -7,8 +7,8 @@ entity PIC16F84A is
 	generic (N : natural := 8);
 	port (input_mux : in std_logic_vector(N-1 downto 0);
 			operation : in std_logic_vector(5 downto 0);
-			status_in : in std_logic_vector(7 downto 0);
-			status_out : out std_logic_vector(7 downto 0);
+			status_in : in std_logic_vector(N-1 downto 0);
+			status_out : out std_logic_vector(N-1 downto 0);
 			clk : in std_logic;
 			reset : in std_logic);
 end PIC16F84A;
@@ -22,8 +22,8 @@ architecture struct of PIC16F84A is
 		port (input_W : in std_logic_vector(N-1 downto 0);
 				input_mux : in std_logic_vector(N-1 downto 0);
 				operation : in std_logic_vector(5 downto 0);
-				status_in : in std_logic_vector(7 downto 0);
-				status_out : out std_logic_vector(7 downto 0);
+				status_in : in std_logic_vector(N-1 downto 0);
+				status_out : out std_logic_vector(N-1 downto 0);
 				ALU_output : out std_logic_vector(N-1 downto 0);
 				clk : in std_logic;
 				reset : in std_logic);
