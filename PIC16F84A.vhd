@@ -5,17 +5,19 @@ use ieee.std_logic_unsigned.all;
 
 entity PIC16F84A is
 	generic (N : natural := 8);
-	port (input_mux : in std_logic_vector(N-1 downto 0);
+	port (serial_in_literal : in std_logic;
 			operation : in std_logic_vector(5 downto 0);
 			status_in : in std_logic_vector(N-1 downto 0);
 			status_out : out std_logic_vector(N-1 downto 0);
 			clk : in std_logic;
+			enable : in std_logic;
 			reset : in std_logic);
 end PIC16F84A;
 
 architecture struct of PIC16F84A is
 	signal ALU_output_int : std_logic_vector(7 downto 0);
 	signal W_output_int : std_logic_vector(7 downto 0);
+	signal input_mux : std_logic_vector(7 downto 0);
 	
 	component ALU is
 		generic (N : natural := 8);
@@ -28,6 +30,15 @@ architecture struct of PIC16F84A is
 				clk : in std_logic;
 				reset : in std_logic);
 	end component ALU;
+	
+	component serial_to_parallel_literal is
+		generic (N : natural := 8);
+		port (clk : in std_logic;
+				reset : in std_logic;
+				enable : in std_logic;
+				serial_in : in std_logic;
+				parallel_out : out std_logic_vector(N-1 downto 0));
+	end component serial_to_parallel_literal;
 	
 	component W_register is
 		generic (N : natural := 8);
@@ -48,6 +59,14 @@ architecture struct of PIC16F84A is
 						ALU_output => ALU_output_int,
 						clk => clk,
 						reset => reset);
+						
+		serial_to_parallel_literal_unit : component serial_to_parallel_literal
+			generic map (N => 8)
+			port map (clk => clk,
+						 reset => reset,
+						 enable => enable,
+						 serial_in => serial_in_literal,
+						 parallel_out => input_mux);
 		
 		W_register_unit : component W_register
 			generic map (N => 8)
