@@ -8,11 +8,11 @@ entity ALU is
 	port (input_W : in std_logic_vector(N-1 downto 0);
 			input_mux : in std_logic_vector(N-1 downto 0);
 			opcode : in std_logic_vector(5 downto 0);
-			status_in : in std_logic_vector(N-1 downto 0);
+			--status_in : in std_logic_vector(N-1 downto 0);
 			clk : in std_logic;
 			reset : in std_logic;
 			enable : in std_logic;
-			status_out : out std_logic_vector(N-1 downto 0);
+			--status_out : out std_logic_vector(N-1 downto 0);
 			ALU_output : out std_logic_vector(N-1 downto 0));
 end ALU;
 
@@ -29,18 +29,18 @@ begin
 		variable decTemp : std_logic_vector(N-1 downto 0);
 		variable incTemp : std_logic_vector(N-1 downto 0);
 		variable opTemp : std_logic_vector(5 downto 0);
-		variable status_carry : std_logic;
+		--variable status_carry : std_logic;
 
 	begin
 
 		if (reset = '1') then
 			ALU_output <= (others => '0');
 			skipNext <= '0';
-			status_out <= (others => '0');
+			--status_out <= (others => '0');
 			decTemp := (others => '0');
 			incTemp := (others => '0');
 			opTemp := (others => '0');
-			status_carry := '0';
+			--status_carry := '0';
 
 		elsif (rising_edge(clk)) then
 			if (skipNext = '1') then
@@ -93,15 +93,15 @@ begin
 
 					-- MOVWF: the first six bits the same as with NOP
 
-					when "001101" => -- RLF
-						status_carry := status_in(0);
-						status_out <= status_in(7 downto 1) & input_mux(7);
-						ALU_output <= input_mux(6 downto 0) & status_carry;
+					--when "001101" => -- RLF
+						--status_carry := status_in(0);
+						--status_out <= status_in(7 downto 1) & input_mux(7);
+						--ALU_output <= input_mux(6 downto 0) & status_carry;
 
-					when "001100" => -- RRF
-						status_carry := status_in(0);
-						status_out <= status_in(7 downto 1) & input_mux(0);
-						ALU_output <= status_carry & input_mux(7 downto 1);
+					--when "001100" => -- RRF
+						--status_carry := status_in(0);
+						--status_out <= status_in(7 downto 1) & input_mux(0);
+						--ALU_output <= status_carry & input_mux(7 downto 1);
 
 					when "000010" => -- SUBWF
 						ALU_output <= input_mux - input_W;

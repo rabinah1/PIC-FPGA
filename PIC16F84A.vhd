@@ -7,12 +7,14 @@ entity PIC16F84A is
 	generic (N : natural := 8);
 	port (serial_in_literal : in std_logic;
 			serial_in_opcode : in std_logic;
-			status_in : in std_logic_vector(N-1 downto 0);
-			status_out : out std_logic_vector(N-1 downto 0);
+			--status_in : in std_logic_vector(N-1 downto 0);
+			--status_out : out std_logic_vector(N-1 downto 0);
 			clk : in std_logic;
 			enable_opcode : in std_logic;
 			enable_literal : in std_logic;
 			enable_ALU : in std_logic;
+			enable_w_register : in std_logic;
+			ALU_output_raspi : out std_logic_vector(N-1 downto 0);
 			reset : in std_logic);
 end PIC16F84A;
 
@@ -27,8 +29,8 @@ architecture struct of PIC16F84A is
 		port (input_W : in std_logic_vector(N-1 downto 0);
 				input_mux : in std_logic_vector(N-1 downto 0);
 				opcode : in std_logic_vector(5 downto 0);
-				status_in : in std_logic_vector(N-1 downto 0);
-				status_out : out std_logic_vector(N-1 downto 0);
+				--status_in : in std_logic_vector(N-1 downto 0);
+				--status_out : out std_logic_vector(N-1 downto 0);
 				ALU_output : out std_logic_vector(N-1 downto 0);
 				clk : in std_logic;
 				enable : in std_logic;
@@ -48,7 +50,9 @@ architecture struct of PIC16F84A is
 		generic (N : natural := 8);
 		port (data_in : in std_logic_vector(N-1 downto 0);
 				data_out : out std_logic_vector(N-1 downto 0);
+				ALU_output_raspi : out std_logic_vector(N-1 downto 0);
 				clk : in std_logic;
+				enable : in std_logic;
 				reset : in std_logic);
 	end component W_register;
 	
@@ -58,8 +62,8 @@ architecture struct of PIC16F84A is
 			port map (input_W => W_output_int,
 						input_mux => input_mux,
 						opcode => opcode,
-						status_in => status_in,
-						status_out => status_out,
+						--status_in => status_in,
+						--status_out => status_out,
 						ALU_output => ALU_output_int,
 						clk => clk,
 						enable => enable_ALU,
@@ -85,6 +89,8 @@ architecture struct of PIC16F84A is
 			generic map (N => 8)
 			port map (data_in => ALU_output_int,
 						 data_out => W_output_int,
+						 ALU_output_raspi => ALU_output_raspi,
 						 clk => clk,
+						 enable => enable_w_register,
 						 reset => reset);
 end architecture struct;

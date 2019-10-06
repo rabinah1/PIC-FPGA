@@ -12,8 +12,8 @@ end PIC16F84A_tb;
 architecture behavior of PIC16F84A_tb is
 	signal input_mux : std_logic_vector(7 downto 0) := "00000000";
 	signal operation : std_logic_vector(5 downto 0) := "000000";
-	signal status_in : std_logic_vector(7 downto 0) := "00000000";
-	signal status_out : std_logic_vector(7 downto 0) := "00000000";
+	--signal status_in : std_logic_vector(7 downto 0) := "00000000";
+	--signal status_out : std_logic_vector(7 downto 0) := "00000000";
 	
 	signal clk : std_logic := '0';
 	signal reset : std_logic := '0';
@@ -24,15 +24,15 @@ architecture behavior of PIC16F84A_tb is
 		generic (N : natural := 8);
 		port (input_mux : in std_logic_vector(N-1 downto 0);
 				operation : in std_logic_vector(5 downto 0);
-				status_in : in std_logic_vector(N-1 downto 0);
-				status_out : out std_logic_vector(N-1 downto 0);
+				--status_in : in std_logic_vector(N-1 downto 0);
+				--status_out : out std_logic_vector(N-1 downto 0);
 				clk : in std_logic;
 				reset : in std_logic);
 	end component;
 	
 	begin
 		dut : PIC16F84A
-			port map(input_mux => input_mux, operation => operation, status_in => status_in, status_out => status_out,
+			port map(input_mux => input_mux, operation => operation,
 			clk => clk, reset => reset);
 			
 		clk_process : process is
