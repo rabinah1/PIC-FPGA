@@ -16,4 +16,4 @@ incremental_db/
 output_files/
 pic16f84a_datasheet.pdf
 simulation/
-serial_to_parallel_literal.vhd.bak
+serial_to_parallel.vhd.bak
