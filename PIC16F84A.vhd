@@ -37,14 +37,23 @@ architecture struct of PIC16F84A is
 				reset : in std_logic);
 	end component ALU;
 	
-	component serial_to_parallel is
+	component serial_to_parallel_literal is
 		generic (N : natural := 8);
 		port (clk : in std_logic;
 				reset : in std_logic;
 				enable : in std_logic;
 				serial_in : in std_logic;
 				parallel_out : out std_logic_vector(N-1 downto 0));
-	end component serial_to_parallel;
+	end component serial_to_parallel_literal;
+	
+	component serial_to_parallel_opcode is
+		generic (N : natural := 6);
+		port (clk : in std_logic;
+				reset : in std_logic;
+				enable : in std_logic;
+				serial_in : in std_logic;
+				parallel_out : out std_logic_vector(N-1 downto 0));
+	end component serial_to_parallel_opcode;
 	
 	component W_register is
 		generic (N : natural := 8);
@@ -69,7 +78,7 @@ architecture struct of PIC16F84A is
 						enable => enable_ALU,
 						reset => reset);
 						
-		serial_to_parallel_literal : component serial_to_parallel
+		serial_to_parallel_literal_unit : component serial_to_parallel_literal
 			generic map (N => 8)
 			port map (clk => clk,
 						 reset => reset,
@@ -77,7 +86,7 @@ architecture struct of PIC16F84A is
 						 serial_in => serial_in_literal,
 						 parallel_out => input_mux);
 
-		serial_to_parallel_opcode : component serial_to_parallel
+		serial_to_parallel_opcode_unit : component serial_to_parallel_opcode
 			generic map(N => 6)
 			port map (clk => clk,
 						 reset => reset,

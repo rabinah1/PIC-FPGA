@@ -59,8 +59,8 @@ architecture behavior of PIC16F84A_tb is
 
 		stimulus : process is
 			file stimulus_file : text open read_mode is "C:\Users\henry\Documents\PIC-FPGA\Input.txt";
-			variable data_in_mux : std_logic_vector(7 downto 0);
-			variable data_in_oper : std_logic_vector(5 downto 0);
+			variable data_in_literal : std_logic_vector(21 downto 0);
+			variable data_in_opcode : std_logic_vector(21 downto 0);
 			variable comma : character;
 			variable linein : line;
 			variable count : integer := 0;
@@ -72,42 +72,37 @@ architecture behavior of PIC16F84A_tb is
 				wait for 10.5 us;
 				reset <= '0';
 				while (not endfile(stimulus_file)) loop
-					--wait until falling_edge(clk);
 					readline(stimulus_file, linein);
-					read(linein, data_in_mux);
+					read(linein, data_in_literal);
 					read(linein, comma);
-					read(linein, data_in_oper);
+					read(linein, data_in_opcode);
+					wait until rising_edge(clk);
+					enable_literal <= '1';
+					count := 21;
+					while (count >= 0) loop
+						serial_in_literal <= data_in_literal(count);
+						count := count - 1;
+						wait until rising_edge(clk);
+					end loop;
+					enable_literal <= '0';
+					wait for 10 us;
 					wait until rising_edge(clk);
 					enable_opcode <= '1';
-					count := 0;
-					while (count <= 5) loop
-						--wait until rising_edge(clk);
-						serial_in_opcode <= data_in_oper(count);
-						count := count + 1;
+					count := 21;
+					while (count >= 0) loop
+						serial_in_opcode <= data_in_opcode(count);
+						count := count - 1;
 						wait until rising_edge(clk);
 					end loop;
 					enable_opcode <= '0';
 					wait for 10 us;
-					wait until falling_edge(clk);
-					enable_literal <= '1';
-					count := 0;
-					while (count <= 7) loop
-						wait until rising_edge(clk);
-						serial_in_literal <= data_in_mux(count);
-						count := count + 1;
-					end loop;
-					enable_literal <= '0';
-					wait for 10 us;
 					enable_ALU <= '1';
 					wait until rising_edge(clk);
-					--wait for 10 us;
 					enable_ALU <= '0';
 					wait for 10 us;
 					enable_w_register <= '1';
 					wait for 10 us;
 					enable_w_register <= '0';
-					--input_mux <= data_in_mux;
-					--operation <= data_in_oper;
 				end loop;
 				file_close(stimulus_file);
 				check <= 1;
