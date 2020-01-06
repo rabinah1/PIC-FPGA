@@ -14,7 +14,9 @@ entity PIC16F84A is
 			enable_literal : in std_logic;
 			enable_ALU : in std_logic;
 			enable_w_register : in std_logic;
-			ALU_output_raspi : out std_logic_vector(N-1 downto 0);
+			enable_wreg_out : in std_logic;
+			--ALU_output_raspi : out std_logic_vector(N-1 downto 0);
+			ALU_output_raspi : out std_logic;
 			reset : in std_logic);
 end PIC16F84A;
 
@@ -23,6 +25,7 @@ architecture struct of PIC16F84A is
 	signal W_output_int : std_logic_vector(7 downto 0);
 	signal input_mux : std_logic_vector(7 downto 0);
 	signal opcode : std_logic_vector(5 downto 0);
+	signal raspi_input_int : std_logic_vector(7 downto 0);
 	
 	component ALU is
 		generic (N : natural := 8);
@@ -65,6 +68,15 @@ architecture struct of PIC16F84A is
 				reset : in std_logic);
 	end component W_register;
 	
+	component parallel_to_serial_wreg is
+		generic (N : natural := 8);
+		port (clk : in std_logic;
+				reset : in std_logic;
+				enable : in std_logic;
+				parallel_in : in std_logic_vector(N-1 downto 0);
+				serial_out : out std_logic);
+	end component parallel_to_serial_wreg;
+	
 	begin
 		ALU_unit : component ALU
 			generic map (N => 8)
@@ -85,6 +97,14 @@ architecture struct of PIC16F84A is
 						 enable => enable_literal,
 						 serial_in => serial_in_literal,
 						 parallel_out => input_mux);
+						 
+		parallel_to_serial_wreg_unit : component parallel_to_serial_wreg
+			generic map (N => 8)
+			port map (clk => clk,
+						 reset => reset,
+						 enable => enable_wreg_out,
+						 parallel_in => raspi_input_int,
+						 serial_out => ALU_output_raspi);
 
 		serial_to_parallel_opcode_unit : component serial_to_parallel_opcode
 			generic map(N => 6)
@@ -98,7 +118,8 @@ architecture struct of PIC16F84A is
 			generic map (N => 8)
 			port map (data_in => ALU_output_int,
 						 data_out => W_output_int,
-						 ALU_output_raspi => ALU_output_raspi,
+						 --ALU_output_raspi => ALU_output_raspi,
+						 ALU_output_raspi => raspi_input_int,
 						 clk => clk,
 						 enable => enable_w_register,
 						 reset => reset);

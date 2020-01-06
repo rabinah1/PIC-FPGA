@@ -19,6 +19,7 @@
 #define LITERAL_ENABLE_PIN 21
 #define OPCODE_ENABLE_PIN 20
 #define WREG_ENABLE_PIN 12
+#define RESULT_PIN 16
 #define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
 #define OUT_GPIO(g) *(gpio+((g)/10)) |=  (1<<(((g)%10)*3))
 #define GPIO_SET *(gpio+7)
@@ -54,6 +55,7 @@ void init_pins(void *vargp)
       OUT_GPIO(arr[idx]);
       idx = idx + 1;
     }
+  INP_GPIO(RESULT_PIN);
 }
 
 volatile unsigned* init_gpio_map(void)
@@ -122,6 +124,45 @@ void *read_opcode(void *vargp)
     {
       GPIO_SET = 1<<OPCODE_PIN;
     }
+  return NULL;
+}
+
+void *result_thread(void *vargp)
+{
+  volatile unsigned *gpio;
+  gpio = (volatile unsigned *)vargp;
+
+  int code_word[6] = {0, 0, 0, 0, 0, 0};
+  //int code_word_correct[6] = {0, 0, 0, 1, 0, 1};
+  int data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  int rising_check = 0;
+  int idx = 0;
+
+  while (idx < 6)
+    {
+      if (GET_GPIO(CLK_PIN) && rising_check == 0)
+	{
+	  rising_check = 1;
+	  code_word[idx] = GET_GPIO(RESULT_PIN);
+	  idx++;
+	}
+      else if (rising_check == 1 && !(GET_GPIO(CLK_PIN)))
+	rising_check = 0;
+    }
+  // TODO: check if code_word is correct, return if not
+  rising_check = 0;
+  while (idx < 8)
+    {
+      if (GET_GPIO(CLK_PIN) && rising_check == 0)
+	{
+	  rising_check = 1;
+	  data[idx] = GET_GPIO(RESULT_PIN);
+	  idx++;
+	}
+      else if (rising_check == 1 && !(GET_GPIO(CLK_PIN)))
+	rising_check = 0;
+    }
+  // TODO: convert data[] to decimal
   return NULL;
 }
 
