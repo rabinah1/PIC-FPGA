@@ -27,7 +27,7 @@ begin
 		
 		elsif (rising_edge(clk)) then
 			if (enable = '1' and idx >= 0) then
-				serial_out <= parallel_in(idx);
+				serial_out <= data_to_send(idx);
 				idx := idx - 1;
 			elsif (enable = '1') then
 				serial_out <= '0';
