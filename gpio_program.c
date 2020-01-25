@@ -507,5 +507,6 @@ int main(void)
     }
   pthread_join(clk_thread_id, NULL);
   pthread_join(read_result_thread_id, NULL);
+  printf("HelloL");
   exit(0);
 }
