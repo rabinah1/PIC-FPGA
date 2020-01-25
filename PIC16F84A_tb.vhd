@@ -20,7 +20,8 @@ architecture behavior of PIC16F84A_tb is
 	signal enable_literal : std_logic := '0';
 	signal enable_ALU : std_logic := '0';
 	signal enable_w_register : std_logic := '0';
-	signal ALU_output_raspi : std_logic_vector(7 downto 0) := "00000000";
+	signal enable_wreg_out : std_logic := '0';
+	signal ALU_output_raspi : std_logic := '0';
 	constant clk_period : time := 1 us;
 	signal check : natural := 0;
 
@@ -36,7 +37,8 @@ architecture behavior of PIC16F84A_tb is
 				enable_literal : in std_logic;
 				enable_ALU : in std_logic;
 				enable_w_register : in std_logic;
-				ALU_output_raspi : out std_logic_vector(N-1 downto 0));
+				enable_wreg_out : in std_logic;
+				ALU_output_raspi : out std_logic);
 	end component;
 
 	begin
@@ -44,7 +46,8 @@ architecture behavior of PIC16F84A_tb is
 			port map(serial_in_literal => serial_in_literal, serial_in_opcode => serial_in_opcode,
 						clk => clk, reset => reset, enable_opcode => enable_opcode,
 						enable_literal => enable_literal, enable_ALU => enable_ALU,
-						enable_w_register => enable_w_register, ALU_output_raspi => ALU_output_raspi);
+						enable_w_register => enable_w_register, enable_wreg_out => enable_wreg_out,
+						ALU_output_raspi => ALU_output_raspi);
 
 		clk_process : process is
 			begin
@@ -103,6 +106,10 @@ architecture behavior of PIC16F84A_tb is
 					enable_w_register <= '1';
 					wait for 10 us;
 					enable_w_register <= '0';
+					wait for 10 us;
+					enable_wreg_out <= '1';
+					wait for 20 us;
+					enable_wreg_out <= '0';
 				end loop;
 				file_close(stimulus_file);
 				check <= 1;

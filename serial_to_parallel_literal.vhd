@@ -27,7 +27,6 @@ begin
 
 		elsif (rising_edge(clk)) then
 			if (enable = '1' and counter <= N-1 and code_word = "000111") then
-				--parallel_out(counter) <= serial_in;
 				parallel_out <= parallel_out(N-2 downto 0) & serial_in;
 				counter := counter + 1;
 			elsif (enable = '1') then

@@ -10,14 +10,14 @@ entity PIC16F84A is
 			--status_in : in std_logic_vector(N-1 downto 0);
 			--status_out : out std_logic_vector(N-1 downto 0);
 			clk : in std_logic;
+			reset : in std_logic;
 			enable_opcode : in std_logic;
 			enable_literal : in std_logic;
 			enable_ALU : in std_logic;
 			enable_w_register : in std_logic;
 			enable_wreg_out : in std_logic;
 			--ALU_output_raspi : out std_logic_vector(N-1 downto 0);
-			ALU_output_raspi : out std_logic;
-			reset : in std_logic);
+			ALU_output_raspi : out std_logic);
 end PIC16F84A;
 
 architecture struct of PIC16F84A is
