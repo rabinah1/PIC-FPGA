@@ -56,22 +56,8 @@ set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulati
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_location_assignment PIN_V11 -to clk
-set_location_assignment PIN_AA24 -to input_mux[7]
-set_location_assignment PIN_AA26 -to input_mux[6]
-set_location_assignment PIN_AB4 -to input_mux[5]
-set_location_assignment PIN_AC4 -to input_mux[4]
-set_location_assignment PIN_AB23 -to input_mux[3]
-set_location_assignment PIN_AB25 -to input_mux[2]
-set_location_assignment PIN_AB26 -to input_mux[1]
-set_location_assignment PIN_AC22 -to input_mux[0]
-set_location_assignment PIN_AD19 -to operation[5]
-set_location_assignment PIN_AD20 -to operation[4]
-set_location_assignment PIN_AD23 -to operation[3]
-set_location_assignment PIN_AD26 -to operation[2]
-set_location_assignment PIN_AE4 -to operation[1]
-set_location_assignment PIN_AE6 -to operation[0]
-set_location_assignment PIN_AE7 -to reset
+set_location_assignment PIN_D11 -to clk
+set_location_assignment PIN_AE24 -to reset
 set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
 set_global_assignment -name VHDL_FILE serial_to_parallel_literal.vhd
 set_global_assignment -name SDC_FILE PIC16F84A.sdc
@@ -82,4 +68,32 @@ set_global_assignment -name VHDL_FILE PIC16F84A_tb.vhd
 set_global_assignment -name TEXT_FILE Input.txt
 set_global_assignment -name VHDL_FILE serial_to_parallel_opcode.vhdl
 set_global_assignment -name VHDL_FILE parallel_to_serial_wreg.vhd
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ALU_output_raspi
+set_location_assignment PIN_E8 -to ALU_output_raspi
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to clk
+set_location_assignment PIN_AH13 -to enable_ALU
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to enable_ALU
+set_location_assignment PIN_AH14 -to enable_literal
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to enable_literal
+set_location_assignment PIN_AH3 -to enable_opcode
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to enable_opcode
+set_location_assignment PIN_AG14 -to enable_w_register
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to enable_w_register
+set_location_assignment PIN_AE6 -to enable_wreg_out
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to enable_wreg_out
+set_location_assignment PIN_AD20 -to serial_in_literal
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to reset
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to serial_in_literal
+set_location_assignment PIN_AD17 -to serial_in_opcode
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to serial_in_opcode
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to ALU_output_raspi
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to clk
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to enable_ALU
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to enable_literal
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to enable_opcode
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to enable_w_register
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to enable_wreg_out
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to reset
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to serial_in_literal
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to serial_in_opcode
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

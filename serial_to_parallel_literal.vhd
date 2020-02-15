@@ -29,7 +29,7 @@ begin
 			if (enable = '1' and counter <= N-1 and code_word = "000111") then
 				parallel_out <= parallel_out(N-2 downto 0) & serial_in;
 				counter := counter + 1;
-			elsif (enable = '1') then
+			elsif (enable = '1' and counter = 0) then
 				parallel_out <= (others => '0');
 				code_word <= code_word(4 downto 0) & serial_in;
 			elsif (enable = '0') then
