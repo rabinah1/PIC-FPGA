@@ -12,7 +12,7 @@
 
 #define BLOCK_SIZE (4*20)	// only using gpio registers region
 #define CLK_PIN 5
-#define CLK_FREQ_HZ 2
+#define CLK_FREQ_HZ 10
 #define RESET_PIN 6
 #define LITERAL_PIN 13
 #define OPCODE_PIN 19
@@ -187,6 +187,7 @@ void *result_thread(void *vargp)
 	      cw_found = 0;
 	      data_count = 0;
 	      printf("The result is: %d\n", result_decimal);
+	      result_decimal = 0;
 	      //return NULL;
 	    }
 	}
@@ -507,6 +508,5 @@ int main(void)
     }
   pthread_join(clk_thread_id, NULL);
   pthread_join(read_result_thread_id, NULL);
-  printf("HelloÅL");
   exit(0);
 }

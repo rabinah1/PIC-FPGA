@@ -26,12 +26,14 @@ begin
 			counter := 0;
 
 		elsif (rising_edge(clk)) then
-			if (enable = '1' and counter <= N-1 and code_word = "000111") then
+			if (enable = '1' and counter <= N-1 and code_word = "000110") then
 				parallel_out <= parallel_out(N-2 downto 0) & serial_in;
+				--parallel_out <= parallel_out(N-2 downto 0) & '0';
 				counter := counter + 1;
 			elsif (enable = '1' and counter = 0) then
 				parallel_out <= (others => '0');
 				code_word <= code_word(4 downto 0) & serial_in;
+				--code_word <= code_word(4 downto 0) & '0';
 			elsif (enable = '0') then
 				code_word <= (others => '0');
 				counter := 0;

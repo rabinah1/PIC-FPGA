@@ -51,6 +51,7 @@ begin
 			end if;
 
 			if (enable = '1') then
+				--ALU_output <= input_mux;
 				--ALU_output <= "00000011";
 				case opTemp is
 
@@ -112,7 +113,8 @@ begin
 
 					when "111110" => -- ADDLW
 						ALU_output <= input_W + input_mux;
-						--ALU_output <= "00000100";
+						--ALU_output <= input_mux;
+						--ALU_output <= "00000010";
 
 					when "111001" => -- ANDLW
 						ALU_output <= input_W and input_mux;

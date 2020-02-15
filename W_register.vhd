@@ -22,9 +22,10 @@ begin
 			data_out <= (others => '0');
 			ALU_output_raspi <= (others => '0');
 		elsif rising_edge(clk) then
-			data_out <= data_in;
 			if (enable = '1') then
+				data_out <= data_in;
 				ALU_output_raspi <= data_in;
+				--ALU_output_raspi <= "00000011";
 			end if;
 		end if;
 	end process operation;
