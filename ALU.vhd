@@ -51,8 +51,6 @@ begin
 			end if;
 
 			if (enable = '1') then
-				--ALU_output <= input_mux;
-				--ALU_output <= "00000011";
 				case opTemp is
 
 					when "000111" => -- ADDWF

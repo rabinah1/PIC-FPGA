@@ -25,7 +25,6 @@ begin
 			if (enable = '1') then
 				data_out <= data_in;
 				ALU_output_raspi <= data_in;
-				--ALU_output_raspi <= "00000011";
 			end if;
 		end if;
 	end process operation;

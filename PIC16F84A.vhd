@@ -118,7 +118,6 @@ architecture struct of PIC16F84A is
 			generic map (N => 8)
 			port map (data_in => ALU_output_int,
 						 data_out => W_output_int,
-						 --ALU_output_raspi => ALU_output_raspi,
 						 ALU_output_raspi => raspi_input_int,
 						 clk => clk,
 						 enable => enable_w_register,

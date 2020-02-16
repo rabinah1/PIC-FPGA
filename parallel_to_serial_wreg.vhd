@@ -28,13 +28,11 @@ begin
 		elsif (rising_edge(clk)) then
 			if (enable = '1' and idx >= 0) then
 				serial_out <= data_to_send(idx);
-				--serial_out <= '0';
 				idx := idx - 1;
 			elsif (enable = '1') then
 				serial_out <= '0';
 			elsif (enable = '0') then
 				data_to_send <= "000101" & parallel_in;
-				--data_to_send <= "00010100110011";
 				idx := 13;
 			end if;
 		end if;

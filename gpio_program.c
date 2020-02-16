@@ -143,11 +143,9 @@ void *result_thread(void *vargp)
 	  for (int idx = 0; idx < 5; idx++)
 	    code_word[idx] = code_word[idx+1];
 	  if (GET_GPIO(RESULT_PIN)) {
-	    //printf("1\n");
 	    code_word[5] = 1;
 	  }
 	  else {
-	    //printf("0\n");
 	    code_word[5] = 0;
 	  }
 
@@ -188,7 +186,6 @@ void *result_thread(void *vargp)
 	      data_count = 0;
 	      printf("The result is: %d\n", result_decimal);
 	      result_decimal = 0;
-	      //return NULL;
 	    }
 	}
 
