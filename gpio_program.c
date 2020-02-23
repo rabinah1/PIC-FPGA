@@ -32,6 +32,30 @@ int clk_enable = 0;
 int clk_exit = 0;
 int reception_stop = 0;
 
+struct mapping {
+  char *command;
+  char *binary;
+};
+
+struct mapping dict[] = {
+  "ADDWF", "000111",
+  "ANDWF", "000101",
+  "CLRW", "000001",
+  "COMF", "001001",
+  "DECF", "000011",
+  "DECFSZ", "001011",
+  "INCF", "001010",
+  "INCFSZ", "001111",
+  "IORWF", "000100",
+  "MOVF", "001000",
+  "SUBWF", "000010",
+  "XORWF", "000110",
+  "ADDLW", "111110",
+  "ANDLW", "111001",
+  "SUBLW", "111101",
+  "NOP", "000000"
+};
+
 struct enable_struct
 {
   volatile unsigned *gpio;
@@ -59,6 +83,40 @@ void init_pins(void *vargp)
       idx = idx + 1;
     }
   INP_GPIO(RESULT_PIN);
+}
+
+void get_command(char *key, char *value)
+{
+  int i = 0;
+  char *name = dict[i].command;
+  while (name) {
+    if (strcmp(name, key) == 0) {
+      memset(value, '\0', sizeof(value));
+      strcpy(value, dict[i].binary);
+      return;
+    }
+    i++;
+    name = dict[i].command;
+  }
+  return;
+}
+
+void convert_to_binary(int decimal_in, char *binary_out)
+{
+  int idx = 7;
+  memset(binary_out, '\0', sizeof(binary_out));
+  while (idx >= 0) {
+    if ((int)pow(2, idx) > decimal_in) {
+      binary_out[7 - idx] = '0';
+    }
+    else {
+      binary_out[7 - idx] = '1';
+      decimal_in = decimal_in - (int)pow(2, idx);
+      if (decimal_in == 0)
+	decimal_in = -1;
+    }
+    idx--;
+  }
 }
 
 volatile unsigned* init_gpio_map(void)
@@ -308,7 +366,13 @@ void *enable_result(void *vargp)
 
 int main(void)
 {
-  char binary_data[199];
+  char binary_data_literal[99];
+  char binary_data_opcode[99];
+  char command[99];
+  char opcode_keyword[99] = "00110011";
+  char literal_keyword[99] = "00000110";
+  char temp[99];
+  int literal = 0;
   pthread_t clk_thread_id;
   pthread_t literal_thread_id;
   pthread_t reset_thread_id;
@@ -431,16 +495,23 @@ int main(void)
 	  //  printf("ERROR: reset is enabled\n");
 	  //  continue;
 	  //}
-	  printf("Enter data to send: ");
-	  scanf("%s", binary_data);
-	  int length = strlen(binary_data);
+	  printf("Enter literal: ");
+	  scanf("%d", &literal);
+	  convert_to_binary(literal, binary_data_literal);
+	  memset(temp, '\0', sizeof(temp));
+	  strcpy(temp, literal_keyword);
+	  strcat(temp, binary_data_literal);
+	  memset(binary_data_literal, '\0', sizeof(binary_data_literal));
+	  strcpy(binary_data_literal, temp);
+	  //scanf("%s", binary_data);
+	  int length = strlen(binary_data_literal);
 	  int idx = 0;
 	  while(idx < length)
 	    {
 	      if (!(GET_GPIO(CLK_PIN)) && falling_check == 0)
 		{
 		  falling_check = 1;
-		  data->bit = binary_data[idx];
+		  data->bit = binary_data_literal[idx];
 		  pthread_create(&literal_thread_id, NULL, read_literal, (void *)data);
 		  pthread_join(literal_thread_id, NULL);
 		  idx++;
@@ -461,16 +532,23 @@ int main(void)
 	  //  printf("ERROR: reset is enabled\n");
 	  //  continue;
 	  //}
-	  printf("Enter data to send: ");
-	  scanf("%s", binary_data);
-	  int length = strlen(binary_data);
+	  printf("Enter the command: ");
+	  scanf("%s", command);
+	  get_command(command, binary_data_opcode);
+	  memset(temp, '\0', sizeof(temp));
+	  strcpy(temp, opcode_keyword);
+	  strcat(temp, binary_data_opcode);
+	  memset(binary_data_opcode, '\0', sizeof(binary_data_opcode));
+	  strcpy(binary_data_opcode, temp);
+	  //scanf("%s", binary_data);
+	  int length = strlen(binary_data_opcode);
 	  int idx = 0;
 	  while(idx < length)
 	    {
 	      if (!(GET_GPIO(CLK_PIN)) && falling_check == 0)
 		{
 		  falling_check = 1;
-		  data->bit = binary_data[idx];
+		  data->bit = binary_data_opcode[idx];
 		  pthread_create(&opcode_thread_id, NULL, read_opcode, (void *)data);
 		  pthread_join(opcode_thread_id, NULL);
 		  idx++;
