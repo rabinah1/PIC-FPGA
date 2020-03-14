@@ -21,3 +21,4 @@ serial_to_parallel_literal.vhd.bak
 serial_to_parallel_opcode.vhdl.bak
 parallel_to_serial_wreg.vhd.bak
 state_machine.vhd.bak
+serial_to_parallel_instruction.vhd.bak

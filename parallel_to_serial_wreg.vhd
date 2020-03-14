@@ -17,7 +17,7 @@ architecture rtl of parallel_to_serial_wreg is
 begin
 
 	func: process(all) is
-		variable idx : integer;
+		variable idx : integer := 13;
 	begin
 	
 		if (reset = '1') then
