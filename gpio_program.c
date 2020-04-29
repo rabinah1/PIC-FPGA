@@ -185,9 +185,9 @@ void *result_thread(void *vargp)
   volatile unsigned *gpio;
   gpio = (volatile unsigned *)vargp;
 
-  int code_word[6] = {0, 0, 0, 0, 0, 0};
+  volatile int code_word[6] = {0, 0, 0, 0, 0, 0};
   int code_word_correct[6] = {0, 0, 0, 1, 0, 1};
-  int data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  volatile int data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   int falling_check = 0;
   int cw_found = 0;
   int data_count = 0;
@@ -369,7 +369,7 @@ int main(void)
   char binary_data_literal[99];
   char binary_data_opcode[99];
   char command[99];
-  char opcode_keyword[99] = "00110011";
+  char opcode_keyword[99] = "11110011";
   char literal_keyword[99] = "00000110";
   char temp[99];
   int literal = 0;
