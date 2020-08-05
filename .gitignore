@@ -22,3 +22,7 @@ serial_to_parallel_opcode.vhdl.bak
 parallel_to_serial_wreg.vhd.bak
 state_machine.vhd.bak
 serial_to_parallel_instruction.vhd.bak
+ram.vhd.bak
+alu_output_demux.vhd.bak
+alu_input_mux.vhd.bak
+states_package.vhd.bak

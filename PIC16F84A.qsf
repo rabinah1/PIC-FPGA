@@ -68,6 +68,11 @@ set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to clk
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to reset
 set_global_assignment -name ENABLE_SIGNALTAP OFF
 set_global_assignment -name USE_SIGNALTAP_FILE test1.stp
+
+set_location_assignment PIN_AH13 -to serial_in
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to serial_in
+set_global_assignment -name VHDL_FILE states_package.vhd
+set_global_assignment -name VHDL_FILE alu_input_mux.vhd
 set_global_assignment -name SIGNALTAP_FILE test1.stp
 set_global_assignment -name VHDL_FILE serial_to_parallel_literal.vhd
 set_global_assignment -name SDC_FILE PIC16F84A.sdc
@@ -79,8 +84,7 @@ set_global_assignment -name TEXT_FILE Input.txt
 set_global_assignment -name VHDL_FILE serial_to_parallel_opcode.vhdl
 set_global_assignment -name VHDL_FILE parallel_to_serial_wreg.vhd
 set_global_assignment -name VHDL_FILE state_machine.vhd
-
 set_global_assignment -name VHDL_FILE serial_to_parallel_instruction.vhd
-set_location_assignment PIN_AH13 -to serial_in
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to serial_in
+set_global_assignment -name VHDL_FILE ram.vhd
+set_global_assignment -name VHDL_FILE alu_output_demux.vhd
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

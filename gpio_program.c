@@ -12,7 +12,7 @@
 
 #define BLOCK_SIZE (4*20)	// only using gpio registers region
 #define CLK_PIN 5
-#define CLK_FREQ_HZ 800
+#define CLK_FREQ_HZ 600
 #define RESET_PIN 6
 #define RESULT_PIN 16
 #define COMMAND_PIN 26

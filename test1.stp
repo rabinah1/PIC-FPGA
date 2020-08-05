@@ -6,17 +6,17 @@
     <node_ip_info instance_id="0" mfg_id="110" node_id="0" version="6"/>
     <position_info>
       <single attribute="active tab" value="0"/>
-      <single attribute="data horizontal scroll position" value="15"/>
+      <single attribute="data horizontal scroll position" value="124"/>
       <single attribute="data vertical scroll position" value="0"/>
       <single attribute="setup horizontal scroll position" value="0"/>
       <single attribute="setup vertical scroll position" value="0"/>
       <single attribute="zoom level denominator" value="1"/>
-      <single attribute="zoom level numerator" value="8192"/>
+      <single attribute="zoom level numerator" value="32768"/>
       <single attribute="zoom offset denominator" value="1"/>
       <single attribute="zoom offset numerator" value="0"/>
-      <multi attribute="timebars" size="1" value="79"/>
+      <multi attribute="timebars" size="1" value="0"/>
     </position_info>
-    <signal_set global_temp="1" name="signal_set: 2020/07/30 16:23:54  #0">
+    <signal_set global_temp="1" name="signal_set: 2020/08/08 22:34:55  #0">
       <clock name="clk" polarity="posedge" tap_mode="classic"/>
       <config pipeline_level="0" ram_type="AUTO" reserved_data_nodes="0" reserved_storage_qualifier_nodes="0" reserved_trigger_nodes="0" sample_depth="128" trigger_in_enable="no" trigger_out_enable="no"/>
       <top_entity/>
@@ -25,72 +25,34 @@
           <wire name="reset" tap_mode="probeonly"/>
         </trigger_input_vec>
         <data_input_vec>
-          <wire name="reset" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[0]" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[1]" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[2]" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[3]" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[4]" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[5]" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|trig_state_machine" tap_mode="probeonly"/>
-          <wire name="state_machine:state_machine_unit|result_enable" tap_mode="probeonly"/>
+          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|d" tap_mode="probeonly"/>
+          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|sel_alu_input_mux" tap_mode="probeonly"/>
         </data_input_vec>
         <storage_qualifier_input_vec>
           <wire name="reset" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[0]" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[1]" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[2]" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[3]" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[4]" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[5]" tap_mode="probeonly"/>
-          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|trig_state_machine" tap_mode="probeonly"/>
-          <wire name="state_machine:state_machine_unit|result_enable" tap_mode="probeonly"/>
+          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|d" tap_mode="probeonly"/>
+          <wire name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|sel_alu_input_mux" tap_mode="probeonly"/>
         </storage_qualifier_input_vec>
       </signal_vec>
       <presentation>
         <unified_setup_data_view>
-          <node data_index="0" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="true" level-0="falling edge" name="reset" pwr_level-0="dont_care" pwr_storage-0="dont_care" pwr_storage-1="dont_care" pwr_storage-2="dont_care" storage-0="dont_care" storage-1="dont_care" storage-2="dont_care" storage_index="0" tap_mode="probeonly" trigger_index="0" type="unknown"/>
-          <node data_index="8" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="state_machine:state_machine_unit|result_enable" storage_index="8" tap_mode="probeonly" trigger_index="0" type="unknown"/>
-          <node data_index="7" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="rising edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|trig_state_machine" storage_index="7" tap_mode="probeonly" trigger_index="0" type="unknown"/>
-          <node is_selected="false" level-0="alt_or" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[5..0]" order="msb_to_lsb" state="expand" type="register">
-            <node data_index="6" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[5]" storage_index="6" tap_mode="probeonly" type="unknown"/>
-            <node data_index="5" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[4]" storage_index="5" tap_mode="probeonly" type="unknown"/>
-            <node data_index="4" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[3]" storage_index="4" tap_mode="probeonly" type="unknown"/>
-            <node data_index="3" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[2]" storage_index="3" tap_mode="probeonly" type="unknown"/>
-            <node data_index="2" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[1]" storage_index="2" tap_mode="probeonly" type="unknown"/>
-            <node data_index="1" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[0]" storage_index="1" tap_mode="probeonly" type="unknown"/>
-          </node>
+          <node data_index="0" duplicate_name_allowed="false" is_data_input="false" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="true" level-0="falling edge" name="reset" pwr_level-0="dont_care" pwr_storage-0="dont_care" pwr_storage-1="dont_care" pwr_storage-2="dont_care" storage-0="dont_care" storage-1="dont_care" storage-2="dont_care" storage_index="0" tap_mode="probeonly" trigger_index="0" type="unknown"/>
+          <node data_index="1" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|sel_alu_input_mux" storage_index="2" tap_mode="probeonly" trigger_index="1" type="unknown"/>
+          <node data_index="0" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|d" storage_index="1" tap_mode="probeonly" type="unknown"/>
         </unified_setup_data_view>
         <data_view>
-          <net data_index="0" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="true" level-0="falling edge" name="reset" pwr_level-0="dont_care" pwr_storage-0="dont_care" pwr_storage-1="dont_care" pwr_storage-2="dont_care" storage-0="dont_care" storage-1="dont_care" storage-2="dont_care" storage_index="0" tap_mode="probeonly" trigger_index="0" type="unknown"/>
-          <net data_index="8" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="state_machine:state_machine_unit|result_enable" storage_index="8" tap_mode="probeonly" trigger_index="0" type="unknown"/>
-          <net data_index="7" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="rising edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|trig_state_machine" storage_index="7" tap_mode="probeonly" trigger_index="0" type="unknown"/>
-          <bus is_selected="false" level-0="alt_or" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[5..0]" order="msb_to_lsb" state="expand" type="register">
-            <net data_index="6" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[5]" storage_index="6" tap_mode="probeonly" type="unknown"/>
-            <net data_index="5" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[4]" storage_index="5" tap_mode="probeonly" type="unknown"/>
-            <net data_index="4" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[3]" storage_index="4" tap_mode="probeonly" type="unknown"/>
-            <net data_index="3" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[2]" storage_index="3" tap_mode="probeonly" type="unknown"/>
-            <net data_index="2" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[1]" storage_index="2" tap_mode="probeonly" type="unknown"/>
-            <net data_index="1" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[0]" storage_index="1" tap_mode="probeonly" type="unknown"/>
-          </bus>
+          <net data_index="1" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|sel_alu_input_mux" storage_index="2" tap_mode="probeonly" trigger_index="1" type="unknown"/>
+          <net data_index="0" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|d" storage_index="1" tap_mode="probeonly" type="unknown"/>
         </data_view>
         <setup_view>
-          <net data_index="0" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="true" level-0="falling edge" name="reset" pwr_level-0="dont_care" pwr_storage-0="dont_care" pwr_storage-1="dont_care" pwr_storage-2="dont_care" storage-0="dont_care" storage-1="dont_care" storage-2="dont_care" storage_index="0" tap_mode="probeonly" trigger_index="0" type="unknown"/>
-          <net data_index="8" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="state_machine:state_machine_unit|result_enable" storage_index="8" tap_mode="probeonly" trigger_index="0" type="unknown"/>
-          <net data_index="7" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="rising edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|trig_state_machine" storage_index="7" tap_mode="probeonly" trigger_index="0" type="unknown"/>
-          <bus is_selected="false" level-0="alt_or" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[5..0]" order="msb_to_lsb" state="expand" type="register">
-            <net data_index="6" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[5]" storage_index="6" tap_mode="probeonly" type="unknown"/>
-            <net data_index="5" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[4]" storage_index="5" tap_mode="probeonly" type="unknown"/>
-            <net data_index="4" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[3]" storage_index="4" tap_mode="probeonly" type="unknown"/>
-            <net data_index="3" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[2]" storage_index="3" tap_mode="probeonly" type="unknown"/>
-            <net data_index="2" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[1]" storage_index="2" tap_mode="probeonly" type="unknown"/>
-            <net data_index="1" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|code_word[0]" storage_index="1" tap_mode="probeonly" type="unknown"/>
-          </bus>
+          <net data_index="0" duplicate_name_allowed="false" is_data_input="false" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="true" level-0="falling edge" name="reset" pwr_level-0="dont_care" pwr_storage-0="dont_care" pwr_storage-1="dont_care" pwr_storage-2="dont_care" storage-0="dont_care" storage-1="dont_care" storage-2="dont_care" storage_index="0" tap_mode="probeonly" trigger_index="0" type="unknown"/>
+          <net data_index="1" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|sel_alu_input_mux" storage_index="2" tap_mode="probeonly" trigger_index="1" type="unknown"/>
+          <net data_index="0" duplicate_name_allowed="false" is_data_input="true" is_node_valid="true" is_selected="false" is_storage_input="true" is_trigger_input="false" level-0="either edge" name="serial_to_parallel_instruction:serial_to_parallel_instruction_unit|d" storage_index="1" tap_mode="probeonly" type="unknown"/>
         </setup_view>
         <trigger_in_editor/>
         <trigger_out_editor/>
       </presentation>
-      <trigger CRC="7D3567D1" attribute_mem_mode="false" gap_record="true" global_temp="1" name="trigger: 2020/07/30 16:23:54  #1" position="pre" power_up_trigger_mode="false" record_data_gap="true" segment_size="1" storage_mode="off" storage_qualifier_disabled="no" storage_qualifier_port_is_pin="false" storage_qualifier_port_name="auto_stp_external_storage_qualifier" storage_qualifier_port_tap_mode="classic" trigger_type="circular">
+      <trigger CRC="F62F8C8E" attribute_mem_mode="false" gap_record="true" global_temp="1" name="trigger: 2020/08/08 22:34:55  #1" position="pre" power_up_trigger_mode="false" record_data_gap="true" segment_size="1" storage_mode="off" storage_qualifier_disabled="no" storage_qualifier_port_is_pin="true" storage_qualifier_port_name="auto_stp_external_storage_qualifier" storage_qualifier_port_tap_mode="classic" trigger_type="circular">
         <power_up_trigger position="pre" storage_qualifier_disabled="no"/>
         <events use_custom_flow_control="no">
           <level enabled="yes" name="condition1" type="basic">'reset' == falling edge
@@ -100,8 +62,8 @@
           </level>
         </events>
         <storage_qualifier_events>
-          <transitional>111111111
-            <pwr_up_transitional>111111111</pwr_up_transitional>
+          <transitional>111
+            <pwr_up_transitional>111</pwr_up_transitional>
           </transitional>
           <storage_qualifier_level type="basic">
             <power_up>
@@ -120,8 +82,8 @@
           </storage_qualifier_level>
         </storage_qualifier_events>
         <log>
-          <data global_temp="1" name="log: Trig @ 2020/07/30 16:33:06 (0:0:14.4 elapsed)" power_up_mode="false" sample_depth="128" trigger_position="16">100000000100000000100000000100000000100000000100000000100000000100000000100000000100000000100000000100000000100000000100000000100000000100000000000000000010000000011000000011100000011110000011111000011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100011111100</data>
-          <extradata>1111111111111111T111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111</extradata>
+          <data global_temp="1" name="log: Trig @ 2020/08/08 22:39:47 (0:0:5.2 elapsed)" power_up_mode="false" sample_depth="127" trigger_position="-1">1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111100</data>
+          <extradata>11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111</extradata>
         </log>
       </trigger>
     </signal_set>
@@ -146,5 +108,6 @@
     <single attribute="sof manager visible" value="1"/>
     <multi attribute="frame size" size="2" value="1920,1001"/>
     <multi attribute="jtag widget size" size="2" value="403,231"/>
+    <multi attribute="column width" size="23" value="34,34,609,74,68,78,95,96,98,98,88,88,110,101,101,101,101,101,101,101,101,107,78"/>
   </global_info>
 </session>
