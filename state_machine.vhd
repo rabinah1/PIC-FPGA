@@ -14,6 +14,7 @@ entity state_machine is
 			alu_enable : out std_logic;
 			wreg_enable : out std_logic;
 			ram_write_enable : out std_logic;
+			status_enable : out std_logic;
 			result_enable : out std_logic);
 end state_machine;
 
@@ -45,6 +46,7 @@ begin
 			alu_enable <= '0';
 			wreg_enable <= '0';
 			result_enable <= '0';
+			status_enable <= '0';
 			next_state <= do_nop;
 			
 		elsif (rising_edge(clk)) then
@@ -57,6 +59,7 @@ begin
 					wreg_enable <= '0';
 					ram_write_enable <= '0';
 					result_enable <= '0';
+					status_enable <= '0';
 
 					if (trig_state_machine = '0') then
 						next_state <= do_nop;
@@ -77,6 +80,7 @@ begin
 					wreg_enable <= '0';
 					ram_write_enable <= '0';
 					result_enable <= '0';
+					status_enable <= '0';
 					next_state <= do_alu_input_sel;
 
 				when do_alu_input_sel =>
@@ -86,6 +90,7 @@ begin
 					wreg_enable <= '0';
 					ram_write_enable <= '0';
 					result_enable <= '0';
+					status_enable <= '0';
 					next_state <= do_alu;
 
 				when do_alu =>
@@ -95,6 +100,7 @@ begin
 					wreg_enable <= '0';
 					ram_write_enable <= '0';
 					result_enable <= '0';
+					status_enable <= '0';
 					if (instruction_type = "00" or instruction_type = "01") then
 						next_state <= do_wreg;
 					elsif (instruction_type = "10") then
@@ -110,6 +116,7 @@ begin
 					wreg_enable <= '1';
 					ram_write_enable <= '0';
 					result_enable <= '0';
+					status_enable <= '1';
 					next_state <= do_result;
 
 				when do_ram_write =>
@@ -119,6 +126,7 @@ begin
 					wreg_enable <= '0';
 					ram_write_enable <= '1';
 					result_enable <= '0';
+					status_enable <= '1';
 					next_state <= do_result;
 
 				when do_result =>
@@ -128,6 +136,7 @@ begin
 					wreg_enable <= '0';
 					ram_write_enable <= '0';
 					result_enable <= '1';
+					status_enable <= '0';
 					next_state <= do_nop;
 			end case;
 		end if;

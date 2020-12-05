@@ -71,6 +71,7 @@ set_global_assignment -name USE_SIGNALTAP_FILE test1.stp
 
 set_location_assignment PIN_AH13 -to serial_in
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to serial_in
+set_global_assignment -name VHDL_FILE status_register.vhd
 set_global_assignment -name VHDL_FILE states_package.vhd
 set_global_assignment -name VHDL_FILE alu_input_mux.vhd
 set_global_assignment -name SIGNALTAP_FILE test1.stp

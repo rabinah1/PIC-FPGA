@@ -44,6 +44,8 @@ struct mapping dict[] = {
 			 "INCFSZ", "001111",
 			 "IORWF", "000100",
 			 "MOVF", "001000",
+			 "RLF", "001101",
+			 "RRF", "001100",
 			 "SUBWF", "000010",
 			 "XORWF", "000110",
 			 "ADDLW", "111110",
@@ -168,11 +170,12 @@ void *result_thread(void *vargp)
 
     volatile int code_word[6] = {0, 0, 0, 0, 0, 0};
     int code_word_correct[6] = {0, 0, 0, 1, 0, 1};
-    volatile int data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    volatile int data[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     int falling_check = 0;
     int cw_found = 0;
     int data_count = 0;
     int result_decimal = 0;
+    int status_decimal = 0;
 
     while (1) {
 	if (!(GET_GPIO(CLK_PIN)) && falling_check == 0 && cw_found == 0) { // falling edge, code word not found
@@ -196,27 +199,31 @@ void *result_thread(void *vargp)
 	}
 
 	else if (!(GET_GPIO(CLK_PIN)) && falling_check == 0 && cw_found == 1) { // falling edge, code word found
-	    if (data_count < 8) {
+	    if (data_count < 16) {
 		falling_check = 1;
-		for (int idx = 0; idx < 7; idx++)
+		for (int idx = 0; idx < 15; idx++)
 		    data[idx] = data[idx+1];
 		if (GET_GPIO(RESULT_PIN))
-		    data[7] = 1;
+		    data[15] = 1;
 		else
-		    data[7] = 0;
+		    data[15] = 0;
 	    }
 	    data_count++;
 	}
 
 	else if (falling_check == 1 && GET_GPIO(CLK_PIN)) { // rising edge
 	    falling_check = 0;
-	    if (data_count == 8) {
+	    if (data_count == 16) {
 		for (int idx = 7; idx >= 0; idx--)
 		    result_decimal = result_decimal + data[idx] * (int)pow(2, 7-idx);
+		for (int idx = 15; idx >= 8; idx--)
+		    status_decimal = status_decimal + data[idx] * (int)pow(2, 15-idx);
 		cw_found = 0;
 		data_count = 0;
 		printf("The result is: %d\n", result_decimal);
 		result_decimal = 0;
+		printf("Status is: %d\n", status_decimal);
+		status_decimal = 0;
 	    }
 	}
 
