@@ -126,7 +126,7 @@ begin
 					-- MOVWF: the first six bits the same as with NOP
 
 					when "001101" => -- RLF
-						status_carry := status_in(0);
+						status_carry := status_in(7);
 						status_out <= status_in(6 downto 0) & output_mux(7);
 						ALU_output <= output_mux(6 downto 0) & status_carry;
 

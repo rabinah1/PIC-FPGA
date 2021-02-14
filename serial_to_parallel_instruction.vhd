@@ -68,7 +68,8 @@ begin
 					if (opcode_out = "000111" or opcode_out = "000101" or opcode_out = "001001" or
 						 opcode_out = "000011" or opcode_out = "001011" or opcode_out = "001010" or
 						 opcode_out = "001111" or opcode_out = "000100" or opcode_out = "001000" or
-						 opcode_out = "000010" or opcode_out = "000110") then
+						 opcode_out = "000010" or opcode_out = "000110" or opcode_out = "001101" or
+						 opcode_out = "001100") then
 						sel_alu_input_mux <= '1';
 						d <= serial_in;
 					else
