@@ -5,7 +5,7 @@ use ieee.std_logic_unsigned.all;
 
 entity ALU is
 	generic (N : natural := 8);
-	port (input_W : in std_logic_vector(N-1 downto 0);
+	port (input_w : in std_logic_vector(N-1 downto 0);
 			output_mux : in std_logic_vector(N-1 downto 0);
 			opcode : in std_logic_vector(5 downto 0);
 			status_in : in std_logic_vector(N-1 downto 0);
@@ -77,7 +77,7 @@ begin
 						status_out(2) <= update_status_z(result(N-1 downto 0));
 						ALU_output <= result(N-1 downto 0);
 
-					when "000001" => -- CLRW
+					when "000001" => -- CLR
 						result := (others => '0');
 						status_out(2) <= update_status_z(result(N-1 downto 0));
 						ALU_output <= result(N-1 downto 0);
@@ -141,26 +141,60 @@ begin
 						status_out(0) <= not result(N);
 						ALU_output <= result(N-1 downto 0);
 
+					when "001110" => -- SWAPF
+						result := '0' & output_mux(3 downto 0) & output_mux(7 downto 4);
+						ALU_output <= result(N-1 downto 0);
+
 					when "000110" => -- XORWF
 						result := '0' & input_w xor output_mux;
 						status_out(2) <= update_status_z(result(N-1 downto 0));
 						ALU_output <= result(N-1 downto 0);
 
 					when "111110" => -- ADDLW
-						result := '0' & input_W + output_mux;
+						result := '0' & input_w + output_mux;
 						status_out(2) <= update_status_z(result(N-1 downto 0));
 						status_out(0) <= result(N);
 						ALU_output <= result(N-1 downto 0);
 
 					when "111001" => -- ANDLW
-						result := '0' & input_W and output_mux;
+						result := '0' & input_w and output_mux;
 						status_out(2) <= update_status_z(result(N-1 downto 0));
 						ALU_output <= result(N-1 downto 0);
 
+					when "111000" => -- IORLW
+						result := '0' & input_w or output_mux;
+						status_out(2) <= update_status_z(result(N-1 downto 0));
+						ALU_output <= result(N-1 downto 0);
+
+					when "110000" => -- MOVLW
+						result := '0' & output_mux;
+						status_out <= (others => '0');
+						ALU_output <= result(N-1 downto 0);
+
 					when "111101" => -- SUBLW
-						result := '1' & input_W - output_mux;
+						result := '1' & input_w - output_mux;
 						status_out(2) <= update_status_z(result(N-1 downto 0));
 						status_out(0) <= not result(N);
+						ALU_output <= result(N-1 downto 0);
+
+					when "111010" => -- XORLW
+						result := '0' & input_w xor output_mux;
+						status_out(2) <= update_status_z(result(N-1 downto 0));
+						ALU_output <= result(N-1 downto 0);
+
+					when "110001" => -- READ_WREG
+						result := '0' & input_w;
+						status_out <= status_in;
+						ALU_output <= result(N-1 downto 0);
+
+					when "110010" => -- READ_STATUS
+						result := '0' & status_in;
+						status_out <= status_in;
+						ALU_output <= result(N-1 downto 0);
+
+					when "110011" => -- READ_ADDRESS
+						result := '0' & output_mux;
+						status_out <= status_in;
 						ALU_output <= result(N-1 downto 0);
 
 					when "000000" => -- NOP

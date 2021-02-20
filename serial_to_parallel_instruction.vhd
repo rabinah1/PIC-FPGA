@@ -11,9 +11,10 @@ entity serial_to_parallel_instruction is
 			reset : in std_logic;
 			serial_in : in std_logic;
 			trig_state_machine : out std_logic;
-			instruction_type : out std_logic_vector(1 downto 0);
+			instruction_type : out std_logic_vector(2 downto 0);
 			sel_alu_input_mux : out std_logic;
 			d : out std_logic;
+			transfer_to_sw : out std_logic;
 			operand_out : out std_logic_vector(N-1 downto 0);
 			address_out : out std_logic_vector(N-1 downto 0);
 			opcode_out : out std_logic_vector(M-1 downto 0));
@@ -24,6 +25,7 @@ architecture rtl of serial_to_parallel_instruction is
 	signal counter : integer := 0;
 begin
 
+	-- Incoming data type: <6 bit code word> + <6 bit opcode> + <7 bit address or operand>
 	func: process(all) is
 	begin
 
@@ -35,20 +37,25 @@ begin
 			counter <= 0;
 			sel_alu_input_mux <= '0';
 			d <= '0';
+			transfer_to_sw <= '0';
 			instruction_type <= (others => '0');
 			trig_state_machine <= '0';
 
 		elsif (rising_edge(clk)) then
 
 			if (counter >= N + M) then
-				if (sel_alu_input_mux = '0' and d = '0') then
-					instruction_type <= "00";
-				elsif (sel_alu_input_mux = '1' and d = '0') then
-					instruction_type <= "01";
-				elsif (sel_alu_input_mux = '1' and d = '1') then
-					instruction_type <= "10";
+				if (sel_alu_input_mux = '0' and d = '0' and transfer_to_sw = '0') then -- input from literal, output to wreg
+					instruction_type <= "000";
+				elsif (sel_alu_input_mux = '1' and d = '0' and transfer_to_sw = '0') then -- input from ram, output to wreg
+					instruction_type <= "001";
+				elsif (sel_alu_input_mux = '1' and d = '1' and transfer_to_sw = '0') then -- input from ram, output to ram
+					instruction_type <= "010";
+				elsif (transfer_to_sw = '1' and sel_alu_input_mux = '0') then
+					instruction_type <= "011";
+				elsif (transfer_to_sw = '1' and sel_alu_input_mux = '1') then
+					instruction_type <= "100";
 				else
-					instruction_type <= "11";
+					instruction_type <= "111";
 				end if;
 
 				if (counter <= N + M + 1) then
@@ -63,29 +70,42 @@ begin
 					counter <= 0;
 				end if;
 
+			-- Read the address or operand after opcode was found
 			elsif (counter >= M and counter <= N + M - 1 and code_word = "000110") then
 				if (counter = M) then
-					if (opcode_out = "000111" or opcode_out = "000101" or opcode_out = "001001" or
-						 opcode_out = "000011" or opcode_out = "001011" or opcode_out = "001010" or
-						 opcode_out = "001111" or opcode_out = "000100" or opcode_out = "001000" or
-						 opcode_out = "000010" or opcode_out = "000110" or opcode_out = "001101" or
-						 opcode_out = "001100") then
+					if (opcode_out = "110011") then
 						sel_alu_input_mux <= '1';
-						d <= serial_in;
-					else
-						sel_alu_input_mux <= '0';
 						d <= '0';
+						transfer_to_sw <= '1'; -- Output ALU is transferred to raspberry pi
+					elsif (opcode_out = "110001" or opcode_out = "110010") then
+						sel_alu_input_mux <= '0';
+						d <= '0'; -- This does not matter when transfer_to_sw = 1
+						transfer_to_sw <= '1';
+					elsif (opcode_out = "000111" or opcode_out = "000101" or opcode_out = "001001" or
+							 opcode_out = "000011" or opcode_out = "001011" or opcode_out = "001010" or
+							 opcode_out = "001111" or opcode_out = "000100" or opcode_out = "001000" or
+							 opcode_out = "000010" or opcode_out = "000110" or opcode_out = "001101" or
+							 opcode_out = "001100" or opcode_out = "000001" or opcode_out = "001110") then
+						sel_alu_input_mux <= '1'; -- input to ALU will be from memory
+						d <= serial_in; -- d = 0 --> data stored to wreg, d = 1 --> data stored to ram
+						transfer_to_sw <= '0';
+					else
+						sel_alu_input_mux <= '0'; -- input to ALU will be from literal
+						d <= '0';
+						transfer_to_sw <= '0';
 					end if;
 				end if;
 				operand_out <= operand_out(N-2 downto 0) & serial_in;
 				address_out <= operand_out(N-2 downto 0) & serial_in;
 				counter <= counter + 1;
 
+			-- Read the opcode after code word was found
 			elsif (counter <= M - 1 and code_word = "000110") then
 				opcode_out <= opcode_out(M-2 downto 0) & serial_in;
 				operand_out <= (others => '0');
 				counter <= counter + 1;
 
+			-- Search for the code word for incoming data
 			elsif (counter = 0) then
 				opcode_out <= (others => '0');
 				operand_out <= (others => '0');

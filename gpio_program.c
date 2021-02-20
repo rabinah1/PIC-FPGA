@@ -36,7 +36,7 @@ struct mapping {
 struct mapping dict[] = {
 			 "ADDWF", "000111",
 			 "ANDWF", "000101",
-			 "CLRW", "000001",
+			 "CLR", "000001",
 			 "COMF", "001001",
 			 "DECF", "000011",
 			 "DECFSZ", "001011",
@@ -47,10 +47,17 @@ struct mapping dict[] = {
 			 "RLF", "001101",
 			 "RRF", "001100",
 			 "SUBWF", "000010",
+			 "SWAPF", "001110",
 			 "XORWF", "000110",
 			 "ADDLW", "111110",
 			 "ANDLW", "111001",
+			 "IORLW", "111000",
+			 "MOVLW", "110000",
 			 "SUBLW", "111101",
+			 "XORLW", "111010",
+			 "READ_WREG", "110001",
+			 "READ_STATUS", "110010",
+			 "READ_ADDRESS", "110011",
 			 "NOP", "000000"
 };
 
@@ -170,12 +177,11 @@ void *result_thread(void *vargp)
 
     volatile int code_word[6] = {0, 0, 0, 0, 0, 0};
     int code_word_correct[6] = {0, 0, 0, 1, 0, 1};
-    volatile int data[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    volatile int data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     int falling_check = 0;
     int cw_found = 0;
     int data_count = 0;
     int result_decimal = 0;
-    int status_decimal = 0;
 
     while (1) {
 	if (!(GET_GPIO(CLK_PIN)) && falling_check == 0 && cw_found == 0) { // falling edge, code word not found
@@ -199,31 +205,27 @@ void *result_thread(void *vargp)
 	}
 
 	else if (!(GET_GPIO(CLK_PIN)) && falling_check == 0 && cw_found == 1) { // falling edge, code word found
-	    if (data_count < 16) {
+	    if (data_count < 8) {
 		falling_check = 1;
-		for (int idx = 0; idx < 15; idx++)
+		for (int idx = 0; idx < 7; idx++)
 		    data[idx] = data[idx+1];
 		if (GET_GPIO(RESULT_PIN))
-		    data[15] = 1;
+		    data[7] = 1;
 		else
-		    data[15] = 0;
+		    data[7] = 0;
 	    }
 	    data_count++;
 	}
 
 	else if (falling_check == 1 && GET_GPIO(CLK_PIN)) { // rising edge
 	    falling_check = 0;
-	    if (data_count == 16) {
+	    if (data_count == 8) {
 		for (int idx = 7; idx >= 0; idx--)
 		    result_decimal = result_decimal + data[idx] * (int)pow(2, 7-idx);
-		for (int idx = 15; idx >= 8; idx--)
-		    status_decimal = status_decimal + data[idx] * (int)pow(2, 15-idx);
 		cw_found = 0;
 		data_count = 0;
 		printf("The result is: %d\n", result_decimal);
 		result_decimal = 0;
-		printf("Status is: %d\n", status_decimal);
-		status_decimal = 0;
 	    }
 	}
 
@@ -338,6 +340,8 @@ int main(void)
 	    strcat(temp, binary_data_literal);
 	    memset(binary_command, '\0', sizeof(binary_command));
 	    strcpy(binary_command, temp);
+	    // binary_command = <special_trigger_word> + <opcode_in_binary> + <literal_in_binary>
+	    // This data is sent to FPGA one bit at a time, starting from the first (idx = 0) bit.
 
 	    int length = strlen(binary_command);
 	    int idx = 0;

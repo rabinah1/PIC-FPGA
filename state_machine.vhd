@@ -8,7 +8,7 @@ entity state_machine is
 	port (clk : in std_logic;
 			reset : in std_logic;
 			trig_state_machine : in std_logic;
-			instruction_type : in std_logic_vector(1 downto 0);
+			instruction_type : in std_logic_vector(2 downto 0);
 			ram_read_enable : out std_logic;
 			alu_input_mux_enable : out std_logic;
 			alu_enable : out std_logic;
@@ -50,7 +50,6 @@ begin
 			next_state <= do_nop;
 			
 		elsif (rising_edge(clk)) then
-
 			case state is
 				when do_nop =>
 					ram_read_enable <= '0';
@@ -64,14 +63,26 @@ begin
 					if (trig_state_machine = '0') then
 						next_state <= do_nop;
 					else
-						if (instruction_type = "00") then
+						if (instruction_type = "000") then
 							next_state <= do_alu_input_sel;
-						elsif (instruction_type = "01" or instruction_type = "10") then
+						elsif (instruction_type = "001" or instruction_type = "010" or instruction_type = "100") then
 							next_state <= do_ram_read;
+						elsif (instruction_type = "011") then
+							next_state <= do_alu;
 						else
 							next_state <= do_nop;
 						end if;
 					end if;
+
+				when do_wait =>
+					ram_read_enable <= '0';
+					alu_input_mux_enable <= '0';
+					alu_enable <= '0';
+					wreg_enable <= '0';
+					ram_write_enable <= '0';
+					result_enable <= '0';
+					status_enable <= '0';
+					next_state <= do_result;
 
 				when do_ram_read =>
 					ram_read_enable <= '1';
@@ -101,10 +112,12 @@ begin
 					ram_write_enable <= '0';
 					result_enable <= '0';
 					status_enable <= '0';
-					if (instruction_type = "00" or instruction_type = "01") then
+					if (instruction_type = "000" or instruction_type = "001") then
 						next_state <= do_wreg;
-					elsif (instruction_type = "10") then
+					elsif (instruction_type = "010") then
 						next_state <= do_ram_write;
+					elsif (instruction_type = "100" or instruction_type = "011") then
+						next_state <= do_wait;
 					else
 						next_state <= do_nop;
 					end if;
@@ -117,7 +130,7 @@ begin
 					ram_write_enable <= '0';
 					result_enable <= '0';
 					status_enable <= '1';
-					next_state <= do_result;
+					next_state <= do_nop;
 
 				when do_ram_write =>
 					ram_read_enable <= '0';
@@ -127,7 +140,7 @@ begin
 					ram_write_enable <= '1';
 					result_enable <= '0';
 					status_enable <= '1';
-					next_state <= do_result;
+					next_state <= do_nop;
 
 				when do_result =>
 					ram_read_enable <= '0';
