@@ -58,6 +58,7 @@ struct mapping dict[] = {
 			 "READ_WREG", "110001",
 			 "READ_STATUS", "110010",
 			 "READ_ADDRESS", "110011",
+			 "DUMP_MEM", "101000",
 			 "NOP", "000000"
 };
 
@@ -87,6 +88,15 @@ void init_pins(void *vargp)
 	idx = idx + 1;
     }
     INP_GPIO(RESULT_PIN);
+}
+
+int binary_to_decimal(volatile int *data)
+{
+    int result = 0;
+    for (int idx = 7; idx >= 0; idx--)
+	result = result + data[idx] * (int)pow(2, 7-idx);
+
+    return result;
 }
 
 void get_command(char *key, char *value)
@@ -188,12 +198,10 @@ void *result_thread(void *vargp)
 	    falling_check = 1;
 	    for (int idx = 0; idx < 5; idx++)
 		code_word[idx] = code_word[idx+1];
-	    if (GET_GPIO(RESULT_PIN)) {
+	    if (GET_GPIO(RESULT_PIN))
 		code_word[5] = 1;
-	    }
-	    else {
+	    else
 		code_word[5] = 0;
-	    }
 
 	    cw_found = 1;
 	    for (int idx = 0; idx < 6; idx++) {
@@ -220,8 +228,9 @@ void *result_thread(void *vargp)
 	else if (falling_check == 1 && GET_GPIO(CLK_PIN)) { // rising edge
 	    falling_check = 0;
 	    if (data_count == 8) {
-		for (int idx = 7; idx >= 0; idx--)
-		    result_decimal = result_decimal + data[idx] * (int)pow(2, 7-idx);
+		result_decimal = binary_to_decimal(data);
+		/* for (int idx = 7; idx >= 0; idx--) */
+		/*     result_decimal = result_decimal + data[idx] * (int)pow(2, 7-idx); */
 		cw_found = 0;
 		data_count = 0;
 		printf("The result is: %d\n", result_decimal);
@@ -229,6 +238,79 @@ void *result_thread(void *vargp)
 	    }
 	}
 
+	if (reception_stop == 1) // force exit
+	    break;
+    }
+    return NULL;
+}
+
+void *mem_dump_thread(void *vargp)
+{
+    volatile unsigned *gpio;
+    gpio = (volatile unsigned *)vargp;
+
+    volatile int code_word[6] = {0};
+    int code_word_correct[6] = {0, 0, 0, 1, 0, 1};
+    volatile int data[1016] = {0};
+    int byte_data[8] = {0};
+    int falling_check = 0;
+    int cw_found = 0;
+    int data_count = 0;
+    int result_decimal = 0;
+    int result = 0;
+    int counter = 0;
+
+    while (1) {
+	if (!(GET_GPIO(CLK_PIN)) && falling_check == 0 && cw_found == 0) { // falling edge, code word not found
+	    falling_check = 1;
+	    for (int idx = 0; idx < 5; idx++)
+		code_word[idx] = code_word[idx+1];
+	    if (GET_GPIO(RESULT_PIN))
+		code_word[5] = 1;
+	    else
+		code_word[5] = 0;
+
+	    cw_found = 1;
+	    for (int idx = 0; idx < 6; idx++) {
+		if (code_word[idx] != code_word_correct[idx]) {
+		    cw_found = 0;
+		    break;
+		}
+	    }
+	}
+
+	else if (!(GET_GPIO(CLK_PIN)) && falling_check == 0 && cw_found == 1) { // falling edge, code word found
+	    if (data_count < 1016) {
+		falling_check = 1;
+		for (int idx = 0; idx < 1015; idx++)
+		    data[idx] = data[idx+1];
+		if (GET_GPIO(RESULT_PIN))
+		    data[1015] = 1;
+		else
+		    data[1015] = 0;
+	    }
+	    data_count++;
+	}
+
+	else if (falling_check == 1 && GET_GPIO(CLK_PIN)) { // rising edge
+	    falling_check = 0;
+	    if (data_count == 1016) {
+		for (int idx = 126; idx >= 0; idx--) {
+		    if (counter == 8) {
+			counter = 0;
+			printf("\n");
+		    }
+		    for (int i = 0; i < 8; i++)
+			byte_data[i] = data[idx*8 + i];
+		    result = binary_to_decimal(byte_data);
+		    printf("%3d   ", result);
+		    counter++;
+		}
+		printf("\n");
+		cw_found = 0;
+		data_count = 0;
+	    }
+	}
 	if (reception_stop == 1) // force exit
 	    break;
     }
@@ -278,12 +360,16 @@ int main(void)
     char literal_keyword[99] = "00000110";
     char temp[99];
     int literal = 0;
+    int i = 0;
+    int num_spaces = 0;
     pthread_t clk_thread_id;
     pthread_t reset_thread_id;
     pthread_t read_result_thread_id;
+    pthread_t mem_dump_thread_id;
     pthread_t command_thread_id;
     int operation;
     int falling_check = 0;
+    int delta = 0;
     volatile unsigned *gpio = init_gpio_map();
     struct enable_struct *ena;
     struct data_struct *data;
@@ -295,7 +381,6 @@ int main(void)
     data->bit = '0';
     init_pins((void *)gpio);
     pthread_create(&clk_thread_id, NULL, clk_thread, (void *)gpio);
-    pthread_create(&read_result_thread_id, NULL, result_thread, (void *)gpio);
 
     while(1) {
 	printf("What do you want to do?\n");
@@ -330,7 +415,32 @@ int main(void)
 	    // convert the instruction to 14 bits, and send them to FPGA.
 	    char *command = malloc(MAX_COMMAND_SIZE);
 	    fgets(command, MAX_COMMAND_SIZE, stdin);
-	    sscanf(command, "%s %d", instruction, &literal);
+	    while (command[i] != '\0') {
+		if (command[i] == ' ') {
+		    num_spaces++;
+		}
+		i++;
+	    }
+	    if (num_spaces == 1) {
+		sscanf(command, "%s %d", instruction, &literal);
+	    } else if (num_spaces == 0) {
+		sscanf(command, "%s", instruction);
+		literal = 0;
+	    } else {
+		printf("Invalid command\n");
+		free(command);
+		continue;
+	    }
+	    if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
+		strcmp(instruction, "READ_STATUS") == 0) {
+		delta = 100000;
+		pthread_create(&read_result_thread_id, NULL, result_thread, (void *)gpio);
+	    } else if (strcmp(instruction, "DUMP_MEM") == 0) {
+		pthread_create(&mem_dump_thread_id, NULL, mem_dump_thread, (void *)gpio);
+		delta = 2000000;
+	    } else {
+		delta = 100000;
+	    }
 	    convert_to_binary(literal, binary_data_literal);
 	    get_command(instruction, binary_data_opcode);
 
@@ -356,7 +466,19 @@ int main(void)
 		else if (falling_check == 1 && GET_GPIO(CLK_PIN))
 		    falling_check = 0;
 	    }
+	    usleep(delta);
+	    if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
+		strcmp(instruction, "READ_STATUS") == 0) {
+		reception_stop = 1;
+		pthread_join(read_result_thread_id, NULL);
+	    } else if (strcmp(instruction, "DUMP_MEM") == 0) {
+		reception_stop = 1;
+		pthread_join(mem_dump_thread_id, NULL);
+	    }
 	    free(command);
+	    i = 0;
+	    num_spaces = 0;
+	    reception_stop = 0;
 	}
 
 	else if (operation == 6) {
@@ -371,6 +493,5 @@ int main(void)
 	}
     }
     pthread_join(clk_thread_id, NULL);
-    pthread_join(read_result_thread_id, NULL);
     exit(0);
 }

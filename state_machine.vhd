@@ -14,8 +14,10 @@ entity state_machine is
 			alu_enable : out std_logic;
 			wreg_enable : out std_logic;
 			ram_write_enable : out std_logic;
+			mem_dump_enable : out std_logic;
 			status_enable : out std_logic;
-			result_enable : out std_logic);
+			result_enable : out std_logic;
+			result_enable_mem_dump : out std_logic);
 end state_machine;
 
 architecture rtl of state_machine is
@@ -42,28 +44,35 @@ begin
 		if (reset = '1') then
 			ram_read_enable <= '0';
 			ram_write_enable <= '0';
+			mem_dump_enable <= '0';
 			alu_input_mux_enable <= '0';
 			alu_enable <= '0';
 			wreg_enable <= '0';
 			result_enable <= '0';
 			status_enable <= '0';
+			result_enable_mem_dump <= '0';
 			next_state <= do_nop;
 			
 		elsif (rising_edge(clk)) then
 			case state is
 				when do_nop =>
+					mem_dump_enable <= '0';
 					ram_read_enable <= '0';
 					alu_input_mux_enable <= '0';
 					alu_enable <= '0';
 					wreg_enable <= '0';
 					ram_write_enable <= '0';
+					mem_dump_enable <= '0';
 					result_enable <= '0';
 					status_enable <= '0';
+					result_enable_mem_dump <= '0';
 
 					if (trig_state_machine = '0') then
 						next_state <= do_nop;
 					else
-						if (instruction_type = "000") then
+						if (instruction_type = "101") then
+							next_state <= do_ram_dump;
+						elsif (instruction_type = "000") then
 							next_state <= do_alu_input_sel;
 						elsif (instruction_type = "001" or instruction_type = "010" or instruction_type = "100") then
 							next_state <= do_ram_read;
@@ -76,42 +85,62 @@ begin
 
 				when do_wait =>
 					ram_read_enable <= '0';
+					mem_dump_enable <= '0';
 					alu_input_mux_enable <= '0';
 					alu_enable <= '0';
 					wreg_enable <= '0';
 					ram_write_enable <= '0';
 					result_enable <= '0';
 					status_enable <= '0';
+					result_enable_mem_dump <= '0';
 					next_state <= do_result;
 
 				when do_ram_read =>
 					ram_read_enable <= '1';
+					mem_dump_enable <= '0';
 					alu_input_mux_enable <= '0';
 					alu_enable <= '0';
 					wreg_enable <= '0';
 					ram_write_enable <= '0';
 					result_enable <= '0';
 					status_enable <= '0';
+					result_enable_mem_dump <= '0';
 					next_state <= do_alu_input_sel;
+					
+				when do_ram_dump =>
+					ram_read_enable <= '0';
+					mem_dump_enable <= '1';
+					alu_input_mux_enable <= '0';
+					alu_enable <= '0';
+					wreg_enable <= '0';
+					ram_write_enable <= '0';
+					result_enable <= '0';
+					status_enable <= '0';
+					result_enable_mem_dump <= '0';
+					next_state <= do_wait;
 
 				when do_alu_input_sel =>
 					ram_read_enable <= '0';
+					mem_dump_enable <= '0';
 					alu_input_mux_enable <= '1';
 					alu_enable <= '0';
 					wreg_enable <= '0';
 					ram_write_enable <= '0';
 					result_enable <= '0';
 					status_enable <= '0';
+					result_enable_mem_dump <= '0';
 					next_state <= do_alu;
 
 				when do_alu =>
 					ram_read_enable <= '0';
+					mem_dump_enable <= '0';
 					alu_input_mux_enable <= '0';
 					alu_enable <= '1';
 					wreg_enable <= '0';
 					ram_write_enable <= '0';
 					result_enable <= '0';
 					status_enable <= '0';
+					result_enable_mem_dump <= '0';
 					if (instruction_type = "000" or instruction_type = "001") then
 						next_state <= do_wreg;
 					elsif (instruction_type = "010") then
@@ -124,33 +153,52 @@ begin
 
 				when do_wreg =>
 					ram_read_enable <= '0';
+					mem_dump_enable <= '0';
 					alu_input_mux_enable <= '0';
 					alu_enable <= '0';
 					wreg_enable <= '1';
 					ram_write_enable <= '0';
 					result_enable <= '0';
 					status_enable <= '1';
+					result_enable_mem_dump <= '0';
 					next_state <= do_nop;
 
 				when do_ram_write =>
 					ram_read_enable <= '0';
+					mem_dump_enable <= '0';
 					alu_input_mux_enable <= '0';
 					alu_enable <= '0';
 					wreg_enable <= '0';
 					ram_write_enable <= '1';
 					result_enable <= '0';
 					status_enable <= '1';
+					result_enable_mem_dump <= '0';
 					next_state <= do_nop;
 
 				when do_result =>
-					ram_read_enable <= '0';
-					alu_input_mux_enable <= '0';
-					alu_enable <= '0';
-					wreg_enable <= '0';
-					ram_write_enable <= '0';
-					result_enable <= '1';
-					status_enable <= '0';
-					next_state <= do_nop;
+					if (instruction_type = "101") then
+						ram_read_enable <= '0';
+						mem_dump_enable <= '0';
+						alu_input_mux_enable <= '0';
+						alu_enable <= '0';
+						wreg_enable <= '0';
+						ram_write_enable <= '0';
+						result_enable <= '0';
+						status_enable <= '0';
+						result_enable_mem_dump <= '1';
+						next_state <= do_nop;
+					else
+						ram_read_enable <= '0';
+						mem_dump_enable <= '0';
+						alu_input_mux_enable <= '0';
+						alu_enable <= '0';
+						wreg_enable <= '0';
+						ram_write_enable <= '0';
+						result_enable <= '1';
+						status_enable <= '0';
+						result_enable_mem_dump <= '0';
+						next_state <= do_nop;
+					end if;
 			end case;
 		end if;
 	end process func;

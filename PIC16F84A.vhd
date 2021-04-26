@@ -36,6 +36,9 @@ architecture struct of PIC16F84A is
 	signal status_in_ALU : std_logic_vector(7 downto 0);
 	signal transfer_to_sw_int: std_logic;
 	signal data_to_sw_int: std_logic_vector(7 downto 0);
+	signal mem_dump_int: std_logic_vector(1015 downto 0);
+	signal mem_dump_enable_int: std_logic;
+	signal result_enable_mem_dump_int: std_logic;
 
 	component alu_output_demux is
 		port (clk : in std_logic;
@@ -65,6 +68,8 @@ architecture struct of PIC16F84A is
 				address : in std_logic_vector(7 downto 0);
 				write_enable : in std_logic;
 				read_enable : in std_logic;
+				mem_dump_enable : in std_logic;
+				mem_dump : out std_logic_vector(1015 downto 0);
 				data_out : out std_logic_vector(7 downto 0));
 	end component ram;
 
@@ -78,8 +83,10 @@ architecture struct of PIC16F84A is
 				alu_enable : out std_logic;
 				wreg_enable : out std_logic;
 				ram_write_enable : out std_logic;
+				mem_dump_enable : out std_logic;
 				status_enable : out std_logic;
-				result_enable : out std_logic);
+				result_enable : out std_logic;
+				result_enable_mem_dump : out std_logic);
 	end component state_machine;
 
 	component serial_to_parallel_instruction is
@@ -115,7 +122,6 @@ architecture struct of PIC16F84A is
 		generic (N : natural := 8);
 		port (data_in : in std_logic_vector(N-1 downto 0);
 				data_out : out std_logic_vector(N-1 downto 0);
-				--ALU_output_raspi : out std_logic_vector(N-1 downto 0);
 				clk : in std_logic;
 				enable : in std_logic;
 				reset : in std_logic);
@@ -129,14 +135,16 @@ architecture struct of PIC16F84A is
 				reset : in std_logic);
 	end component status_register;
 	
-	component parallel_to_serial_wreg is
+	component parallel_to_serial_output is
 		generic (N : natural := 8);
 		port (clk : in std_logic;
 				reset : in std_logic;
 				enable : in std_logic;
+				result_enable_mem_dump : in std_logic;
 				data_to_sw : in std_logic_vector(N-1 downto 0);
+				mem_dump_to_sw : in std_logic_vector(1015 downto 0);
 				serial_out : out std_logic);
-	end component parallel_to_serial_wreg;
+	end component parallel_to_serial_output;
 	
 	begin
 
@@ -166,6 +174,8 @@ architecture struct of PIC16F84A is
 						 address => ram_address_int,
 						 write_enable => ram_write_enable_int,
 						 read_enable => ram_read_enable_int,
+						 mem_dump_enable => mem_dump_enable_int,
+						 mem_dump => mem_dump_int,
 						 data_out => from_ram_to_alu);
 
 		ALU_unit : component ALU
@@ -190,8 +200,10 @@ architecture struct of PIC16F84A is
 						 alu_enable => alu_enable_int,
 						 wreg_enable => wreg_enable_int,
 						 ram_write_enable => ram_write_enable_int,
+						 mem_dump_enable => mem_dump_enable_int,
 						 status_enable => status_enable_int,
-						 result_enable => result_enable_int);
+						 result_enable => result_enable_int,
+						 result_enable_mem_dump => result_enable_mem_dump_int);
 
 		serial_to_parallel_instruction_unit : component serial_to_parallel_instruction
 			generic map (N => 8,
@@ -208,12 +220,14 @@ architecture struct of PIC16F84A is
 						 address_out => ram_address_int, 
 						 opcode_out => opcode);
 
-		parallel_to_serial_wreg_unit : component parallel_to_serial_wreg
+		parallel_to_serial_output_unit : component parallel_to_serial_output
 			generic map (N => 8)
 			port map (clk => clk,
 						 reset => reset,
 						 enable => result_enable_int,
+						 result_enable_mem_dump => result_enable_mem_dump_int,
 						 data_to_sw => data_to_sw_int,
+						 mem_dump_to_sw => mem_dump_int,
 						 serial_out => ALU_output_raspi);
 
 		W_register_unit : component W_register

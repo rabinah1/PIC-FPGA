@@ -23,6 +23,7 @@ end serial_to_parallel_instruction;
 architecture rtl of serial_to_parallel_instruction is
 	signal code_word : std_logic_vector(5 downto 0);
 	signal counter : integer := 0;
+	signal dump_mem : std_logic;
 begin
 
 	-- Incoming data type: <6 bit code word> + <6 bit opcode> + <7 bit address or operand>
@@ -40,11 +41,12 @@ begin
 			transfer_to_sw <= '0';
 			instruction_type <= (others => '0');
 			trig_state_machine <= '0';
-
+			dump_mem <= '0';
 		elsif (rising_edge(clk)) then
-
 			if (counter >= N + M) then
-				if (sel_alu_input_mux = '0' and d = '0' and transfer_to_sw = '0') then -- input from literal, output to wreg
+				if (dump_mem = '1') then
+					instruction_type <= "101";
+				elsif (sel_alu_input_mux = '0' and d = '0' and transfer_to_sw = '0') then -- input from literal, output to wreg
 					instruction_type <= "000";
 				elsif (sel_alu_input_mux = '1' and d = '0' and transfer_to_sw = '0') then -- input from ram, output to wreg
 					instruction_type <= "001";
@@ -73,11 +75,18 @@ begin
 			-- Read the address or operand after opcode was found
 			elsif (counter >= M and counter <= N + M - 1 and code_word = "000110") then
 				if (counter = M) then
-					if (opcode_out = "110011") then
+					if (opcode_out = "101000") then
+						dump_mem <= '1';
+						sel_alu_input_mux <= '0';
+						d <= '0';
+						transfer_to_sw <= '0';
+					elsif (opcode_out = "110011") then
+						dump_mem <= '0';
 						sel_alu_input_mux <= '1';
 						d <= '0';
 						transfer_to_sw <= '1'; -- Output ALU is transferred to raspberry pi
 					elsif (opcode_out = "110001" or opcode_out = "110010") then
+						dump_mem <= '0';
 						sel_alu_input_mux <= '0';
 						d <= '0'; -- This does not matter when transfer_to_sw = 1
 						transfer_to_sw <= '1';
@@ -86,10 +95,12 @@ begin
 							 opcode_out = "001111" or opcode_out = "000100" or opcode_out = "001000" or
 							 opcode_out = "000010" or opcode_out = "000110" or opcode_out = "001101" or
 							 opcode_out = "001100" or opcode_out = "000001" or opcode_out = "001110") then
+						dump_mem <= '0';
 						sel_alu_input_mux <= '1'; -- input to ALU will be from memory
 						d <= serial_in; -- d = 0 --> data stored to wreg, d = 1 --> data stored to ram
 						transfer_to_sw <= '0';
 					else
+						dump_mem <= '0';
 						sel_alu_input_mux <= '0'; -- input to ALU will be from literal
 						d <= '0';
 						transfer_to_sw <= '0';

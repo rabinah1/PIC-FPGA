@@ -16,10 +16,7 @@ incremental_db/
 output_files/
 pic16f84a_datasheet.pdf
 simulation/
-serial_to_parallel.vhd.bak
-serial_to_parallel_literal.vhd.bak
-serial_to_parallel_opcode.vhdl.bak
-parallel_to_serial_wreg.vhd.bak
+parallel_to_serial_output.vhd.bak
 state_machine.vhd.bak
 serial_to_parallel_instruction.vhd.bak
 ram.vhd.bak
