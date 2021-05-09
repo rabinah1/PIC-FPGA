@@ -16,7 +16,7 @@ end parallel_to_serial_output;
 
 architecture rtl of parallel_to_serial_output is
 	signal data_to_send : std_logic_vector(13 downto 0);
-	signal mem_to_send : std_logic_vector(1021 downto 0);
+	signal mem_to_send : std_logic_vector(1024 downto 0);
 begin
 
 	func: process(all) is
@@ -44,14 +44,14 @@ begin
 			elsif (result_enable_mem_dump = '1') then
 				mem_dump_process := '1';
 				serial_out <= '0';
-				idx := 1022;
+				idx := 1025;
 			elsif (enable = '1') then
 				data_send_process := '1';
 				serial_out <= '0';
 				idx := 14;
 			elsif (enable = '0') then
 				data_to_send <= "000101" & data_to_sw;
-				mem_to_send <= "000101" & mem_dump_to_sw;
+				mem_to_send <= "000" & "000101" & mem_dump_to_sw;
 				idx := 0;
 				data_send_process := '0';
 				mem_dump_process := '0';
