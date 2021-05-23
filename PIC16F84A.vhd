@@ -8,6 +8,8 @@ entity PIC16F84A is
 	port (serial_in : in std_logic;
 			clk : in std_logic;
 			reset : in std_logic;
+			miso : out std_logic;
+			mosi : in std_logic;
 			ALU_output_raspi : out std_logic);
 end PIC16F84A;
 
@@ -95,6 +97,7 @@ architecture struct of PIC16F84A is
 		port (clk : in std_logic;
 				reset : in std_logic;
 				serial_in : in std_logic;
+				mosi : in std_logic;
 				trig_state_machine : out std_logic;
 				instruction_type : out std_logic_vector(2 downto 0);
 				sel_alu_input_mux : out std_logic;
@@ -143,6 +146,7 @@ architecture struct of PIC16F84A is
 				result_enable_mem_dump : in std_logic;
 				data_to_sw : in std_logic_vector(N-1 downto 0);
 				mem_dump_to_sw : in std_logic_vector(1015 downto 0);
+				miso : out std_logic;
 				serial_out : out std_logic);
 	end component parallel_to_serial_output;
 	
@@ -211,6 +215,7 @@ architecture struct of PIC16F84A is
 			port map (clk => clk,
 						 reset => reset,
 						 serial_in => serial_in,
+						 mosi => mosi,
 						 trig_state_machine => trig_state_machine_int,
 						 instruction_type => instruction_type_int,
 						 sel_alu_input_mux => sel_alu_input_mux_int,
@@ -228,6 +233,7 @@ architecture struct of PIC16F84A is
 						 result_enable_mem_dump => result_enable_mem_dump_int,
 						 data_to_sw => data_to_sw_int,
 						 mem_dump_to_sw => mem_dump_int,
+						 miso => miso,
 						 serial_out => ALU_output_raspi);
 
 		W_register_unit : component W_register

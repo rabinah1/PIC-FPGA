@@ -10,6 +10,7 @@ entity serial_to_parallel_instruction is
 	port (clk : in std_logic;
 			reset : in std_logic;
 			serial_in : in std_logic;
+			mosi : in std_logic;
 			trig_state_machine : out std_logic;
 			instruction_type : out std_logic_vector(2 downto 0);
 			sel_alu_input_mux : out std_logic;
@@ -21,12 +22,11 @@ entity serial_to_parallel_instruction is
 end serial_to_parallel_instruction;
 
 architecture rtl of serial_to_parallel_instruction is
-	signal code_word : std_logic_vector(5 downto 0);
 	signal counter : integer := 0;
 	signal dump_mem : std_logic;
 begin
 
-	-- Incoming data type: <6 bit code word> + <6 bit opcode> + <7 bit address or operand>
+	-- Incoming data type: <6 bit opcode> + <7 bit address or operand>
 	func: process(all) is
 	begin
 
@@ -34,7 +34,6 @@ begin
 			operand_out <= (others => '0');
 			address_out <= (others => '0');
 			opcode_out <= (others => '0');
-			code_word <= (others => '0');
 			counter <= 0;
 			sel_alu_input_mux <= '0';
 			d <= '0';
@@ -68,12 +67,11 @@ begin
 					trig_state_machine <= '0';
 				else
 					trig_state_machine <= '0';
-					code_word <= (others => '0');
 					counter <= 0;
 				end if;
 
 			-- Read the address or operand after opcode was found
-			elsif (counter >= M and counter <= N + M - 1 and code_word = "000110") then
+			elsif (counter >= M and counter <= N + M - 1) then
 				if (counter = M) then
 					if (opcode_out = "101000") then
 						dump_mem <= '1';
@@ -110,17 +108,15 @@ begin
 				address_out <= operand_out(N-2 downto 0) & serial_in;
 				counter <= counter + 1;
 
-			-- Read the opcode after code word was found
-			elsif (counter <= M - 1 and code_word = "000110") then
+			-- Read the opcode after mosi was set
+			elsif (counter <= M - 1 and mosi = '1') then
 				opcode_out <= opcode_out(M-2 downto 0) & serial_in;
 				operand_out <= (others => '0');
 				counter <= counter + 1;
 
-			-- Search for the code word for incoming data
-			elsif (counter = 0) then
+			elsif (mosi = '0') then
 				opcode_out <= (others => '0');
 				operand_out <= (others => '0');
-				code_word <= code_word(4 downto 0) & serial_in;
 
 			end if;
 		end if;
