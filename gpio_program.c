@@ -189,7 +189,7 @@ void *result_thread(void *vargp)
 	    if (data_count == 8) {
 		result_decimal = binary_to_decimal(data);
 		data_count = 0;
-		printf("The result is: %d\n", result_decimal);
+		printf("%d\n", result_decimal);
 		result_decimal = 0;
 		return NULL;
 	    }
@@ -300,98 +300,88 @@ int main(void)
     pthread_create(&clk_thread_id, NULL, clk_thread, (void *)gpio);
 
     while(1) {
-	printf("What do you want to do?\n");
-	printf("1) Enable clock\n");
-	printf("2) Disable clock\n");
-	printf("3) Enable reset\n");
-	printf("4) Disable reset\n");
-	printf("5) Give instruction\n");
-	printf("6) Exit program\n");
-	scanf("%d", &operation);
-	getchar();
-      
-	if (operation == 1) {
-	    clk_enable = 1;
-	} else if (operation == 2) {
-	    clk_enable = 0;
-	} else if (operation == 3) {
-	    GPIO_SET = 1<<RESET_PIN;
-	} else if (operation == 4) {
-	    GPIO_CLR = 1<<RESET_PIN;
-	} else if (operation == 5) {
-	    // convert the instruction to 14 bits, and send them to FPGA.
-	    int i = 0;
-	    char *command = malloc(MAX_COMMAND_SIZE);
-	    fgets(command, MAX_COMMAND_SIZE, stdin);
-	    while (command[i] != '\0') {
-		if (command[i] == ' ')
-		    num_spaces++;
-		i++;
-	    }
-	    if (num_spaces == 1) {
-		sscanf(command, "%s %d", instruction, &literal);
-	    } else if (num_spaces == 0) {
-		sscanf(command, "%s", instruction);
-		literal = 0;
-	    } else {
-		printf("Invalid command\n");
-		free(command);
-		continue;
-	    }
-	    if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
-		strcmp(instruction, "READ_STATUS") == 0) {
-	        pthread_create(&read_result_thread_id, NULL, result_thread, (void *)gpio);
-		usleep(1000);
-	    }
-	    else if (strcmp(instruction, "DUMP_MEM") == 0) {
-	        pthread_create(&mem_dump_thread_id, NULL, mem_dump_thread, (void *)gpio);
-		usleep(1000);
-	    }
-	    decimal_to_binary(literal, binary_data_operand);
-	    get_command(instruction, binary_data_opcode);
-
-	    memset(temp, '\0', sizeof(temp));
-	    strcpy(temp, binary_data_opcode);
-	    strcat(temp, binary_data_operand);
-	    memset(binary_command, '\0', sizeof(binary_command));
-	    strcpy(binary_command, temp);
-	    // binary_command = <opcode_in_binary> + <argument_in_binary>
-	    // This data is sent to FPGA one bit at a time, starting from the first (idx = 0) bit.
-
-	    int length = strlen(binary_command);
-	    int idx = 0;
-	    while (idx <= length) {
-		if (!(GET_GPIO(CLK_PIN)) && falling_check == 0) { // falling edge
-		    falling_check = 1;
-		    if (idx < length) {
-		        if (idx == 0)
-			    GPIO_SET = 1<<MOSI_PIN;
-		        if (binary_command[idx] == '0')
-			    GPIO_CLR = 1<<COMMAND_PIN;
-			else
-			    GPIO_SET = 1<<COMMAND_PIN;
-		    } else {
-		        GPIO_CLR = 1<<MOSI_PIN;
-		    }
-		    idx++;
-		} else if (GET_GPIO(CLK_PIN) && falling_check == 1) { // rising edge
-		    falling_check = 0;
-		}
-	    }
-	    if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
-		strcmp(instruction, "READ_STATUS") == 0) {
-	        pthread_join(read_result_thread_id, NULL);
-	    }
-	    else if (strcmp(instruction, "DUMP_MEM") == 0)
-	        pthread_join(mem_dump_thread_id, NULL);
+	int i = 0;
+	char *command = malloc(MAX_COMMAND_SIZE);
+	fgets(command, MAX_COMMAND_SIZE, stdin);
+	while (command[i] != '\0') {
+	    if (command[i] == ' ')
+		num_spaces++;
+	    i++;
+	}
+	if (num_spaces == 1) {
+	    sscanf(command, "%s %d", instruction, &literal);
+	} else if (num_spaces == 0) {
+	    sscanf(command, "%s", instruction);
+	    literal = 0;
+	} else {
+	    printf("Invalid command\n");
 	    free(command);
-	    i = 0;
-	    num_spaces = 0;
-	} else if (operation == 6) {
+	    continue;
+	}
+	if (strcmp(instruction, "ENABLE_CLOCK") == 0) {
+	    clk_enable = 1;
+	    continue;
+	} else if (strcmp(instruction, "DISABLE_CLOCk") == 0) {
+	    clk_enable = 0;
+	    continue;
+	} else if (strcmp(instruction, "ENABLE_RESET") == 0) {
+	    GPIO_SET = 1<<RESET_PIN;
+	    continue;
+	} else if (strcmp(instruction, "DISABLE_RESET") == 0) {
+	    GPIO_CLR = 1<<RESET_PIN;
+	    continue;
+	} else if (strcmp(instruction, "EXIT") == 0) {
 	    GPIO_CLR = 1<<RESET_PIN;
 	    clk_exit = 1;
 	    break;
+	} else if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
+		   strcmp(instruction, "READ_STATUS") == 0) {
+	    pthread_create(&read_result_thread_id, NULL, result_thread, (void *)gpio);
+	    usleep(1000);
+	} else if (strcmp(instruction, "DUMP_MEM") == 0) {
+	    pthread_create(&mem_dump_thread_id, NULL, mem_dump_thread, (void *)gpio);
+	    usleep(1000);
 	}
+	decimal_to_binary(literal, binary_data_operand);
+	get_command(instruction, binary_data_opcode);
+
+	memset(temp, '\0', sizeof(temp));
+	strcpy(temp, binary_data_opcode);
+	strcat(temp, binary_data_operand);
+	memset(binary_command, '\0', sizeof(binary_command));
+	strcpy(binary_command, temp);
+	// binary_command = <opcode_in_binary> + <argument_in_binary>
+	// This data is sent to FPGA one bit at a time, starting from the first (idx = 0) bit.
+
+	int length = strlen(binary_command);
+	int idx = 0;
+	while (idx <= length) {
+	    if (!(GET_GPIO(CLK_PIN)) && falling_check == 0) { // falling edge
+		falling_check = 1;
+		if (idx < length) {
+		    if (idx == 0)
+			GPIO_SET = 1<<MOSI_PIN;
+		    if (binary_command[idx] == '0')
+			GPIO_CLR = 1<<COMMAND_PIN;
+		    else
+			GPIO_SET = 1<<COMMAND_PIN;
+		} else {
+		    GPIO_CLR = 1<<MOSI_PIN;
+		}
+		idx++;
+	    } else if (GET_GPIO(CLK_PIN) && falling_check == 1) { // rising edge
+		falling_check = 0;
+	    }
+	}
+	if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
+	    strcmp(instruction, "READ_STATUS") == 0) {
+	    pthread_join(read_result_thread_id, NULL);
+	}
+	else if (strcmp(instruction, "DUMP_MEM") == 0)
+	    pthread_join(mem_dump_thread_id, NULL);
+	free(command);
+	i = 0;
+	num_spaces = 0;
     }
     pthread_join(clk_thread_id, NULL);
     exit(0);
