@@ -12,6 +12,7 @@ entity ALU is
 			clk : in std_logic;
 			reset : in std_logic;
 			enable : in std_logic;
+			bit_idx : in std_logic_vector(2 downto 0);
 			status_out : out std_logic_vector(N-1 downto 0);
 			ALU_output : out std_logic_vector(N-1 downto 0));
 end ALU;
@@ -41,6 +42,7 @@ begin
 		variable incTemp : std_logic_vector(N downto 0);
 		variable opTemp : std_logic_vector(5 downto 0);
 		variable result : std_logic_vector(N downto 0);
+		variable temp_mem : std_logic_vector(7 downto 0);
 		variable status_carry : std_logic;
 
 	begin
@@ -53,6 +55,7 @@ begin
 			incTemp := (others => '0');
 			opTemp := (others => '0');
 			result := (others => '0');
+			temp_mem := (others => '0');
 			status_carry := '0';
 
 		elsif (rising_edge(clk)) then
@@ -74,6 +77,20 @@ begin
 
 					when "000101" => -- ANDWF
 						result := '0' & input_w and output_mux;
+						status_out(2) <= update_status_z(result(N-1 downto 0));
+						ALU_output <= result(N-1 downto 0);
+						
+					when "010000" => -- BCF
+						temp_mem := output_mux;
+						temp_mem(to_integer(unsigned(bit_idx))) := '0';
+						result := '0' & temp_mem;
+						status_out(2) <= update_status_z(result(N-1 downto 0));
+						ALU_output <= result(N-1 downto 0);
+						
+					when "010100" => -- BSF
+						temp_mem := output_mux;
+						temp_mem(to_integer(unsigned(bit_idx))) := '1';
+						result := '0' & temp_mem;
 						status_out(2) <= update_status_z(result(N-1 downto 0));
 						ALU_output <= result(N-1 downto 0);
 

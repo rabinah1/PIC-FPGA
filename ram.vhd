@@ -7,7 +7,7 @@ entity ram is
 	port (clk : in std_logic;
 			reset : in std_logic;
 			data : in std_logic_vector(7 downto 0);
-			address : in std_logic_vector(7 downto 0);
+			address : in std_logic_vector(6 downto 0);
 			write_enable : in std_logic;
 			read_enable : in std_logic;
 			mem_dump_enable : in std_logic;
@@ -44,10 +44,10 @@ begin
 				mem_dump <= ram_to_linear(ram_block);
 			end if;
 			if (read_enable = '1' and mem_dump_enable = '0') then
-				data_out <= ram_block(to_integer(unsigned(address(6 downto 0))));
+				data_out <= ram_block(to_integer(unsigned(address)));
 			end if;
 			if (write_enable = '1' and mem_dump_enable = '0') then
-				ram_block(to_integer(unsigned(address(6 downto 0)))) <= data;
+				ram_block(to_integer(unsigned(address))) <= data;
 			end if;
 		end if;
 	end process func;

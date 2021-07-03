@@ -24,3 +24,4 @@ alu_output_demux.vhd.bak
 alu_input_mux.vhd.bak
 states_package.vhd.bak
 status_register.vhd.bak
+input_receive.vhd.bak

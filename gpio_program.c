@@ -56,6 +56,8 @@ struct mapping dict[] = {
 			 "MOVLW",        "110000",
 			 "SUBLW",        "111101",
 			 "XORLW",        "111010",
+			 "BCF",          "0100",
+			 "BSF",          "0101",
 			 "READ_WREG",    "110001",
 			 "READ_STATUS",  "110010",
 			 "READ_ADDRESS", "110011",
@@ -106,15 +108,15 @@ void get_command(char *key, char *value)
     return;
 }
 
-void decimal_to_binary(int decimal_in, char *binary_out)
+void decimal_to_binary(int decimal_in, char *binary_out, int num_bits)
 {
-    int idx = 7;
+    int idx = num_bits - 1;
     memset(binary_out, '\0', sizeof(binary_out));
     while (idx >= 0) {
 	if ((int)pow(2, idx) > decimal_in) {
-	    binary_out[7 - idx] = '0';
+	    binary_out[num_bits - 1 - idx] = '0';
 	} else {
-	    binary_out[7 - idx] = '1';
+	    binary_out[num_bits - 1 - idx] = '1';
 	    decimal_in = decimal_in - (int)pow(2, idx);
 	    if (decimal_in == 0)
 		decimal_in = -1;
@@ -285,10 +287,12 @@ int main(void)
 {
     char binary_data_operand[99];
     char binary_data_opcode[99];
+    char binary_data_bit[99];
     char binary_command[99];
     char instruction[99];
     char temp[99];
-    int literal = 0;
+    int literal_or_address = 0;
+    int bit = 0;
     int num_spaces = 0;
     pthread_t clk_thread_id;
     pthread_t read_result_thread_id;
@@ -308,11 +312,39 @@ int main(void)
 		num_spaces++;
 	    i++;
 	}
-	if (num_spaces == 1) {
-	    sscanf(command, "%s %d", instruction, &literal);
+	memset(binary_data_bit, '\0', sizeof(binary_data_bit));
+	memset(binary_data_operand, '\0', sizeof(binary_data_operand));
+	memset(binary_data_opcode, '\0', sizeof(binary_data_opcode));
+	if (num_spaces == 2) { // bit-oriented instruction
+	    sscanf(command, "%s %d %d", instruction, &bit, &literal_or_address);
+	    decimal_to_binary(bit, binary_data_bit, 3);
+	    decimal_to_binary(literal_or_address, binary_data_operand, 7);
+	    get_command(instruction, binary_data_opcode);
+	    memset(temp, '\0', sizeof(temp));
+	    strcpy(temp, binary_data_opcode);
+	    strcat(temp, binary_data_bit);
+	    strcat(temp, binary_data_operand);
+	    memset(binary_command, '\0', sizeof(binary_command));
+	    strcpy(binary_command, temp);
+	} else if (num_spaces == 1) { // literal or byte-oriented instruction
+	    sscanf(command, "%s %d", instruction, &literal_or_address);
+	    decimal_to_binary(literal_or_address, binary_data_operand, 8);
+	    get_command(instruction, binary_data_opcode);
+	    memset(temp, '\0', sizeof(temp));
+	    strcpy(temp, binary_data_opcode);
+	    strcat(temp, binary_data_operand);
+	    memset(binary_command, '\0', sizeof(binary_command));
+	    strcpy(binary_command, temp);
 	} else if (num_spaces == 0) {
 	    sscanf(command, "%s", instruction);
-	    literal = 0;
+	    literal_or_address = 0;
+	    decimal_to_binary(literal_or_address, binary_data_operand, 8);
+	    get_command(instruction, binary_data_opcode);
+	    memset(temp, '\0', sizeof(temp));
+	    strcpy(temp, binary_data_opcode);
+	    strcat(temp, binary_data_operand);
+	    memset(binary_command, '\0', sizeof(binary_command));
+	    strcpy(binary_command, temp);
 	} else {
 	    printf("Invalid command\n");
 	    free(command);
@@ -321,7 +353,7 @@ int main(void)
 	if (strcmp(instruction, "ENABLE_CLOCK") == 0) {
 	    clk_enable = 1;
 	    continue;
-	} else if (strcmp(instruction, "DISABLE_CLOCk") == 0) {
+	} else if (strcmp(instruction, "DISABLE_CLOCK") == 0) {
 	    clk_enable = 0;
 	    continue;
 	} else if (strcmp(instruction, "ENABLE_RESET") == 0) {
@@ -342,14 +374,6 @@ int main(void)
 	    pthread_create(&mem_dump_thread_id, NULL, mem_dump_thread, (void *)gpio);
 	    usleep(1000);
 	}
-	decimal_to_binary(literal, binary_data_operand);
-	get_command(instruction, binary_data_opcode);
-
-	memset(temp, '\0', sizeof(temp));
-	strcpy(temp, binary_data_opcode);
-	strcat(temp, binary_data_operand);
-	memset(binary_command, '\0', sizeof(binary_command));
-	strcpy(binary_command, temp);
 	// binary_command = <opcode_in_binary> + <argument_in_binary>
 	// This data is sent to FPGA one bit at a time, starting from the first (idx = 0) bit.
 
