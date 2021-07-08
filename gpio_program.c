@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -35,35 +36,91 @@ struct mapping {
 };
 
 struct mapping dict[] = {
-    "ADDWF",        "000111",
-    "ANDWF",        "000101",
-    "CLR",          "000001",
-    "COMF",         "001001",
-    "DECF",         "000011",
-    "DECFSZ",       "001011",
-    "INCF",         "001010",
-    "INCFSZ",       "001111",
-    "IORWF",        "000100",
-    "MOVF",         "001000",
-    "RLF",          "001101",
-    "RRF",          "001100",
-    "SUBWF",        "000010",
-    "SWAPF",        "001110",
-    "XORWF",        "000110",
-    "ADDLW",        "111110",
-    "ANDLW",        "111001",
-    "IORLW",        "111000",
-    "MOVLW",        "110000",
-    "SUBLW",        "111101",
-    "XORLW",        "111010",
-    "BCF",          "0100",
-    "BSF",          "0101",
-    "READ_WREG",    "110001",
-    "READ_STATUS",  "110010",
-    "READ_ADDRESS", "110011",
-    "DUMP_MEM",     "101000",
-    "NOP",          "000000"
+    "ADDWF",         "000111",
+    "ANDWF",         "000101",
+    "CLR",           "000001",
+    "COMF",          "001001",
+    "DECF",          "000011",
+    "DECFSZ",        "001011",
+    "INCF",          "001010",
+    "INCFSZ",        "001111",
+    "IORWF",         "000100",
+    "MOVF",          "001000",
+    "RLF",           "001101",
+    "RRF",           "001100",
+    "SUBWF",         "000010",
+    "SWAPF",         "001110",
+    "XORWF",         "000110",
+    "ADDLW",         "111110",
+    "ANDLW",         "111001",
+    "IORLW",         "111000",
+    "MOVLW",         "110000",
+    "SUBLW",         "111101",
+    "XORLW",         "111010",
+    "BCF",           "0100",
+    "BSF",           "0101",
+    "READ_WREG",     "110001",
+    "READ_STATUS",   "110010",
+    "READ_ADDRESS",  "110011",
+    "DUMP_MEM",      "101000",
+    "NOP",           "000000",
+    "ENABLE_CLOCK",  "000000",
+    "DISABLE_CLOCK", "000000",
+    "ENABLE_RESET",  "000000",
+    "DISABLE_RESET", "000000",
+    "EXIT",          "000000",
+    "HELP",          "000000"
 };
+
+void print_help(void)
+{
+    printf("\nThe following literal operations are available:\n"
+           "ADDLW\n"
+           "ANDLW\n"
+           "IORLW\n"
+           "MOVLW\n"
+           "SUBLW\n"
+           "XORLW\n"
+           "NOP\n\n"
+           "These must be used as follows:\n"
+           "<operation> <literal>\n\n"
+           "The following byte-oriented operations are available:\n"
+           "ADDWF\n"
+           "ANDWF\n"
+           "CLR\n"
+           "COMF\n"
+           "DECF\n"
+           "DECFSZ\n"
+           "INCF\n"
+           "INCFSZ\n"
+           "IORWF\n"
+           "MOVF\n"
+           "RLF\n"
+           "RRF\n"
+           "SUBWF\n"
+           "SWAPF\n"
+           "XORWF\n\n"
+           "These must be used as follows:\n"
+           "<operation> <d> <address>\n"
+           "where <d> = 1 if result is stored to RAM\n"
+           "and <d> = 0 if result is stored to W-register\n\n"
+           "The following bit-oriented operations are available:\n"
+           "BCF\n"
+           "BSF\n\n"
+           "These must be used as follows:\n"
+           "<operation> <bit> <address>\n\n"
+           "Other commands:\n"
+           "READ_WREG\n"
+           "READ_STATUS\n"
+           "READ_ADDRESS\n"
+           "DUMP_MEM\n"
+           "ENABLE_CLOCK\n"
+           "DISABLE_CLOCK\n"
+           "ENABLE_RESET\n"
+           "DISABLE_RESET\n"
+           "EXIT\n\n");
+    return;
+}
 
 void init_pins(void *vargp)
 {
@@ -91,7 +148,7 @@ int binary_to_decimal(volatile int *data)
     return result;
 }
 
-void get_command(char *key, char *value)
+bool get_command(char *key, char *value)
 {
     int i = 0;
     char *name = dict[i].command;
@@ -99,13 +156,14 @@ void get_command(char *key, char *value)
         if (strcmp(name, key) == 0) {
             memset(value, '\0', sizeof(value));
             strcpy(value, dict[i].binary);
-            return;
+            return true;
         }
         i++;
         name = dict[i].command;
     }
 
-    return;
+    printf("Invalid command\n");
+    return false;
 }
 
 void decimal_to_binary(int decimal_in, char *binary_out, int num_bits)
@@ -287,12 +345,12 @@ int main(void)
 {
     char binary_data_operand[99];
     char binary_data_opcode[99];
-    char binary_data_bit[99];
+    char binary_data_bit_or_d[99];
     char binary_command[99];
     char instruction[99];
     char temp[99];
     int literal_or_address = 0;
-    int bit = 0;
+    int bit_or_d = 0;
     int num_spaces = 0;
     pthread_t clk_thread_id;
     pthread_t read_result_thread_id;
@@ -303,6 +361,7 @@ int main(void)
     init_pins((void *)gpio);
     pthread_create(&clk_thread_id, NULL, clk_thread, (void *)gpio);
 
+    printf("Please enter command, or \"HELP\" for instructions\n");
     while(1) {
         int i = 0;
         char *command = malloc(MAX_COMMAND_SIZE);
@@ -312,24 +371,31 @@ int main(void)
                 num_spaces++;
             i++;
         }
-        memset(binary_data_bit, '\0', sizeof(binary_data_bit));
+        memset(binary_data_bit_or_d, '\0', sizeof(binary_data_bit_or_d));
         memset(binary_data_operand, '\0', sizeof(binary_data_operand));
         memset(binary_data_opcode, '\0', sizeof(binary_data_opcode));
-        if (num_spaces == 2) { // bit-oriented instruction
-            sscanf(command, "%s %d %d", instruction, &bit, &literal_or_address);
-            decimal_to_binary(bit, binary_data_bit, 3);
+        if (num_spaces == 2) { // bit-oriented or byte-oriented instruction
+            sscanf(command, "%s %d %d", instruction, &bit_or_d, &literal_or_address);
+            free(command);
+            if (strcmp(instruction, "BCF") == 0 || strcmp(instruction, "BSF") == 0)
+                decimal_to_binary(bit_or_d, binary_data_bit_or_d, 3);
+            else
+                decimal_to_binary(bit_or_d, binary_data_bit_or_d, 1);
             decimal_to_binary(literal_or_address, binary_data_operand, 7);
-            get_command(instruction, binary_data_opcode);
+            if (!get_command(instruction, binary_data_opcode))
+                continue;
             memset(temp, '\0', sizeof(temp));
             strcpy(temp, binary_data_opcode);
-            strcat(temp, binary_data_bit);
+            strcat(temp, binary_data_bit_or_d);
             strcat(temp, binary_data_operand);
             memset(binary_command, '\0', sizeof(binary_command));
             strcpy(binary_command, temp);
-        } else if (num_spaces == 1) { // literal or byte-oriented instruction
+        } else if (num_spaces == 1) { // literal instruction
             sscanf(command, "%s %d", instruction, &literal_or_address);
+            free(command);
             decimal_to_binary(literal_or_address, binary_data_operand, 8);
-            get_command(instruction, binary_data_opcode);
+            if (!get_command(instruction, binary_data_opcode))
+                continue;
             memset(temp, '\0', sizeof(temp));
             strcpy(temp, binary_data_opcode);
             strcat(temp, binary_data_operand);
@@ -337,9 +403,11 @@ int main(void)
             strcpy(binary_command, temp);
         } else if (num_spaces == 0) {
             sscanf(command, "%s", instruction);
+            free(command);
             literal_or_address = 0;
             decimal_to_binary(literal_or_address, binary_data_operand, 8);
-            get_command(instruction, binary_data_opcode);
+            if (!get_command(instruction, binary_data_opcode))
+                continue;
             memset(temp, '\0', sizeof(temp));
             strcpy(temp, binary_data_opcode);
             strcat(temp, binary_data_operand);
@@ -366,6 +434,9 @@ int main(void)
             GPIO_CLR = 1<<RESET_PIN;
             clk_exit = 1;
             break;
+        } else if (strcmp(instruction, "HELP") == 0) {
+            print_help();
+            continue;
         } else if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
                    strcmp(instruction, "READ_STATUS") == 0) {
             pthread_create(&read_result_thread_id, NULL, result_thread, (void *)gpio);
@@ -401,7 +472,6 @@ int main(void)
             pthread_join(read_result_thread_id, NULL);
         } else if (strcmp(instruction, "DUMP_MEM") == 0)
             pthread_join(mem_dump_thread_id, NULL);
-        free(command);
         i = 0;
         num_spaces = 0;
     }
