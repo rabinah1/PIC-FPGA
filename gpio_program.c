@@ -10,6 +10,8 @@
 #include <pthread.h>
 #include <string.h>
 #include <math.h>
+#include <wiringPi.h>
+#include <wiringSerial.h>
 
 #define BLOCK_SIZE (4*20) // only using gpio registers region
 #define CLK_FREQ_HZ 4000
@@ -76,7 +78,8 @@ struct mapping dict[] = {
     "ENABLE_RESET",  "000000",
     "DISABLE_RESET", "000000",
     "EXIT",          "000000",
-    "HELP",          "000000"
+    "HELP",          "000000",
+    "SELECT_SLAVE",  "000000"
 };
 
 void print_help(void)
@@ -514,11 +517,38 @@ int process_command(char *command, void *vargp)
     return 0;
 }
 
+int send_to_arduino(void)
+{
+    int fd;
+    char msg[256];
+    if (wiringPiSetup() < 0)
+        return 1;
+    if ((fd = serialOpen("/dev/ttyUSB0", 9600)) < 0)
+        return 1;
+    usleep(1500000); // Wait for serial connection to stabilize
+    printf("Type a message: \n");
+    fgets(msg, 256, stdin);
+    serialPuts(fd, msg);
+
+    while (1) {
+        if (serialDataAvail(fd) > 0) {
+            char input = serialGetchar(fd);
+	    if (input == '\n')
+	        break;
+	    printf("%c", input);
+        }
+    }
+    serialClose(fd);
+    printf("\nConnection closed\n");
+    return 0;
+}
+
 int main(void)
 {
     bool is_valid = true;
     char filename[MAX_FILENAME_SIZE];
     char instruction[MAX_INSTRUCTION_SIZE];
+    int slave_sel = 0;
     pthread_t clk_thread_id;
     volatile unsigned *gpio = init_gpio_map();
     init_pins((void *)gpio);
@@ -529,34 +559,45 @@ int main(void)
         memset(filename, '\0', sizeof(filename));
         char *command = malloc(MAX_COMMAND_SIZE);
         fgets(command, MAX_COMMAND_SIZE, stdin);
-        if (strstr(command, "READ_FILE") == NULL) { // READ_FILE not found
+        if (strstr(command, "SELECT_SLAVE") != NULL) {
             if (!check_validity(command))
                 continue;
-            if (process_command(command, (void *)gpio) == EXIT_COMMAND) {
-                free(command);
-                break;
-            }
-        } else { // READ_FILE found
-            sscanf(command, "%s %s", instruction, filename);
-            FILE *f = fopen(filename, "r");
-            char line[MAX_COMMAND_SIZE];
-            is_valid = true;
-            while (fgets(line, sizeof(line), f)) {
-                line[strlen(line) - 1] = '\0'; // Remove trailing newline
-                if (!check_validity(command)) {
-                    is_valid = false;
+            sscanf(command, "%s %d", instruction, &slave_sel);
+            printf("Slave select is now %d\n", slave_sel);
+            continue;
+        }
+        if (slave_sel == 0) { // Slave is FPGA
+            if (strstr(command, "READ_FILE") == NULL) { // READ_FILE not found
+                if (!check_validity(command))
+                    continue;
+                if (process_command(command, (void *)gpio) == EXIT_COMMAND) {
+                    free(command);
                     break;
                 }
-            }
-            if (!is_valid)
-                continue;
-            rewind(f);
+            } else { // READ_FILE found
+                sscanf(command, "%s %s", instruction, filename);
+                FILE *f = fopen(filename, "r");
+                char line[MAX_COMMAND_SIZE];
+                is_valid = true;
+                while (fgets(line, sizeof(line), f)) {
+                    line[strlen(line) - 1] = '\0'; // Remove trailing newline
+                    if (!check_validity(command)) {
+                        is_valid = false;
+                        break;
+                    }
+                }
+                if (!is_valid)
+                    continue;
+                rewind(f);
 
-            while (fgets(line, sizeof(line), f)) {
-                line[strlen(line) - 1] = '\0';
-                process_command(line, (void *)gpio);
-                usleep(100000);
+                while (fgets(line, sizeof(line), f)) {
+                    line[strlen(line) - 1] = '\0';
+                    process_command(line, (void *)gpio);
+                    usleep(100000);
+                }
             }
+        } else if (slave_sel == 1 && strstr(command, "test_arduino") != NULL) { // Slave is Arduino
+            send_to_arduino();
         }
         free(command);
     }
