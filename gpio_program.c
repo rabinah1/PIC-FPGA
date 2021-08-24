@@ -1,5 +1,5 @@
-#define BCM2835_PERI_BASE        0x3F000000			// peripheral base address
-#define GPIO_BASE		(BCM2835_PERI_BASE + 0x200000) 	// GPIO controller base address
+#define BCM2835_PERI_BASE 0x3F000000 // peripheral base address
+#define GPIO_BASE (BCM2835_PERI_BASE + 0x200000) // GPIO controller base address
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,19 +31,19 @@
 #define MAX_BIT_OR_D_SIZE 3
 #define BINARY_COMMAND_SIZE 14
 #define MAX_INSTRUCTION_SIZE 32
-#define MAX_FILENAME_SIZE 256
-#define MAX_COMMAND_SIZE 256
+#define MAX_STRING_SIZE 256
 #define EXIT_COMMAND -1
 
 int clk_enable = 0;
 int clk_exit = 0;
+char serial_port[MAX_STRING_SIZE];
 
 struct mapping {
     char *command;
     char *binary;
 };
 
-struct mapping dict[] = {
+struct mapping slave_0_commands[] = {
     "ADDWF",         "000111",
     "ANDWF",         "000101",
     "CLR",           "000001",
@@ -79,12 +79,19 @@ struct mapping dict[] = {
     "DISABLE_RESET", "000000",
     "EXIT",          "000000",
     "HELP",          "000000",
-    "SELECT_SLAVE",  "000000"
+    "SELECT_SLAVE",  "000000",
+    "SHOW_SLAVE",    "000000"
 };
+
+char slave_1_commands[][MAX_STRING_SIZE] = {"read_temperature"};
 
 void print_help(void)
 {
-    printf("\nThe following literal operations are available:\n"
+    printf("\nThere are two slaves: slave 0 (Terasic DE10-nano) and slave 1 (Arduino Nano)\n"
+           "You can switch between these with command SELECT_SLAVE <slave_id>\n"
+           "You can check which slave is currently in use by SHOW_SLAVE command\n"
+           "For slave 0, the following commands are available:\n"
+           "Literal operations:\n"
            "ADDLW\n"
            "ANDLW\n"
            "IORLW\n"
@@ -94,7 +101,7 @@ void print_help(void)
            "NOP\n\n"
            "These must be used as follows:\n"
            "<operation> <literal>\n\n"
-           "The following byte-oriented operations are available:\n"
+           "Byte-oriented operations:\n"
            "ADDWF\n"
            "ANDWF\n"
            "CLR\n"
@@ -114,7 +121,7 @@ void print_help(void)
            "<operation> <d> <address>\n"
            "where <d> = 1 if result is stored to RAM\n"
            "and <d> = 0 if result is stored to W-register\n\n"
-           "The following bit-oriented operations are available:\n"
+           "Bit-oriented operations:\n"
            "BCF\n"
            "BSF\n\n"
            "These must be used as follows:\n"
@@ -129,7 +136,9 @@ void print_help(void)
            "DISABLE_CLOCK\n"
            "ENABLE_RESET\n"
            "DISABLE_RESET\n"
-           "EXIT\n\n");
+           "EXIT\n\n"
+           "For slave 1, the following operations are available:\n"
+           "read_temperature\n\n");
     return;
 }
 
@@ -161,11 +170,11 @@ int binary_to_decimal(volatile int *data)
 
 bool instruction_exists(char *key)
 {
-    int num_instructions = sizeof(dict) / sizeof(dict[0]);
+    int num_instructions = sizeof(slave_0_commands) / sizeof(slave_0_commands[0]);
     int i = 0;
     char *name;
     while (i < num_instructions) {
-        name = dict[i].command;
+        name = slave_0_commands[i].command;
         if (strcmp(name, key) == 0)
             return true;
         i++;
@@ -177,13 +186,13 @@ bool instruction_exists(char *key)
 bool get_command(char *key, char *value)
 {
     int i = 0;
-    int num_instructions = sizeof(dict) / sizeof(dict[0]);
+    int num_instructions = sizeof(slave_0_commands) / sizeof(slave_0_commands[0]);
     char *name;
     while (i < num_instructions) {
-        name = dict[i].command;
+        name = slave_0_commands[i].command;
         if (strcmp(name, key) == 0) {
             memset(value, '\0', sizeof(value));
-            strcpy(value, dict[i].binary);
+            strcpy(value, slave_0_commands[i].binary);
             return true;
         }
         i++;
@@ -222,12 +231,12 @@ volatile unsigned* init_gpio_map(void)
     }
 
     gpio_map = mmap(
-                    NULL,             	  // Any adddress in our space will do
-                    BLOCK_SIZE,      	  // Map length
+                    NULL,                 // Any adddress in our space will do
+                    BLOCK_SIZE,           // Map length
                     PROT_READ|PROT_WRITE, // Enable reading & writting to mapped memory
-                    MAP_SHARED,       	  // Shared with other processes
-                    mem_fd,          	  // File to map
-                    GPIO_BASE        	  // Offset to GPIO peripheral
+                    MAP_SHARED,           // Shared with other processes
+                    mem_fd,               // File to map
+                    GPIO_BASE             // Offset to GPIO peripheral
                     );
     close(mem_fd);
 
@@ -470,8 +479,6 @@ int process_command(char *command, void *vargp)
     } else if (strcmp(instruction, "DISABLE_RESET") == 0) {
         GPIO_CLR = 1<<RESET_PIN;
         return 0;
-    } else if (strcmp(instruction, "READ_FILE") == 0) {
-
     } else if (strcmp(instruction, "EXIT") == 0) {
         GPIO_CLR = 1<<RESET_PIN;
         clk_exit = 1;
@@ -517,25 +524,22 @@ int process_command(char *command, void *vargp)
     return 0;
 }
 
-int send_to_arduino(void)
+int send_to_arduino(char *command)
 {
     int fd;
-    char msg[256];
     if (wiringPiSetup() < 0)
         return 1;
-    if ((fd = serialOpen("/dev/ttyUSB0", 9600)) < 0)
+    if ((fd = serialOpen(serial_port, 9600)) < 0)
         return 1;
-    usleep(1500000); // Wait for serial connection to stabilize
-    printf("Type a message: \n");
-    fgets(msg, 256, stdin);
-    serialPuts(fd, msg);
+    usleep(2000000); // Wait for serial connection to stabilize
+    serialPuts(fd, command);
 
     while (1) {
         if (serialDataAvail(fd) > 0) {
             char input = serialGetchar(fd);
-	    if (input == '\n')
-	        break;
-	    printf("%c", input);
+        if (input == '\n')
+            break;
+        printf("%c", input);
         }
     }
     serialClose(fd);
@@ -543,10 +547,15 @@ int send_to_arduino(void)
     return 0;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    if (argc != 2) {
+        printf("Exactly one command line argument is required.\n");
+        return 0;
+    }
+    strcpy(serial_port, argv[1]);
     bool is_valid = true;
-    char filename[MAX_FILENAME_SIZE];
+    char filename[MAX_STRING_SIZE];
     char instruction[MAX_INSTRUCTION_SIZE];
     int slave_sel = 0;
     pthread_t clk_thread_id;
@@ -557,47 +566,57 @@ int main(void)
     printf("Please enter command, or \"HELP\" for instructions\n");
     while(1) {
         memset(filename, '\0', sizeof(filename));
-        char *command = malloc(MAX_COMMAND_SIZE);
-        fgets(command, MAX_COMMAND_SIZE, stdin);
+        char *command = malloc(MAX_STRING_SIZE);
+        fgets(command, MAX_STRING_SIZE, stdin);
         if (strstr(command, "SELECT_SLAVE") != NULL) {
-            if (!check_validity(command))
-                continue;
-            sscanf(command, "%s %d", instruction, &slave_sel);
-            printf("Slave select is now %d\n", slave_sel);
-            continue;
-        }
-        if (slave_sel == 0) { // Slave is FPGA
+            if (check_validity(command))
+                sscanf(command, "%s %d", instruction, &slave_sel);
+        } else if (strstr(command, "SHOW_SLAVE") != NULL) {
+            if (check_validity(command))
+                printf("Slave %d\n", slave_sel);
+        } else if (slave_sel == 0) { // Slave is FPGA
             if (strstr(command, "READ_FILE") == NULL) { // READ_FILE not found
-                if (!check_validity(command))
-                    continue;
-                if (process_command(command, (void *)gpio) == EXIT_COMMAND) {
-                    free(command);
-                    break;
+                if (check_validity(command)) {
+                    if (process_command(command, (void *)gpio) == EXIT_COMMAND) {
+                        free(command);
+                        break;
+                    }
                 }
             } else { // READ_FILE found
                 sscanf(command, "%s %s", instruction, filename);
                 FILE *f = fopen(filename, "r");
-                char line[MAX_COMMAND_SIZE];
+                char line[MAX_STRING_SIZE];
                 is_valid = true;
                 while (fgets(line, sizeof(line), f)) {
                     line[strlen(line) - 1] = '\0'; // Remove trailing newline
-                    if (!check_validity(command)) {
+                    if (!check_validity(line)) {
                         is_valid = false;
                         break;
                     }
                 }
-                if (!is_valid)
-                    continue;
-                rewind(f);
-
-                while (fgets(line, sizeof(line), f)) {
-                    line[strlen(line) - 1] = '\0';
-                    process_command(line, (void *)gpio);
-                    usleep(100000);
+                if (is_valid) {
+                    rewind(f);
+                    while (fgets(line, sizeof(line), f)) {
+                        line[strlen(line) - 1] = '\0';
+                        process_command(line, (void *)gpio);
+                        usleep(100000);
+                    }
                 }
             }
-        } else if (slave_sel == 1 && strstr(command, "test_arduino") != NULL) { // Slave is Arduino
-            send_to_arduino();
+        } else if (slave_sel == 1) { // Slave is Arduino
+            command[strlen(command) - 1] = '\0';
+            bool command_found = false;
+            int num_instructions = sizeof(slave_1_commands) / sizeof(slave_1_commands[0]);
+            for (int i = 0; i < num_instructions; i++) {
+                if (strcmp(slave_1_commands[i], command) == 0) {
+                    command_found = true;
+                    break;
+                }
+            }
+            if (command_found)
+                send_to_arduino(command);
+            else
+                printf("Command \"%s\" is not valid for slave 1\n", command);
         }
         free(command);
     }
