@@ -24,7 +24,7 @@ architecture rtl of state_machine is
 
     signal state : t_state;
     signal next_state : t_state;
-    
+
 begin
 
     state_change : process(clk, reset) is

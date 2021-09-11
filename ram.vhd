@@ -18,7 +18,7 @@ end ram;
 architecture rtl of ram is
     type memory is array(126 downto 0) of std_logic_vector(7 downto 0);
     signal ram_block : memory;
-    
+
     function ram_to_linear(memory_data : in memory)
                                   return std_logic_vector is
     variable linear_data : std_logic_vector(1015 downto 0);

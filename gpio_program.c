@@ -33,6 +33,12 @@
 #define MAX_INSTRUCTION_SIZE 32
 #define MAX_STRING_SIZE 256
 #define EXIT_COMMAND -1
+#define RESULT_TIMEOUT 1000
+#define MEM_DUMP_TIMEOUT 6000
+#define DATA_BIT_WIDTH 8
+#define MEM_DUMP_VALUES_PER_LINE 8
+#define NUM_BYTES_RAM 127
+#define NUM_BITS_RAM 1016
 
 int clk_enable = 0;
 int clk_exit = 0;
@@ -89,6 +95,7 @@ void print_help(void)
 {
     printf("\nThere are two slaves: slave 0 (Terasic DE10-nano) and slave 1 (Arduino Nano)\n"
            "You can switch between these with command SELECT_SLAVE <slave_id>\n"
+           "Slave 0 corresponds to the DE10-nano, and slave 1 corresponds to the Arduino\n"
            "You can check which slave is currently in use by SHOW_SLAVE command\n"
            "For slave 0, the following commands are available:\n"
            "Literal operations:\n"
@@ -148,12 +155,12 @@ void init_pins(void *vargp)
     gpio = (volatile unsigned *)vargp;
 
     int arr[] = {CLK_PIN, RESET_PIN, COMMAND_PIN, MOSI_PIN};
-    size_t len = sizeof(arr)/sizeof(arr[0]);
+    size_t len = sizeof(arr) / sizeof(arr[0]);
     int idx = 0;
     while (idx < len) {
         INP_GPIO(arr[idx]); // Pin cannot be set as output unless first set as input
         OUT_GPIO(arr[idx]);
-        idx = idx + 1;
+        idx++;
     }
     INP_GPIO(RESULT_PIN);
     INP_GPIO(MISO_PIN);
@@ -162,8 +169,8 @@ void init_pins(void *vargp)
 int binary_to_decimal(volatile int *data)
 {
     int result = 0;
-    for (int idx = 7; idx >= 0; idx--)
-        result = result + data[idx] * (int)pow(2, 7-idx);
+    for (int idx = DATA_BIT_WIDTH - 1; idx >= 0; idx--)
+        result += data[idx] * (int)pow(2, 7 - idx);
 
     return result;
 }
@@ -179,6 +186,7 @@ bool instruction_exists(char *key)
             return true;
         i++;
     }
+
     printf("Instruction %s does not exist\n", key);
     return false;
 }
@@ -213,7 +221,7 @@ void decimal_to_binary(int decimal_in, char *binary_out, int num_bits)
             binary_out[num_bits - 1 - idx] = '1';
             decimal_in = decimal_in - (int)pow(2, idx);
             if (decimal_in == 0)
-                decimal_in = -1;
+                decimal_in--;
         }
         idx--;
     }
@@ -230,8 +238,7 @@ volatile unsigned* init_gpio_map(void)
         exit(-1);
     }
 
-    gpio_map = mmap(
-                    NULL,                 // Any adddress in our space will do
+    gpio_map = mmap(NULL,                 // Any adddress in our space will do
                     BLOCK_SIZE,           // Map length
                     PROT_READ|PROT_WRITE, // Enable reading & writting to mapped memory
                     MAP_SHARED,           // Shared with other processes
@@ -261,7 +268,7 @@ void *result_thread(void *vargp)
     int result_decimal = 0;
     int timeout = 0;
 
-    while (timeout < 1000) {
+    while (timeout < RESULT_TIMEOUT) {
         if (!(GET_GPIO(CLK_PIN)) && falling_check == 0 && miso_trigger == 0) { // falling edge, miso_trigger not received
             timeout++;
             falling_check = 1;
@@ -272,7 +279,7 @@ void *result_thread(void *vargp)
         } else if (!(GET_GPIO(CLK_PIN)) && falling_check == 0 && miso_trigger == 1) { // falling edge, miso_trigger received
             timeout++;
             falling_check = 1;
-            if (data_count < 8) {
+            if (data_count < DATA_BIT_WIDTH) {
                 if (GET_GPIO(RESULT_PIN))
                     data[data_count] = 1;
                 else
@@ -282,7 +289,7 @@ void *result_thread(void *vargp)
         } else if (falling_check == 1 && GET_GPIO(CLK_PIN)) { // rising edge
             timeout++;
             falling_check = 0;
-            if (data_count == 8) {
+            if (data_count == DATA_BIT_WIDTH) {
                 result_decimal = binary_to_decimal(data);
                 data_count = 0;
                 printf("%d\n", result_decimal);
@@ -291,7 +298,7 @@ void *result_thread(void *vargp)
             }
         }
     }
-    if (timeout >= 1000)
+    if (timeout >= RESULT_TIMEOUT)
         printf("Error occured when executing instruction\n");
 
     return NULL;
@@ -312,7 +319,7 @@ void *mem_dump_thread(void *vargp)
     int counter = 0;
     int timeout = 0;
 
-    while (timeout < 6000) {
+    while (timeout < MEM_DUMP_TIMEOUT) {
         if (!(GET_GPIO(CLK_PIN)) && falling_check == 0 && miso_trigger == 0) { // falling edge, miso_trigger not received
             timeout++;
             falling_check = 1;
@@ -333,14 +340,14 @@ void *mem_dump_thread(void *vargp)
         } else if (falling_check == 1 && GET_GPIO(CLK_PIN)) { // rising edge
             timeout++;
             falling_check = 0;
-            if (data_count == 1016) { 
-                for (int idx = 126; idx >= 0; idx--) {
-                    if (counter == 8) {
+            if (data_count == NUM_BITS_RAM) {
+                for (int idx = NUM_BYTES_RAM - 1; idx >= 0; idx--) {
+                    if (counter == MEM_DUMP_VALUES_PER_LINE) {
                         counter = 0;
                         printf("\n");
                     }
-                    for (int i = 0; i < 8; i++)
-                        byte_data[i] = data[idx*8 + i];
+                    for (int i = 0; i < DATA_BIT_WIDTH; i++)
+                        byte_data[i] = data[idx * DATA_BIT_WIDTH + i];
                     result = binary_to_decimal(byte_data);
                     printf("%3d   ", result);
                     counter++;
@@ -351,7 +358,7 @@ void *mem_dump_thread(void *vargp)
             }
         }
     }
-    if (timeout >= 6000)
+    if (timeout >= MEM_DUMP_TIMEOUT)
         printf("Error occured with dumping memory\n");
 
     return NULL;
@@ -362,15 +369,15 @@ void *clk_thread(void *vargp)
     volatile unsigned *gpio;
     gpio = (volatile unsigned *)vargp;
 
-    double clk_period = 1000000/CLK_FREQ_HZ;
+    double clk_period = 1000000 / CLK_FREQ_HZ;
     while(1) {
         if (clk_exit == 1)
             break;
         if (clk_enable == 1) {
-            GPIO_SET = 1<<CLK_PIN;
-            usleep(clk_period/2);
-            GPIO_CLR = 1<<CLK_PIN;
-            usleep(clk_period/2);
+            GPIO_SET = 1 << CLK_PIN;
+            usleep(clk_period / 2);
+            GPIO_CLR = 1 << CLK_PIN;
+            usleep(clk_period / 2);
         }
     }
 
@@ -392,6 +399,7 @@ bool check_validity(char *command)
             num_spaces++;
         i++;
     }
+
     memset(binary_data_bit_or_d, '\0', sizeof(binary_data_bit_or_d));
     memset(binary_data_operand, '\0', sizeof(binary_data_operand));
     memset(binary_data_opcode, '\0', sizeof(binary_data_opcode));
@@ -406,6 +414,7 @@ bool check_validity(char *command)
         return false;
     if (!instruction_exists(instruction))
         return false;
+
     return true;
 }
 
@@ -430,6 +439,7 @@ int process_command(char *command, void *vargp)
             num_spaces++;
         i++;
     }
+
     memset(binary_data_bit_or_d, '\0', sizeof(binary_data_bit_or_d));
     memset(binary_data_operand, '\0', sizeof(binary_data_operand));
     memset(binary_data_opcode, '\0', sizeof(binary_data_opcode));
@@ -446,6 +456,7 @@ int process_command(char *command, void *vargp)
         strcpy(binary_command, binary_data_opcode);
         strcat(binary_command, binary_data_bit_or_d);
         strcat(binary_command, binary_data_operand);
+
     } else if (num_spaces == 1) { // literal instruction
         sscanf(command, "%s %d", instruction, &literal_or_address);
         decimal_to_binary(literal_or_address, binary_data_operand, 8);
@@ -454,6 +465,7 @@ int process_command(char *command, void *vargp)
         memset(binary_command, '\0', sizeof(binary_command));
         strcpy(binary_command, binary_data_opcode);
         strcat(binary_command, binary_data_operand);
+
     } else if (num_spaces == 0) {
         sscanf(command, "%s", instruction);
         literal_or_address = 0;
@@ -463,10 +475,12 @@ int process_command(char *command, void *vargp)
         memset(binary_command, '\0', sizeof(binary_command));
         strcpy(binary_command, binary_data_opcode);
         strcat(binary_command, binary_data_operand);
+
     } else {
         printf("Invalid command\n");
         return 0;
     }
+
     if (strcmp(instruction, "ENABLE_CLOCK") == 0) {
         clk_enable = 1;
         return 0;
@@ -503,13 +517,13 @@ int process_command(char *command, void *vargp)
             falling_check = 1;
             if (idx < length) {
                 if (idx == 0)
-                    GPIO_SET = 1<<MOSI_PIN;
+                    GPIO_SET = 1 << MOSI_PIN;
                 if (binary_command[idx] == '0')
-                    GPIO_CLR = 1<<COMMAND_PIN;
+                    GPIO_CLR = 1 << COMMAND_PIN;
                 else
-                    GPIO_SET = 1<<COMMAND_PIN;
+                    GPIO_SET = 1 << COMMAND_PIN;
             } else {
-                GPIO_CLR = 1<<MOSI_PIN;
+                GPIO_CLR = 1 << MOSI_PIN;
             }
             idx++;
         } else if (GET_GPIO(CLK_PIN) && falling_check == 1) { // rising edge
@@ -517,9 +531,9 @@ int process_command(char *command, void *vargp)
         }
     }
     if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
-        strcmp(instruction, "READ_STATUS") == 0) {
+        strcmp(instruction, "READ_STATUS") == 0)
         pthread_join(read_result_thread_id, NULL);
-    } else if (strcmp(instruction, "DUMP_MEM") == 0)
+    else if (strcmp(instruction, "DUMP_MEM") == 0)
         pthread_join(mem_dump_thread_id, NULL);
     return 0;
 }
@@ -537,9 +551,9 @@ int send_to_arduino(char *command)
     while (1) {
         if (serialDataAvail(fd) > 0) {
             char input = serialGetchar(fd);
-        if (input == '\n')
-            break;
-        printf("%c", input);
+            if (input == '\n')
+                break;
+            printf("%c", input);
         }
     }
     serialClose(fd);
@@ -571,9 +585,11 @@ int main(int argc, char *argv[])
         if (strstr(command, "SELECT_SLAVE") != NULL) {
             if (check_validity(command))
                 sscanf(command, "%s %d", instruction, &slave_sel);
+
         } else if (strstr(command, "SHOW_SLAVE") != NULL) {
             if (check_validity(command))
                 printf("Slave %d\n", slave_sel);
+
         } else if (slave_sel == 0) { // Slave is FPGA
             if (strstr(command, "READ_FILE") == NULL) { // READ_FILE not found
                 if (check_validity(command)) {
@@ -603,6 +619,7 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+
         } else if (slave_sel == 1) { // Slave is Arduino
             command[strlen(command) - 1] = '\0';
             bool command_found = false;
