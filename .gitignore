@@ -25,3 +25,6 @@ alu_input_mux.vhd.bak
 states_package.vhd.bak
 status_register.vhd.bak
 input_receive.vhd.bak
+tb_input_parsed.txt
+tb_result.txt
+tb_result_formatted.txt

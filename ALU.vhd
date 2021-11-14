@@ -187,7 +187,7 @@ begin
                         alu_output <= result(N-1 downto 0);
 
                     when "111101" => -- SUBLW
-                        result := '1' & input_w - output_mux;
+                        result := '1' & output_mux - input_w;
                         status_out(2) <= update_status_z(result(N-1 downto 0));
                         status_out(0) <= not result(N);
                         alu_output <= result(N-1 downto 0);
