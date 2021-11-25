@@ -2,6 +2,7 @@
 #define GPIO_BASE (BCM2835_PERI_BASE + 0x200000) // GPIO controller base address
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <fcntl.h>
@@ -12,6 +13,7 @@
 #include <math.h>
 #include <wiringPi.h>
 #include <wiringSerial.h>
+#include "code.h"
 
 #define BLOCK_SIZE (4*20) // only using gpio registers region
 #define CLK_FREQ_HZ 4000
@@ -156,7 +158,7 @@ void init_pins(void *vargp)
 
     int arr[] = {CLK_PIN, RESET_PIN, COMMAND_PIN, MOSI_PIN};
     size_t len = sizeof(arr) / sizeof(arr[0]);
-    int idx = 0;
+    uint16_t idx = 0;
     while (idx < len) {
         INP_GPIO(arr[idx]); // Pin cannot be set as output unless first set as input
         OUT_GPIO(arr[idx]);
@@ -164,15 +166,6 @@ void init_pins(void *vargp)
     }
     INP_GPIO(RESULT_PIN);
     INP_GPIO(MISO_PIN);
-}
-
-int binary_to_decimal(volatile int *data)
-{
-    int result = 0;
-    for (int idx = DATA_BIT_WIDTH - 1; idx >= 0; idx--)
-        result += data[idx] * (int)pow(2, 7 - idx);
-
-    return result;
 }
 
 bool instruction_exists(char *key)
@@ -208,23 +201,6 @@ bool get_command(char *key, char *value)
 
     printf("Invalid command\n");
     return false;
-}
-
-void decimal_to_binary(int decimal_in, char *binary_out, int num_bits)
-{
-    int idx = num_bits - 1;
-    memset(binary_out, '\0', sizeof(binary_out));
-    while (idx >= 0) {
-        if ((int)pow(2, idx) > decimal_in) {
-            binary_out[num_bits - 1 - idx] = '0';
-        } else {
-            binary_out[num_bits - 1 - idx] = '1';
-            decimal_in = decimal_in - (int)pow(2, idx);
-            if (decimal_in == 0)
-                decimal_in--;
-        }
-        idx--;
-    }
 }
 
 volatile unsigned* init_gpio_map(void)
@@ -314,7 +290,6 @@ void *mem_dump_thread(void *vargp)
     int byte_data[8] = {0};
     int falling_check = 0;
     int data_count = 0;
-    int result_decimal = 0;
     int result = 0;
     int counter = 0;
     int timeout = 0;
@@ -510,7 +485,7 @@ int process_command(char *command, void *vargp)
     }
     // binary_command = <opcode_in_binary> + <argument_in_binary>
     // This data is sent to FPGA one bit at a time, starting from the first (idx = 0) bit.
-    int length = strlen(binary_command);
+    uint32_t length = strlen(binary_command);
     int idx = 0;
     while (idx <= length) {
         if (!(GET_GPIO(CLK_PIN)) && falling_check == 0) { // falling edge
