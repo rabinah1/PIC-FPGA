@@ -28,11 +28,6 @@
 #define GPIO_SET *(gpio+7)
 #define GPIO_CLR *(gpio+10)
 #define GET_GPIO(g) (*(gpio+13)&(1<<g))
-#define MAX_OPERAND_SIZE 8
-#define MAX_OPCODE_SIZE 6
-#define MAX_BIT_OR_D_SIZE 3
-#define BINARY_COMMAND_SIZE 14
-#define MAX_INSTRUCTION_SIZE 32
 #define MAX_STRING_SIZE 256
 #define EXIT_COMMAND -1
 #define RESULT_TIMEOUT 1000
@@ -45,51 +40,6 @@
 int clk_enable = 0;
 int clk_exit = 0;
 char serial_port[MAX_STRING_SIZE];
-
-struct mapping {
-    char *command;
-    char *binary;
-};
-
-struct mapping slave_0_commands[] = {
-    "ADDWF",         "000111",
-    "ANDWF",         "000101",
-    "CLR",           "000001",
-    "COMF",          "001001",
-    "DECF",          "000011",
-    "DECFSZ",        "001011",
-    "INCF",          "001010",
-    "INCFSZ",        "001111",
-    "IORWF",         "000100",
-    "MOVF",          "001000",
-    "RLF",           "001101",
-    "RRF",           "001100",
-    "SUBWF",         "000010",
-    "SWAPF",         "001110",
-    "XORWF",         "000110",
-    "ADDLW",         "111110",
-    "ANDLW",         "111001",
-    "IORLW",         "111000",
-    "MOVLW",         "110000",
-    "SUBLW",         "111101",
-    "XORLW",         "111010",
-    "BCF",           "0100",
-    "BSF",           "0101",
-    "READ_WREG",     "110001",
-    "READ_STATUS",   "110010",
-    "READ_ADDRESS",  "110011",
-    "DUMP_MEM",      "101000",
-    "NOP",           "000000",
-    "READ_FILE",     "000000",
-    "ENABLE_CLOCK",  "000000",
-    "DISABLE_CLOCK", "000000",
-    "ENABLE_RESET",  "000000",
-    "DISABLE_RESET", "000000",
-    "EXIT",          "000000",
-    "HELP",          "000000",
-    "SELECT_SLAVE",  "000000",
-    "SHOW_SLAVE",    "000000"
-};
 
 char slave_1_commands[][MAX_STRING_SIZE] = {"read_temperature"};
 
@@ -166,41 +116,6 @@ void init_pins(void *vargp)
     }
     INP_GPIO(RESULT_PIN);
     INP_GPIO(MISO_PIN);
-}
-
-bool instruction_exists(char *key)
-{
-    int num_instructions = sizeof(slave_0_commands) / sizeof(slave_0_commands[0]);
-    int i = 0;
-    char *name;
-    while (i < num_instructions) {
-        name = slave_0_commands[i].command;
-        if (strcmp(name, key) == 0)
-            return true;
-        i++;
-    }
-
-    printf("Instruction %s does not exist\n", key);
-    return false;
-}
-
-bool get_command(char *key, char *value)
-{
-    int i = 0;
-    int num_instructions = sizeof(slave_0_commands) / sizeof(slave_0_commands[0]);
-    char *name;
-    while (i < num_instructions) {
-        name = slave_0_commands[i].command;
-        if (strcmp(name, key) == 0) {
-            memset(value, '\0', sizeof(value));
-            strcpy(value, slave_0_commands[i].binary);
-            return true;
-        }
-        i++;
-    }
-
-    printf("Invalid command\n");
-    return false;
 }
 
 volatile unsigned* init_gpio_map(void)
@@ -359,7 +274,7 @@ void *clk_thread(void *vargp)
     return NULL;
 }
 
-bool check_validity(char *command)
+bool is_command_valid(char *command)
 {
     int i = 0;
     int num_spaces = 0;
@@ -369,28 +284,28 @@ bool check_validity(char *command)
     char binary_data_operand[MAX_OPERAND_SIZE];
     char binary_data_opcode[MAX_OPCODE_SIZE];
     char instruction[MAX_INSTRUCTION_SIZE];
+
     while (command[i] != '\0') {
         if (command[i] == ' ')
             num_spaces++;
         i++;
     }
-
-    memset(binary_data_bit_or_d, '\0', sizeof(binary_data_bit_or_d));
-    memset(binary_data_operand, '\0', sizeof(binary_data_operand));
-    memset(binary_data_opcode, '\0', sizeof(binary_data_opcode));
-    memset(instruction, '\0', sizeof(instruction));
-    if (num_spaces == 2) // bit- or byte-oriented instruction
+    memset(binary_data_bit_or_d, '\0', sizeof(char) * MAX_BIT_OR_D_SIZE);
+    memset(binary_data_operand, '\0', sizeof(char) * MAX_OPERAND_SIZE);
+    memset(binary_data_opcode, '\0', sizeof(char) * MAX_OPCODE_SIZE);
+    memset(instruction, '\0', sizeof(char) * MAX_INSTRUCTION_SIZE);
+    if (num_spaces == 2) { // bit- or byte-oriented instruction
         sscanf(command, "%s %d %d", instruction, &bit_or_d, &literal_or_address);
-    else if (num_spaces == 1) // literal instruction
+    } else if (num_spaces == 1) { // literal instruction
         sscanf(command, "%s %d", instruction, &literal_or_address);
-    else if (num_spaces == 0)
+    } else if (num_spaces == 0) {
         sscanf(command, "%s", instruction);
-    else
+    } else {
+        printf("Did not recognize a command with %d spaces\n", num_spaces);
         return false;
-    if (!instruction_exists(instruction))
-        return false;
+    }
 
-    return true;
+    return instruction_exists(instruction);
 }
 
 int process_command(char *command, void *vargp)
@@ -402,60 +317,12 @@ int process_command(char *command, void *vargp)
     char binary_data_bit_or_d[MAX_BIT_OR_D_SIZE];
     char binary_command[BINARY_COMMAND_SIZE];
     char instruction[MAX_INSTRUCTION_SIZE];
-    int literal_or_address = 0;
-    int bit_or_d = 0;
-    int num_spaces = 0;
     pthread_t read_result_thread_id;
     pthread_t mem_dump_thread_id;
     int falling_check = 0;
-    int i = 0;
-    while (command[i] != '\0') {
-        if (command[i] == ' ')
-            num_spaces++;
-        i++;
-    }
 
-    memset(binary_data_bit_or_d, '\0', sizeof(binary_data_bit_or_d));
-    memset(binary_data_operand, '\0', sizeof(binary_data_operand));
-    memset(binary_data_opcode, '\0', sizeof(binary_data_opcode));
-    if (num_spaces == 2) { // bit-oriented or byte-oriented instruction
-        sscanf(command, "%s %d %d", instruction, &bit_or_d, &literal_or_address);
-        if (strcmp(instruction, "BCF") == 0 || strcmp(instruction, "BSF") == 0)
-            decimal_to_binary(bit_or_d, binary_data_bit_or_d, 3);
-        else
-            decimal_to_binary(bit_or_d, binary_data_bit_or_d, 1);
-        decimal_to_binary(literal_or_address, binary_data_operand, 7);
-        if (!get_command(instruction, binary_data_opcode))
-            return 0;
-        memset(binary_command, '\0', sizeof(binary_command));
-        strcpy(binary_command, binary_data_opcode);
-        strcat(binary_command, binary_data_bit_or_d);
-        strcat(binary_command, binary_data_operand);
-
-    } else if (num_spaces == 1) { // literal instruction
-        sscanf(command, "%s %d", instruction, &literal_or_address);
-        decimal_to_binary(literal_or_address, binary_data_operand, 8);
-        if (!get_command(instruction, binary_data_opcode))
-            return 0;
-        memset(binary_command, '\0', sizeof(binary_command));
-        strcpy(binary_command, binary_data_opcode);
-        strcat(binary_command, binary_data_operand);
-
-    } else if (num_spaces == 0) {
-        sscanf(command, "%s", instruction);
-        literal_or_address = 0;
-        decimal_to_binary(literal_or_address, binary_data_operand, 8);
-        if (!get_command(instruction, binary_data_opcode))
-            return 0;
-        memset(binary_command, '\0', sizeof(binary_command));
-        strcpy(binary_command, binary_data_opcode);
-        strcat(binary_command, binary_data_operand);
-
-    } else {
-        printf("Invalid command\n");
-        return 0;
-    }
-
+    create_binary_command(command, binary_command, instruction, binary_data_operand,
+                          binary_data_opcode, binary_data_bit_or_d);
     if (strcmp(instruction, "ENABLE_CLOCK") == 0) {
         clk_enable = 1;
         return 0;
@@ -486,7 +353,7 @@ int process_command(char *command, void *vargp)
     // binary_command = <opcode_in_binary> + <argument_in_binary>
     // This data is sent to FPGA one bit at a time, starting from the first (idx = 0) bit.
     uint32_t length = strlen(binary_command);
-    int idx = 0;
+    uint32_t idx = 0;
     while (idx <= length) {
         if (!(GET_GPIO(CLK_PIN)) && falling_check == 0) { // falling edge
             falling_check = 1;
@@ -554,20 +421,21 @@ int main(int argc, char *argv[])
 
     printf("Please enter command, or \"HELP\" for instructions\n");
     while(1) {
-        memset(filename, '\0', sizeof(filename));
+        memset(filename, '\0', sizeof(char) * MAX_STRING_SIZE);
+        memset(instruction, '\0', sizeof(char) * MAX_INSTRUCTION_SIZE);
         char *command = malloc(MAX_STRING_SIZE);
         fgets(command, MAX_STRING_SIZE, stdin);
         if (strstr(command, "SELECT_SLAVE") != NULL) {
-            if (check_validity(command))
+            if (is_command_valid(command))
                 sscanf(command, "%s %d", instruction, &slave_sel);
 
         } else if (strstr(command, "SHOW_SLAVE") != NULL) {
-            if (check_validity(command))
+            if (is_command_valid(command))
                 printf("Slave %d\n", slave_sel);
 
         } else if (slave_sel == 0) { // Slave is FPGA
             if (strstr(command, "READ_FILE") == NULL) { // READ_FILE not found
-                if (check_validity(command)) {
+                if (is_command_valid(command)) {
                     if (process_command(command, (void *)gpio) == EXIT_COMMAND) {
                         free(command);
                         break;
@@ -577,10 +445,12 @@ int main(int argc, char *argv[])
                 sscanf(command, "%s %s", instruction, filename);
                 FILE *f = fopen(filename, "r");
                 char line[MAX_STRING_SIZE];
+                memset(line, '\0', sizeof(char) * MAX_STRING_SIZE);
                 is_valid = true;
                 while (fgets(line, sizeof(line), f)) {
                     line[strlen(line) - 1] = '\0'; // Remove trailing newline
-                    if (!check_validity(line)) {
+                    if (!is_command_valid(line)) {
+                        printf("Line %s in file %s is invalid\n", line, filename);
                         is_valid = false;
                         break;
                     }
@@ -593,6 +463,7 @@ int main(int argc, char *argv[])
                         usleep(100000);
                     }
                 }
+                fclose(f);
             }
 
         } else if (slave_sel == 1) { // Slave is Arduino
