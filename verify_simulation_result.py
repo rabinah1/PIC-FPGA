@@ -27,9 +27,9 @@ def main():
     reference = reference_file.readlines()
     result = result_file.readlines()
     if reference == result:
-        print("All ok")
+        print("RESULT: verification passed")
     else:
-        print("Verification failed")
+        print("RESULT: verification failed")
 
     reference_file.close()
     result_file.close()

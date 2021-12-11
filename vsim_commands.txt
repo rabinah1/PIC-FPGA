@@ -1,0 +1,11 @@
+add wave  \
+sim:/pic16f84a_tb/serial_in \
+sim:/pic16f84a_tb/reset \
+sim:/pic16f84a_tb/mosi \
+sim:/pic16f84a_tb/miso \
+sim:/pic16f84a_tb/clk_period \
+sim:/pic16f84a_tb/clk \
+sim:/pic16f84a_tb/check \
+sim:/pic16f84a_tb/alu_output_raspi
+run 200ms
+exit
