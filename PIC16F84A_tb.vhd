@@ -18,6 +18,8 @@ architecture behavior of PIC16F84A_tb is
     signal alu_output_raspi : std_logic := '0';
     constant clk_period : time := 250 us;
     signal check : natural := 0;
+    signal write_comment : std_logic := '0';
+    signal result_num : integer := 1;
 
     component PIC16F84A is
         port (serial_in : in std_logic;
@@ -56,6 +58,10 @@ architecture behavior of PIC16F84A_tb is
             variable first_flag : std_logic := '1';
             begin
                 wait until falling_edge(clk);
+                if (write_comment = '1') then
+                    write(lineout, string'("# result_") & integer'image(result_num));
+                    writeline(result_file, lineout);
+                end if;
                 if (miso = '1' and first_flag = '1') then
                     first_flag := '0';
                 elsif (miso = '1' and first_flag = '0') then
@@ -87,8 +93,19 @@ architecture behavior of PIC16F84A_tb is
                 reset <= '0';
                 while (not endfile(stimulus_file)) loop
                     readline(stimulus_file, linein);
+                    if (linein.all = "RESET") then
+                        result_num <= result_num + 1;
+                        reset <= '1';
+                        wait for 1 ms;
+                        reset <= '0';
+                        next;
+                    elsif (linein.all(1) = '#') then
+                        write_comment <= '1';
+                        next;
+                    end if;
                     read(linein, binary_command);
                     wait until falling_edge(clk);
+                    write_comment <= '0';
                     mosi <= '1';
                     count := 13;
                     while (count >= 0) loop

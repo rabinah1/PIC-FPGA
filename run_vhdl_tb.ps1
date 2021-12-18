@@ -20,4 +20,3 @@ rm vsim.wlf
 Remove-Item .\work\ -Force -Recurse
 rm .\tb_input_parsed.txt
 rm .\tb_result.txt
-rm .\tb_result_formatted.txt

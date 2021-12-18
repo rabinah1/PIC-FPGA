@@ -7,5 +7,5 @@ sim:/pic16f84a_tb/clk_period \
 sim:/pic16f84a_tb/clk \
 sim:/pic16f84a_tb/check \
 sim:/pic16f84a_tb/alu_output_raspi
-run 200ms
+run 50000ms
 exit

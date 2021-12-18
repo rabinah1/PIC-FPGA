@@ -38,8 +38,6 @@ architecture rtl of ALU is
 begin
 
     func: process(all) is
-        variable decTemp : std_logic_vector(N downto 0);
-        variable incTemp : std_logic_vector(N downto 0);
         variable opTemp : std_logic_vector(5 downto 0);
         variable result : std_logic_vector(N downto 0);
         variable temp_mem : std_logic_vector(7 downto 0);
@@ -51,22 +49,19 @@ begin
             alu_output <= (others => '0');
             skip_next <= '0';
             status_out <= (others => '0');
-            decTemp := (others => '0');
-            incTemp := (others => '0');
             opTemp := (others => '0');
             result := (others => '0');
             temp_mem := (others => '0');
             status_carry := '0';
 
         elsif (rising_edge(clk)) then
-            if (skip_next = '1') then
-                skip_next <= '0';
-                opTemp := (others => '0');
-            else
-                opTemp := opcode;
-            end if;
-
             if (enable = '1') then
+                if (skip_next = '1') then
+                    skip_next <= '0';
+                    opTemp := (others => '0');
+                else
+                    opTemp := opcode;
+                end if;
                 case opTemp is
 
                     when "000111" => -- ADDWF
@@ -76,7 +71,7 @@ begin
                         alu_output <= result(N-1 downto 0);
 
                     when "000101" => -- ANDWF
-                        result := '0' & input_w and output_mux;
+                        result := '0' & (input_w and output_mux);
                         status_out(2) <= update_status_z(result(N-1 downto 0));
                         alu_output <= result(N-1 downto 0);
 
@@ -111,8 +106,8 @@ begin
 
                     when "001011" => -- DECFSZ
                         status_out(2) <= update_status_z(result(N-1 downto 0));
-                        decTemp := '0' & output_mux - 1;
-                        if (decTemp = "00000000") then
+                        result := '0' & output_mux - 1;
+                        if (result(N-1 downto 0) = "0000000") then
                             skip_next <= '1';
                         end if;
                         alu_output <= result(N-1 downto 0);
@@ -124,14 +119,14 @@ begin
 
                     when "001111" => -- INCFSZ
                         status_out(2) <= update_status_z(result(N-1 downto 0));
-                        incTemp := '0' & output_mux + 1;
-                        if (incTemp = "00000000") then
+                        result := '0' & output_mux + 1;
+                        if (result(N-1 downto 0) = "0000000") then
                             skip_next <= '1';
                         end if;
                         alu_output <= result(N-1 downto 0);
 
                     when "000100" => -- IORWF
-                        result := '0' & input_w or output_mux;
+                        result := '0' & (input_w or output_mux);
                         status_out(2) <= update_status_z(result(N-1 downto 0));
                         alu_output <= result(N-1 downto 0);
 
@@ -141,13 +136,13 @@ begin
                         alu_output <= result(N-1 downto 0);
 
                     when "001101" => -- RLF
-                        status_carry := status_in(7);
-                        status_out <= status_in(6 downto 0) & output_mux(7);
+                        status_carry := status_in(0);
+                        status_out <= status_in(7 downto 1) & output_mux(7);
                         alu_output <= output_mux(6 downto 0) & status_carry;
 
                     when "001100" => -- RRF
                         status_carry := status_in(0);
-                        status_out <= output_mux(0) & status_in(7 downto 1);
+                        status_out <= status_in(7 downto 1) & output_mux(0);
                         alu_output <= status_carry & output_mux(7 downto 1);
 
                     when "000010" => -- SUBWF
@@ -161,7 +156,7 @@ begin
                         alu_output <= result(N-1 downto 0);
 
                     when "000110" => -- XORWF
-                        result := '0' & input_w xor output_mux;
+                        result := '0' & (input_w xor output_mux);
                         status_out(2) <= update_status_z(result(N-1 downto 0));
                         alu_output <= result(N-1 downto 0);
 
@@ -172,12 +167,12 @@ begin
                         alu_output <= result(N-1 downto 0);
 
                     when "111001" => -- ANDLW
-                        result := '0' & input_w and output_mux;
+                        result := '0' & (input_w and output_mux);
                         status_out(2) <= update_status_z(result(N-1 downto 0));
                         alu_output <= result(N-1 downto 0);
 
                     when "111000" => -- IORLW
-                        result := '0' & input_w or output_mux;
+                        result := '0' & (input_w or output_mux);
                         status_out(2) <= update_status_z(result(N-1 downto 0));
                         alu_output <= result(N-1 downto 0);
 
@@ -193,7 +188,7 @@ begin
                         alu_output <= result(N-1 downto 0);
 
                     when "111010" => -- XORLW
-                        result := '0' & input_w xor output_mux;
+                        result := '0' & (input_w xor output_mux);
                         status_out(2) <= update_status_z(result(N-1 downto 0));
                         alu_output <= result(N-1 downto 0);
 
