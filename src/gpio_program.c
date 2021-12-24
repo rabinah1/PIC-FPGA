@@ -1,4 +1,4 @@
-#define BCM2835_PERI_BASE 0x3F000000 // peripheral base address
+#define BCM2835_PERI_BASE 0xFE000000  // peripheral base address
 #define GPIO_BASE (BCM2835_PERI_BASE + 0x200000) // GPIO controller base address
 
 #include <stdio.h>
