@@ -1,3 +1,6 @@
+import argparse
+import os
+
 opcode_dict = {
     "ADDWF":        "000111",
     "ANDWF":        "000101",
@@ -26,6 +29,23 @@ opcode_dict = {
     "READ_ADDRESS": "110011",
     "READ_STATUS":  "110010"
 }
+
+def parse_args():
+    descr = """
+This script converts the human-readable VHDL tb stimulus file into a format
+where each command is a binary string. That format is easier to handle in
+the VHDL tb.
+"""
+    parser = argparse.ArgumentParser(description=descr,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument("input_dir",
+                        type=str,
+                        help="Path to the directory where the stimulus file is located.")
+
+    args = parser.parse_args()
+
+    return args
 
 def decimal_to_binary(decimal_in, num_bits):
     binary_out = ["0" for i in range(num_bits)]
@@ -62,8 +82,9 @@ def parse(line_parts):
     return binary_input
 
 def main():
-    in_file = open("tb_input.txt", "r")
-    out_file = open("tb_input_parsed.txt", "w")
+    args = parse_args()
+    in_file = open(os.path.join(args.input_dir, "tb_input.txt"), "r")
+    out_file = open(os.path.join(args.input_dir, "tb_input_parsed.txt"), "w")
 
     line = in_file.readline()
     while line:

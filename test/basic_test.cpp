@@ -96,3 +96,24 @@ TEST(basic_test_group, test_that_all_fpga_instructions_in_binary_are_found)
         i++;
     }
 }
+
+TEST(basic_test_group, test_that_expected_number_of_arguments_for_all_fpga_instructions_are_found)
+{
+    int num_args = 0;
+    const char *expected_commands[] = {
+        "ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ", "INCF", "INCFSZ", "IORWF",
+        "MOVF", "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW", "MOVLW",
+        "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG", "READ_STATUS", "READ_ADDRESS", "DUMP_MEM",
+        "NOP", "READ_FILE", "ENABLE_CLOCK", "DISABLE_CLOCK", "ENABLE_RESET", "DISABLE_RESET",
+        "EXIT", "HELP", "SELECT_SLAVE", "SHOW_SLAVE"};
+    const int expected_args[] = {
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1,
+        2, 2, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0};
+    int i = 0;
+    while (i < 37) {
+        char *command = (char *)expected_commands[i];
+        num_args = get_expected_num_of_arguments(command);
+        CHECK_EQUAL(expected_args[i], num_args);
+        i++;
+    }
+}

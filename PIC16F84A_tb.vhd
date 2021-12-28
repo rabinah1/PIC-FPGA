@@ -7,6 +7,8 @@ use std.textio.all;
 use ieee.std_logic_textio.all;
 
 entity PIC16F84A_tb is
+    generic (input_file : string := "";
+             output_file : string := "");
 end PIC16F84A_tb;
 
 architecture behavior of PIC16F84A_tb is
@@ -51,8 +53,7 @@ architecture behavior of PIC16F84A_tb is
         end process clk_process;
 
         write_to_file : process is
-            -- Modify result_file path
-            file result_file : text open write_mode is "C:\Users\henry\PIC-FPGA\tb_result.txt";
+            file result_file : text open write_mode is input_file;
             variable lineout : line;
             variable write_flag : std_logic := '0';
             variable first_flag : std_logic := '1';
@@ -78,8 +79,7 @@ architecture behavior of PIC16F84A_tb is
         end process write_to_file;
 
         stimulus : process is
-            -- Modify stimulus_file path
-            file stimulus_file : text open read_mode is "C:\Users\henry\PIC-FPGA\tb_input_parsed.txt";
+            file stimulus_file : text open read_mode is output_file;
             variable comma : character;
             variable linein : line;
             variable count : integer := 0;

@@ -29,7 +29,6 @@
 #define GPIO_CLR *(gpio+10)
 #define GET_GPIO(g) (*(gpio+13)&(1<<g))
 #define MAX_STRING_SIZE 256
-#define EXIT_COMMAND -1
 #define RESULT_TIMEOUT 1000
 #define MEM_DUMP_TIMEOUT 6000
 #define DATA_BIT_WIDTH 8
@@ -278,11 +277,8 @@ bool is_command_valid(char *command)
 {
     int i = 0;
     int num_spaces = 0;
-    int bit_or_d;
-    int literal_or_address = 0;
-    char binary_data_bit_or_d[MAX_BIT_OR_D_SIZE];
-    char binary_data_operand[MAX_OPERAND_SIZE];
-    char binary_data_opcode[MAX_OPCODE_SIZE];
+    int arg_1 = 0;
+    int arg_2 = 0;
     char instruction[MAX_INSTRUCTION_SIZE];
 
     while (command[i] != '\0') {
@@ -290,25 +286,39 @@ bool is_command_valid(char *command)
             num_spaces++;
         i++;
     }
-    memset(binary_data_bit_or_d, '\0', sizeof(char) * MAX_BIT_OR_D_SIZE);
-    memset(binary_data_operand, '\0', sizeof(char) * MAX_OPERAND_SIZE);
-    memset(binary_data_opcode, '\0', sizeof(char) * MAX_OPCODE_SIZE);
     memset(instruction, '\0', sizeof(char) * MAX_INSTRUCTION_SIZE);
     if (num_spaces == 2) { // bit- or byte-oriented instruction
-        sscanf(command, "%s %d %d", instruction, &bit_or_d, &literal_or_address);
+        if (sscanf(command, "%s %d %d", instruction, &arg_1, &arg_2) != 3) {
+            printf("Failed to parse command %s\n", command);
+            return false;
+        }
     } else if (num_spaces == 1) { // literal instruction
-        sscanf(command, "%s %d", instruction, &literal_or_address);
+        if (sscanf(command, "%s %d", instruction, &arg_2) != 2) {
+            printf("Failed to parse command %s\n", command);
+            return false;
+        }
     } else if (num_spaces == 0) {
-        sscanf(command, "%s", instruction);
+        if (sscanf(command, "%s", instruction) != 1) {
+            printf("Failed to parse command %s\n", command);
+            return false;
+        }
     } else {
-        printf("Did not recognize a command with %d spaces\n", num_spaces);
+        printf("Invalid number of spaces (%d) in command %s", num_spaces, command);
         return false;
     }
 
-    return instruction_exists(instruction);
+    if (!instruction_exists(instruction))
+        return false;
+
+    if (get_expected_num_of_arguments(instruction) != num_spaces) {
+        printf("Invalid number of arguments (%d) for instruction %s.\n", num_spaces, instruction);
+        return false;
+    }
+
+    return true;
 }
 
-int process_command(char *command, void *vargp)
+bool process_command(char *command, void *vargp)
 {
     volatile unsigned *gpio;
     gpio = (volatile unsigned *)vargp;
@@ -321,34 +331,49 @@ int process_command(char *command, void *vargp)
     pthread_t mem_dump_thread_id;
     int falling_check = 0;
 
-    create_binary_command(command, binary_command, instruction, binary_data_operand,
-                          binary_data_opcode, binary_data_bit_or_d);
+    if (!create_binary_command(command, binary_command, instruction, binary_data_operand,
+                               binary_data_opcode, binary_data_bit_or_d)) {
+        printf("Binary command creation from command %s failed.\n", command);
+        return false;
+    }
     if (strcmp(instruction, "ENABLE_CLOCK") == 0) {
         clk_enable = 1;
-        return 0;
+        return true;
     } else if (strcmp(instruction, "DISABLE_CLOCK") == 0) {
         clk_enable = 0;
-        return 0;
+        return true;
     } else if (strcmp(instruction, "ENABLE_RESET") == 0) {
         GPIO_SET = 1<<RESET_PIN;
-        return 0;
+        return true;
     } else if (strcmp(instruction, "DISABLE_RESET") == 0) {
         GPIO_CLR = 1<<RESET_PIN;
-        return 0;
+        return true;
     } else if (strcmp(instruction, "EXIT") == 0) {
         GPIO_CLR = 1<<RESET_PIN;
         clk_exit = 1;
-        return EXIT_COMMAND;
+        return false;
     } else if (strcmp(instruction, "HELP") == 0) {
         print_help();
-        return 0;
+        return true;
     } else if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
                strcmp(instruction, "READ_STATUS") == 0) {
+        if (clk_enable == 0) {
+            printf("Clock is not enabled, please enable it first.\n");
+            return true;
+        }
         pthread_create(&read_result_thread_id, NULL, result_thread, (void *)gpio);
         usleep(1000);
     } else if (strcmp(instruction, "DUMP_MEM") == 0) {
+        if (clk_enable == 0) {
+            printf("Clock is not enabled, please enable it first.\n");
+            return true;
+        }
         pthread_create(&mem_dump_thread_id, NULL, mem_dump_thread, (void *)gpio);
         usleep(1000);
+    }
+    if (clk_enable == 0) {
+        printf("Clock is not enabled, please enable it first.\n");
+        return true;
     }
     // binary_command = <opcode_in_binary> + <argument_in_binary>
     // This data is sent to FPGA one bit at a time, starting from the first (idx = 0) bit.
@@ -377,7 +402,7 @@ int process_command(char *command, void *vargp)
         pthread_join(read_result_thread_id, NULL);
     else if (strcmp(instruction, "DUMP_MEM") == 0)
         pthread_join(mem_dump_thread_id, NULL);
-    return 0;
+    return true;
 }
 
 int send_to_arduino(char *command)
@@ -406,7 +431,7 @@ int send_to_arduino(char *command)
 int main(int argc, char *argv[])
 {
     if (argc != 2) {
-        printf("Exactly one command line argument is required.\n");
+        printf("Exactly one command line argument is required, you gave %d.\n", argc - 1);
         return 0;
     }
     strcpy(serial_port, argv[1]);
@@ -436,7 +461,7 @@ int main(int argc, char *argv[])
         } else if (slave_sel == 0) { // Slave is FPGA
             if (strstr(command, "READ_FILE") == NULL) { // READ_FILE not found
                 if (is_command_valid(command)) {
-                    if (process_command(command, (void *)gpio) == EXIT_COMMAND) {
+                    if (!process_command(command, (void *)gpio)) {
                         free(command);
                         break;
                     }
@@ -450,7 +475,6 @@ int main(int argc, char *argv[])
                 while (fgets(line, sizeof(line), f)) {
                     line[strlen(line) - 1] = '\0'; // Remove trailing newline
                     if (!is_command_valid(line)) {
-                        printf("Line %s in file %s is invalid\n", line, filename);
                         is_valid = false;
                         break;
                     }
@@ -459,7 +483,8 @@ int main(int argc, char *argv[])
                     rewind(f);
                     while (fgets(line, sizeof(line), f)) {
                         line[strlen(line) - 1] = '\0';
-                        process_command(line, (void *)gpio);
+                        if (!process_command(line, (void *)gpio))
+                            break;
                         usleep(100000);
                     }
                 }

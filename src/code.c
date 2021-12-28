@@ -53,6 +53,22 @@ bool instruction_exists(char *instruction)
     return false;
 }
 
+int get_expected_num_of_arguments(char *instruction)
+{
+    int num_instructions = sizeof(slave_0_commands_to_args) / sizeof(slave_0_commands_to_args[0]);
+    int i = 0;
+    char *name;
+    while (i < num_instructions) {
+        name = slave_0_commands_to_args[i].command;
+        if (strcmp(name, instruction) == 0)
+            return slave_0_commands_to_args[i].num_args;
+        i++;
+    }
+
+    printf("Instruction %s does not exist\n", instruction);
+    return -1;
+}
+
 bool get_command(char *instruction, char *opcode)
 {
     int i = 0;
@@ -68,24 +84,24 @@ bool get_command(char *instruction, char *opcode)
         i++;
     }
 
-    printf("Invalid command\n");
+    printf("Invalid instruction %s.\n", instruction);
     return false;
 }
 
-int create_binary_command(char *command, char *binary_command, char *instruction,
-                          char *binary_data_operand, char *binary_data_opcode,
-                          char *binary_data_bit_or_d)
+bool create_binary_command(char *command, char *binary_command, char *instruction,
+                           char *binary_data_operand, char *binary_data_opcode,
+                           char *binary_data_bit_or_d)
 {
     int literal_or_address = 0;
     int bit_or_d = 0;
     int num_spaces = 0;
     int i = 0;
+
     while (command[i] != '\0') {
         if (command[i] == ' ')
             num_spaces++;
         i++;
     }
-
     memset(binary_data_bit_or_d, '\0', sizeof(char) * MAX_BIT_OR_D_SIZE);
     memset(binary_data_operand, '\0', sizeof(char) * MAX_OPERAND_SIZE);
     memset(binary_data_opcode, '\0', sizeof(char) * MAX_OPCODE_SIZE);
@@ -99,7 +115,7 @@ int create_binary_command(char *command, char *binary_command, char *instruction
             decimal_to_binary(bit_or_d, binary_data_bit_or_d, 1);
         decimal_to_binary(literal_or_address, binary_data_operand, 7);
         if (!get_command(instruction, binary_data_opcode))
-            return 0;
+            return false;
         strcpy(binary_command, binary_data_opcode);
         strcat(binary_command, binary_data_bit_or_d);
         strcat(binary_command, binary_data_operand);
@@ -108,7 +124,7 @@ int create_binary_command(char *command, char *binary_command, char *instruction
         sscanf(command, "%s %d", instruction, &literal_or_address);
         decimal_to_binary((uint32_t)literal_or_address, binary_data_operand, 8);
         if (!get_command(instruction, binary_data_opcode))
-            return 0;
+            return false;
         strcpy(binary_command, binary_data_opcode);
         strcat(binary_command, binary_data_operand);
 
@@ -117,13 +133,13 @@ int create_binary_command(char *command, char *binary_command, char *instruction
         literal_or_address = 0;
         decimal_to_binary(literal_or_address, binary_data_operand, 8);
         if (!get_command(instruction, binary_data_opcode))
-            return 0;
+            return false;
         strcpy(binary_command, binary_data_opcode);
         strcat(binary_command, binary_data_operand);
 
     } else {
-        printf("Invalid command\n");
-        return 0;
+        printf("Invalid number of spaces %d in command %s\n", num_spaces, command);
+        return false;
     }
-    return 0;
+    return true;
 }
