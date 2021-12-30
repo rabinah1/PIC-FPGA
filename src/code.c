@@ -6,8 +6,7 @@
 #include <math.h>
 #include "code.h"
 #include "types.h"
-
-#define DATA_BIT_WIDTH 8
+#include "defines.h"
 
 int binary_to_decimal(volatile int *data)
 {
@@ -84,7 +83,7 @@ bool get_command(char *instruction, char *opcode)
         i++;
     }
 
-    printf("Invalid instruction %s.\n", instruction);
+    printf("Invalid instruction %s\n", instruction);
     return false;
 }
 

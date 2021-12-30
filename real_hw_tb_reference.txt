@@ -1,0 +1,69 @@
+# result 1
+100
+# result 2
+66
+66
+# result 3
+23
+# result 4
+100
+1
+0
+1
+0
+0
+# result 5
+132
+123
+# result 6
+99
+# result 7
+127
+# result 8
+80
+4
+# result 9
+1
+144
+1
+145
+33
+1
+1
+0
+# result 10
+1
+100
+1
+228
+72
+1
+128
+0
+# result 11
+1
+# result 12
+250
+250
+# result 13
+211
+# result 14
+4
+# result 15
+207
+# result 16
+20
+# result 17
+19
+# result 18
+36
+# result 19
+108
+# result 20
+0
+10
+10
+# result 21
+0
+30
+30

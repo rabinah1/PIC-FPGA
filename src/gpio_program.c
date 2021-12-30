@@ -1,6 +1,3 @@
-#define BCM2835_PERI_BASE 0xFE000000  // peripheral base address
-#define GPIO_BASE (BCM2835_PERI_BASE + 0x200000) // GPIO controller base address
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -14,33 +11,18 @@
 #include <wiringPi.h>
 #include <wiringSerial.h>
 #include "code.h"
+#include "defines.h"
 
-#define BLOCK_SIZE (4*20) // only using gpio registers region
-#define CLK_FREQ_HZ 4000
-#define CLK_PIN 5
-#define RESET_PIN 6
-#define MISO_PIN 13
-#define RESULT_PIN 16
-#define MOSI_PIN 19
-#define COMMAND_PIN 26
-#define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
-#define OUT_GPIO(g) *(gpio+((g)/10)) |=  (1<<(((g)%10)*3))
-#define GPIO_SET *(gpio+7)
-#define GPIO_CLR *(gpio+10)
-#define GET_GPIO(g) (*(gpio+13)&(1<<g))
-#define MAX_STRING_SIZE 256
-#define RESULT_TIMEOUT 1000
-#define MEM_DUMP_TIMEOUT 6000
-#define DATA_BIT_WIDTH 8
-#define MEM_DUMP_VALUES_PER_LINE 8
-#define NUM_BYTES_RAM 127
-#define NUM_BITS_RAM 1016
-
-int clk_enable = 0;
-int clk_exit = 0;
+bool clk_enable = false;
+bool clk_exit = false;
 char serial_port[MAX_STRING_SIZE];
-
 char slave_1_commands[][MAX_STRING_SIZE] = {"read_temperature"};
+
+struct result_thread_args {
+    volatile unsigned *gpio;
+    FILE *result_file;
+    bool write_to_file;
+};
 
 void print_help(void)
 {
@@ -85,6 +67,8 @@ void print_help(void)
            "These must be used as follows:\n"
            "<operation> <bit> <address>\n\n"
            "Other commands:\n"
+           "SHOW_SLAVE\n"
+           "SELECT_SLAVE\n"
            "READ_WREG\n"
            "READ_STATUS\n"
            "READ_ADDRESS\n"
@@ -100,10 +84,10 @@ void print_help(void)
     return;
 }
 
-void init_pins(void *vargp)
+void init_pins(void *arguments)
 {
     volatile unsigned *gpio;
-    gpio = (volatile unsigned *)vargp;
+    gpio = (volatile unsigned *)arguments;
 
     int arr[] = {CLK_PIN, RESET_PIN, COMMAND_PIN, MOSI_PIN};
     size_t len = sizeof(arr) / sizeof(arr[0]);
@@ -124,7 +108,7 @@ volatile unsigned* init_gpio_map(void)
     void *gpio_map;
     volatile unsigned *gpio;
     if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
-        printf("can't open /dev/mem \n");
+        printf("Can't open /dev/mem \n");
         exit(-1);
     }
 
@@ -146,10 +130,15 @@ volatile unsigned* init_gpio_map(void)
     return gpio;
 }
 
-void *result_thread(void *vargp)
+void *result_thread(void *arguments)
 {
+    struct result_thread_args *args = (struct result_thread_args *)arguments;
     volatile unsigned *gpio;
-    gpio = (volatile unsigned *)vargp;
+    FILE *result_file;
+    bool write_to_file;
+    gpio = args->gpio;
+    result_file = args->result_file;
+    write_to_file = args->write_to_file;
 
     volatile int data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     int miso_trigger = 0;
@@ -182,7 +171,10 @@ void *result_thread(void *vargp)
             if (data_count == DATA_BIT_WIDTH) {
                 result_decimal = binary_to_decimal(data);
                 data_count = 0;
-                printf("%d\n", result_decimal);
+                if (write_to_file)
+                    fprintf(result_file, "%d\n", result_decimal);
+                else
+                    printf("%d\n", result_decimal);
                 result_decimal = 0;
                 return NULL;
             }
@@ -194,10 +186,10 @@ void *result_thread(void *vargp)
     return NULL;
 }
 
-void *mem_dump_thread(void *vargp)
+void *mem_dump_thread(void *arguments)
 {
     volatile unsigned *gpio;
-    gpio = (volatile unsigned *)vargp;
+    gpio = (volatile unsigned *)arguments;
 
     volatile int data[1016] = {0};
     int miso_trigger = 0;
@@ -253,16 +245,16 @@ void *mem_dump_thread(void *vargp)
     return NULL;
 }
 
-void *clk_thread(void *vargp)
+void *clk_thread(void *arguments)
 {
     volatile unsigned *gpio;
-    gpio = (volatile unsigned *)vargp;
+    gpio = (volatile unsigned *)arguments;
 
     double clk_period = 1000000 / CLK_FREQ_HZ;
     while(1) {
-        if (clk_exit == 1)
+        if (clk_exit)
             break;
-        if (clk_enable == 1) {
+        if (clk_enable) {
             GPIO_SET = 1 << CLK_PIN;
             usleep(clk_period / 2);
             GPIO_CLR = 1 << CLK_PIN;
@@ -311,17 +303,17 @@ bool is_command_valid(char *command)
         return false;
 
     if (get_expected_num_of_arguments(instruction) != num_spaces) {
-        printf("Invalid number of arguments (%d) for instruction %s.\n", num_spaces, instruction);
+        printf("Invalid number of arguments (%d) for instruction %s\n", num_spaces, instruction);
         return false;
     }
 
     return true;
 }
 
-bool process_command(char *command, void *vargp)
+bool process_command(char *command, void *arguments, FILE *result_file, bool write_to_file)
 {
     volatile unsigned *gpio;
-    gpio = (volatile unsigned *)vargp;
+    gpio = (volatile unsigned *)arguments;
     char binary_data_operand[MAX_OPERAND_SIZE];
     char binary_data_opcode[MAX_OPCODE_SIZE];
     char binary_data_bit_or_d[MAX_BIT_OR_D_SIZE];
@@ -330,17 +322,21 @@ bool process_command(char *command, void *vargp)
     pthread_t read_result_thread_id;
     pthread_t mem_dump_thread_id;
     int falling_check = 0;
+    struct result_thread_args args;
+    args.gpio = gpio;
+    args.result_file = result_file;
+    args.write_to_file = write_to_file;
 
     if (!create_binary_command(command, binary_command, instruction, binary_data_operand,
                                binary_data_opcode, binary_data_bit_or_d)) {
-        printf("Binary command creation from command %s failed.\n", command);
+        printf("Binary command creation from command %s failed\n", command);
         return false;
     }
     if (strcmp(instruction, "ENABLE_CLOCK") == 0) {
-        clk_enable = 1;
+        clk_enable = true;
         return true;
     } else if (strcmp(instruction, "DISABLE_CLOCK") == 0) {
-        clk_enable = 0;
+        clk_enable = false;
         return true;
     } else if (strcmp(instruction, "ENABLE_RESET") == 0) {
         GPIO_SET = 1<<RESET_PIN;
@@ -350,29 +346,29 @@ bool process_command(char *command, void *vargp)
         return true;
     } else if (strcmp(instruction, "EXIT") == 0) {
         GPIO_CLR = 1<<RESET_PIN;
-        clk_exit = 1;
+        clk_exit = true;
         return false;
     } else if (strcmp(instruction, "HELP") == 0) {
         print_help();
         return true;
     } else if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
                strcmp(instruction, "READ_STATUS") == 0) {
-        if (clk_enable == 0) {
-            printf("Clock is not enabled, please enable it first.\n");
+        if (!clk_enable) {
+            printf("Clock is not enabled, please enable it first\n");
             return true;
         }
-        pthread_create(&read_result_thread_id, NULL, result_thread, (void *)gpio);
+        pthread_create(&read_result_thread_id, NULL, result_thread, (void *)&args);
         usleep(1000);
     } else if (strcmp(instruction, "DUMP_MEM") == 0) {
-        if (clk_enable == 0) {
-            printf("Clock is not enabled, please enable it first.\n");
+        if (!clk_enable) {
+            printf("Clock is not enabled, please enable it first\n");
             return true;
         }
         pthread_create(&mem_dump_thread_id, NULL, mem_dump_thread, (void *)gpio);
         usleep(1000);
     }
-    if (clk_enable == 0) {
-        printf("Clock is not enabled, please enable it first.\n");
+    if (!clk_enable) {
+        printf("Clock is not enabled, please enable it first\n");
         return true;
     }
     // binary_command = <opcode_in_binary> + <argument_in_binary>
@@ -430,8 +426,15 @@ int send_to_arduino(char *command)
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2) {
-        printf("Exactly one command line argument is required, you gave %d.\n", argc - 1);
+    bool verify_on_hw = false;
+
+    if (argc == 2) {
+        printf("Running in application mode, using %s as a serial port to Arduino\n", argv[1]);
+    } else if (argc == 3 && strcmp(argv[2], "testing") == 0) {
+        printf("Running in testing mode, using %s as a serial port to Arduino\n", argv[1]);
+        verify_on_hw = true;
+    } else {
+        printf("Invalid arguments\n");
         return 0;
     }
     strcpy(serial_port, argv[1]);
@@ -443,6 +446,73 @@ int main(int argc, char *argv[])
     volatile unsigned *gpio = init_gpio_map();
     init_pins((void *)gpio);
     pthread_create(&clk_thread_id, NULL, clk_thread, (void *)gpio);
+
+    if (verify_on_hw) {
+        printf("Running tests on HW, please wait...\n");
+        char pwd[MAX_STRING_SIZE];
+        char script_relative_path[MAX_STRING_SIZE];
+        char tb_input_file[MAX_STRING_SIZE];
+        char tb_result_file[MAX_STRING_SIZE];
+        char line[MAX_STRING_SIZE];
+        char header_start[MAX_STRING_SIZE];
+        char result_header[MAX_STRING_SIZE];
+        char *last_slash;
+        int test_num = 0;
+        memset(pwd, '\0', sizeof(char) * MAX_STRING_SIZE);
+        memset(script_relative_path, '\0', sizeof(char) * MAX_STRING_SIZE);
+        memset(tb_input_file, '\0', sizeof(char) * MAX_STRING_SIZE);
+        memset(tb_result_file, '\0', sizeof(char) * MAX_STRING_SIZE);
+        memset(line, '\0', sizeof(char) * MAX_STRING_SIZE);
+        memset(header_start, '\0', sizeof(char) * MAX_STRING_SIZE);
+        memset(result_header, '\0', sizeof(char) * MAX_STRING_SIZE);
+        strcpy(script_relative_path, argv[0]);
+        last_slash = strrchr(script_relative_path, '/');
+        script_relative_path[last_slash - script_relative_path] = '\0';
+        getcwd(pwd, sizeof(char) * MAX_STRING_SIZE);
+        strcpy(tb_input_file, pwd);
+        strcat(tb_input_file, "/");
+        strcat(tb_input_file, script_relative_path);
+        strcat(tb_input_file, "/");
+        strcat(tb_input_file, "real_hw_tb_input.txt");
+        strcpy(tb_result_file, pwd);
+        strcat(tb_result_file, "/");
+        strcat(tb_result_file, script_relative_path);
+        strcat(tb_result_file, "/");
+        strcat(tb_result_file, "real_hw_tb_result.txt");
+        FILE *tb_input = fopen(tb_input_file, "r");
+        FILE *result_file = fopen(tb_result_file, "w");
+        is_valid = true;
+        while (fgets(line, sizeof(line), tb_input)) {
+            if (line[0] == '#' || line[0] == '*')
+                continue;
+            line[strlen(line) - 1] = '\0';
+            if (!is_command_valid(line)) {
+                is_valid = false;
+                break;
+            }
+        }
+        if (is_valid) {
+            rewind(tb_input);
+            while (fgets(line, sizeof(line), tb_input)) {
+                if (line[0] == '*' || (line[0] == '#' && strstr(line, "test ") == NULL))
+                    continue;
+                if (line[0] == '#' && strstr(line, "test ") != NULL) {
+                    sscanf(line, "# %s %d", header_start, &test_num);
+                    strcpy(result_header, "# result ");
+                    fprintf(result_file, "%s%d\n", result_header, test_num);
+                    continue;
+                }
+                line[strlen(line) - 1] = '\0';
+                if (!process_command(line, (void *)gpio, result_file, true))
+                    break;
+                usleep(100000);
+            }
+        }
+        fclose(tb_input);
+        fclose(result_file);
+        printf("Tests finished\n");
+        return 0;
+    }
 
     printf("Please enter command, or \"HELP\" for instructions\n");
     while(1) {
@@ -461,18 +531,18 @@ int main(int argc, char *argv[])
         } else if (slave_sel == 0) { // Slave is FPGA
             if (strstr(command, "READ_FILE") == NULL) { // READ_FILE not found
                 if (is_command_valid(command)) {
-                    if (!process_command(command, (void *)gpio)) {
+                    if (!process_command(command, (void *)gpio, NULL, false)) {
                         free(command);
                         break;
                     }
                 }
             } else { // READ_FILE found
                 sscanf(command, "%s %s", instruction, filename);
-                FILE *f = fopen(filename, "r");
+                FILE *input_file = fopen(filename, "r");
                 char line[MAX_STRING_SIZE];
                 memset(line, '\0', sizeof(char) * MAX_STRING_SIZE);
                 is_valid = true;
-                while (fgets(line, sizeof(line), f)) {
+                while (fgets(line, sizeof(line), input_file)) {
                     line[strlen(line) - 1] = '\0'; // Remove trailing newline
                     if (!is_command_valid(line)) {
                         is_valid = false;
@@ -480,17 +550,16 @@ int main(int argc, char *argv[])
                     }
                 }
                 if (is_valid) {
-                    rewind(f);
-                    while (fgets(line, sizeof(line), f)) {
+                    rewind(input_file);
+                    while (fgets(line, sizeof(line), input_file)) {
                         line[strlen(line) - 1] = '\0';
-                        if (!process_command(line, (void *)gpio))
+                        if (!process_command(line, (void *)gpio, NULL, false))
                             break;
                         usleep(100000);
                     }
                 }
-                fclose(f);
+                fclose(input_file);
             }
-
         } else if (slave_sel == 1) { // Slave is Arduino
             command[strlen(command) - 1] = '\0';
             bool command_found = false;
