@@ -10,11 +10,11 @@ if [[ "$1" == "-h" ]]; then
     exit 0
 fi
 
-if [[ ! -e "`dirname "$0"`/gpio_program" ]]; then
-    echo "Executable gpio_program does not exist."
+if [[ ! -e "`dirname "$0"`/PIC16F84A" ]]; then
+    echo "Executable PIC16F84A does not exist."
     exit 0
 fi
 
-sudo `dirname "$0"`/gpio_program $1 testing
+sudo `dirname "$0"`/PIC16F84A $1 testing
 python3 `dirname "$0"`/verify_real_hw_result.py `dirname "$0"`
 rm -f `dirname "$0"`/real_hw_tb_result.txt

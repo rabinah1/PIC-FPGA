@@ -38,7 +38,7 @@ architecture rtl of ALU is
 begin
 
     func: process(all) is
-        variable opTemp : std_logic_vector(5 downto 0);
+        variable op_temp : std_logic_vector(5 downto 0);
         variable result : std_logic_vector(N downto 0);
         variable temp_mem : std_logic_vector(7 downto 0);
         variable status_carry : std_logic;
@@ -49,7 +49,7 @@ begin
             alu_output <= (others => '0');
             skip_next <= '0';
             status_out <= (others => '0');
-            opTemp := (others => '0');
+            op_temp := (others => '0');
             result := (others => '0');
             temp_mem := (others => '0');
             status_carry := '0';
@@ -58,11 +58,11 @@ begin
             if (enable = '1') then
                 if (skip_next = '1') then
                     skip_next <= '0';
-                    opTemp := (others => '0');
+                    op_temp := (others => '0');
                 else
-                    opTemp := opcode;
+                    op_temp := opcode;
                 end if;
-                case opTemp is
+                case op_temp is
 
                     when "000111" => -- ADDWF
                         result := '0' & input_w + output_mux;

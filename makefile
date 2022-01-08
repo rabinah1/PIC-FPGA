@@ -1,4 +1,4 @@
-TARGET_EXEC := gpio_program
+TARGET_EXEC := PIC16F84A
 
 SRC_DIR := ./src
 TEST_DIR := ./test
@@ -15,11 +15,11 @@ test_clean:
 code.o:
 	${CC} -c -I$(SRC_DIR) $(SRC_DIR)/code.c -o $(SRC_DIR)/code.o
 
-gpio_program: code.o
-	sudo ${CC} ${CFLAGS} ${LDFLAGS} ${SRC_DIR}/code.o ${SRC_DIR}/gpio_program.c -o ${TARGET_EXEC}
+PIC16F84A: code.o
+	sudo ${CC} ${CFLAGS} ${LDFLAGS} ${SRC_DIR}/code.o ${SRC_DIR}/PIC16F84A.c -o ${TARGET_EXEC}
 
-all: gpio_program test_run
+all: PIC16F84A test_run
 
 clean: test_clean
 	rm ${SRC_DIR}/*.o
-	rm -f gpio_program
+	rm -f PIC16F84A

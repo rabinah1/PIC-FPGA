@@ -79,7 +79,6 @@ set_location_assignment PIN_V12 -to mosi
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mosi
 set_global_assignment -name TEXT_FILE tb_input.txt
 set_global_assignment -name VHDL_FILE parallel_to_serial_output.vhd
-set_global_assignment -name VHDL_FILE status_register.vhd
 set_global_assignment -name VHDL_FILE states_package.vhd
 set_global_assignment -name VHDL_FILE alu_input_mux.vhd
 set_global_assignment -name SIGNALTAP_FILE test1.stp

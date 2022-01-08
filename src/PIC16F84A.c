@@ -89,7 +89,7 @@ void init_pins(void *arguments)
     volatile unsigned *gpio;
     gpio = (volatile unsigned *)arguments;
 
-    int arr[] = {CLK_PIN, RESET_PIN, COMMAND_PIN, MOSI_PIN};
+    int arr[] = {CLK_PIN, RESET_PIN, DATA_PIN, MOSI_PIN};
     size_t len = sizeof(arr) / sizeof(arr[0]);
     uint16_t idx = 0;
     while (idx < len) {
@@ -191,7 +191,7 @@ void *mem_dump_thread(void *arguments)
     volatile unsigned *gpio;
     gpio = (volatile unsigned *)arguments;
 
-    volatile int data[1016] = {0};
+    volatile int data[NUM_BITS_RAM] = {0};
     int miso_trigger = 0;
     int byte_data[8] = {0};
     int falling_check = 0;
@@ -211,7 +211,7 @@ void *mem_dump_thread(void *arguments)
         } else if (!(GET_GPIO(CLK_PIN)) && falling_check == 0 && miso_trigger == 1) { // falling edge, miso_trigger received
             timeout++;
             falling_check = 1;
-            if (data_count < 1016) {
+            if (data_count < NUM_BITS_RAM) {
                 if (GET_GPIO(RESULT_PIN))
                     data[data_count] = 1;
                 else
@@ -382,9 +382,9 @@ bool process_command(char *command, void *arguments, FILE *result_file, bool wri
                 if (idx == 0)
                     GPIO_SET = 1 << MOSI_PIN;
                 if (binary_command[idx] == '0')
-                    GPIO_CLR = 1 << COMMAND_PIN;
+                    GPIO_CLR = 1 << DATA_PIN;
                 else
-                    GPIO_SET = 1 << COMMAND_PIN;
+                    GPIO_SET = 1 << DATA_PIN;
             } else {
                 GPIO_CLR = 1 << MOSI_PIN;
             }

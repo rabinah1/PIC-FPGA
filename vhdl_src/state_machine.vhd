@@ -15,7 +15,7 @@ entity state_machine is
           wreg_enable : out std_logic;
           ram_write_enable : out std_logic;
           mem_dump_enable : out std_logic;
-          status_enable : out std_logic;
+          status_write_enable : out std_logic;
           result_enable : out std_logic;
           result_enable_mem_dump : out std_logic);
 end state_machine;
@@ -49,8 +49,8 @@ begin
             alu_enable <= '0';
             wreg_enable <= '0';
             result_enable <= '0';
-            status_enable <= '0';
             result_enable_mem_dump <= '0';
+            status_write_enable <= '0';
             next_state <= do_nop;
 
         elsif (rising_edge(clk)) then
@@ -64,8 +64,8 @@ begin
                     ram_write_enable <= '0';
                     mem_dump_enable <= '0';
                     result_enable <= '0';
-                    status_enable <= '0';
                     result_enable_mem_dump <= '0';
+                    status_write_enable <= '0';
 
                     if (trig_state_machine = '0') then
                         next_state <= do_nop;
@@ -91,8 +91,8 @@ begin
                     wreg_enable <= '0';
                     ram_write_enable <= '0';
                     result_enable <= '0';
-                    status_enable <= '0';
                     result_enable_mem_dump <= '0';
+                    status_write_enable <= '0';
                     next_state <= do_result;
 
                 when do_ram_read =>
@@ -103,8 +103,8 @@ begin
                     wreg_enable <= '0';
                     ram_write_enable <= '0';
                     result_enable <= '0';
-                    status_enable <= '0';
                     result_enable_mem_dump <= '0';
+                    status_write_enable <= '0';
                     next_state <= do_alu_input_sel;
 
                 when do_ram_dump =>
@@ -115,8 +115,8 @@ begin
                     wreg_enable <= '0';
                     ram_write_enable <= '0';
                     result_enable <= '0';
-                    status_enable <= '0';
                     result_enable_mem_dump <= '0';
+                    status_write_enable <= '0';
                     next_state <= do_wait;
 
                 when do_alu_input_sel =>
@@ -127,8 +127,8 @@ begin
                     wreg_enable <= '0';
                     ram_write_enable <= '0';
                     result_enable <= '0';
-                    status_enable <= '0';
                     result_enable_mem_dump <= '0';
+                    status_write_enable <= '0';
                     next_state <= do_alu;
 
                 when do_alu =>
@@ -139,7 +139,6 @@ begin
                     wreg_enable <= '0';
                     ram_write_enable <= '0';
                     result_enable <= '0';
-                    status_enable <= '0';
                     result_enable_mem_dump <= '0';
                     if (instruction_type = "000" or instruction_type = "001") then
                         next_state <= do_wreg;
@@ -159,8 +158,8 @@ begin
                     wreg_enable <= '1';
                     ram_write_enable <= '0';
                     result_enable <= '0';
-                    status_enable <= '1';
                     result_enable_mem_dump <= '0';
+                    status_write_enable <= '1';
                     next_state <= do_nop;
 
                 when do_ram_write =>
@@ -171,8 +170,8 @@ begin
                     wreg_enable <= '0';
                     ram_write_enable <= '1';
                     result_enable <= '0';
-                    status_enable <= '1';
                     result_enable_mem_dump <= '0';
+                    status_write_enable <= '1';
                     next_state <= do_nop;
 
                 when do_result =>
@@ -184,8 +183,8 @@ begin
                         wreg_enable <= '0';
                         ram_write_enable <= '0';
                         result_enable <= '0';
-                        status_enable <= '0';
                         result_enable_mem_dump <= '1';
+                        status_write_enable <= '0';
                         next_state <= do_nop;
                     else
                         ram_read_enable <= '0';
@@ -195,8 +194,8 @@ begin
                         wreg_enable <= '0';
                         ram_write_enable <= '0';
                         result_enable <= '1';
-                        status_enable <= '0';
                         result_enable_mem_dump <= '0';
+                        status_write_enable <= '0';
                         next_state <= do_nop;
                     end if;
             end case;

@@ -24,7 +24,6 @@ def main():
 
     result_line = result_file.readline()
     reference_line = reference_file.readline()
-    test_run = 0
     ok_flag = True
     while result_line:
         if not reference_line:

@@ -20,11 +20,11 @@ architecture struct of PIC16F84A is
     signal opcode : std_logic_vector(5 downto 0);
     signal trig_state_machine_int : std_logic;
     signal ram_read_enable_int : std_logic;
+    signal status_write_enable_int : std_logic;
     signal alu_input_mux_enable_int : std_logic;
     signal alu_enable_int : std_logic;
     signal wreg_enable_int : std_logic;
     signal result_enable_int : std_logic;
-    signal status_enable_int : std_logic;
     signal sel_alu_input_mux_int : std_logic;
     signal d_int : std_logic;
     signal trig_instruction_process_int : std_logic;
@@ -34,7 +34,7 @@ architecture struct of PIC16F84A is
     signal from_alu_to_ram : std_logic_vector(7 downto 0);
     signal ram_write_enable_int : std_logic;
     signal instruction_type_int : std_logic_vector(2 downto 0);
-    signal status_out_int : std_logic_vector(7 downto 0);
+    signal status_out_alu : std_logic_vector(7 downto 0);
     signal status_in_alu : std_logic_vector(7 downto 0);
     signal transfer_to_sw_int : std_logic;
     signal data_to_sw_int : std_logic_vector(7 downto 0);
@@ -69,12 +69,15 @@ architecture struct of PIC16F84A is
         port (clk : in std_logic;
               reset : in std_logic;
               data : in std_logic_vector(7 downto 0);
+              status_in : in std_logic_vector(7 downto 0);
               address : in std_logic_vector(6 downto 0);
               write_enable : in std_logic;
               read_enable : in std_logic;
               mem_dump_enable : in std_logic;
+              status_write_enable : in std_logic;
               mem_dump : out std_logic_vector(1015 downto 0);
-              data_out : out std_logic_vector(7 downto 0));
+              data_out : out std_logic_vector(7 downto 0);
+              status_out : out std_logic_vector(7 downto 0));
     end component ram;
 
     component state_machine is
@@ -88,7 +91,7 @@ architecture struct of PIC16F84A is
               wreg_enable : out std_logic;
               ram_write_enable : out std_logic;
               mem_dump_enable : out std_logic;
-              status_enable : out std_logic;
+              status_write_enable : out std_logic;
               result_enable : out std_logic;
               result_enable_mem_dump : out std_logic);
     end component state_machine;
@@ -141,14 +144,6 @@ architecture struct of PIC16F84A is
               reset : in std_logic);
     end component W_register;
 
-    component status_register is
-        port (data_in : in std_logic_vector(7 downto 0);
-              data_out_to_alu : out std_logic_vector(7 downto 0);
-              clk : in std_logic;
-              enable : in std_logic;
-              reset : in std_logic);
-    end component status_register;
-
     component parallel_to_serial_output is
         generic (N : natural := 8);
         port (clk : in std_logic;
@@ -186,12 +181,15 @@ architecture struct of PIC16F84A is
             port map (clk => clk,
                       reset => reset,
                       data => from_alu_to_ram,
+                      status_in => status_out_alu,
                       address => ram_address_int,
                       write_enable => ram_write_enable_int,
                       read_enable => ram_read_enable_int,
                       mem_dump_enable => mem_dump_enable_int,
+                      status_write_enable => status_write_enable_int,
                       mem_dump => mem_dump_int,
-                      data_out => from_ram_to_alu);
+                      data_out => from_ram_to_alu,
+                      status_out => status_in_alu);
 
         ALU_unit : component ALU
             generic map (N => 8)
@@ -199,7 +197,7 @@ architecture struct of PIC16F84A is
                       output_mux => output_mux,
                       opcode => opcode,
                       status_in => status_in_alu,
-                      status_out => status_out_int,
+                      status_out => status_out_alu,
                       alu_output => alu_output_int,
                       clk => clk,
                       enable => alu_enable_int,
@@ -217,7 +215,7 @@ architecture struct of PIC16F84A is
                       wreg_enable => wreg_enable_int,
                       ram_write_enable => ram_write_enable_int,
                       mem_dump_enable => mem_dump_enable_int,
-                      status_enable => status_enable_int,
+                      status_write_enable => status_write_enable_int,
                       result_enable => result_enable_int,
                       result_enable_mem_dump => result_enable_mem_dump_int);
 
@@ -263,10 +261,4 @@ architecture struct of PIC16F84A is
                       enable => wreg_enable_int,
                       reset => reset);
 
-        status_register_unit : component status_register
-            port map (data_in => status_out_int,
-                      data_out_to_alu => status_in_alu,
-                      clk => clk,
-                      enable => status_enable_int,
-                      reset => reset);
 end architecture struct;

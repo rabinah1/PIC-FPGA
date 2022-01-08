@@ -15,7 +15,7 @@
 #define MISO_PIN 13
 #define RESULT_PIN 16
 #define MOSI_PIN 19
-#define COMMAND_PIN 26
+#define DATA_PIN 26
 #define GPIO_SET *(gpio+7)
 #define GPIO_CLR *(gpio+10)
 #define MAX_STRING_SIZE 256

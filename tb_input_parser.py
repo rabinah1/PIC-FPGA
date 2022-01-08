@@ -62,20 +62,21 @@ def decimal_to_binary(decimal_in, num_bits):
     return "".join(binary_out)
 
 def parse(line_parts):
-    if line_parts[0].strip() == "RESET" or line_parts[0].strip().startswith("#"):
-        return line_parts[0].strip()
-    opcode_binary = opcode_dict[line_parts[0].strip()]
+    instruction = line_parts[0].strip()
+    if instruction == "RESET" or instruction.startswith("#"):
+        return instruction
+    opcode_binary = opcode_dict[instruction]
     binary_input = opcode_binary
-    if line_parts[0].strip() in ["ADDLW", "SUBLW", "MOVLW", "ANDLW", "IORLW", "SUBLW", "XORLW"]:
+    if instruction in ["ADDLW", "SUBLW", "MOVLW", "ANDLW", "IORLW", "SUBLW", "XORLW"]:
         binary_input += decimal_to_binary(int(line_parts[1].strip()), 8)
-    elif line_parts[0].strip() in ["ADDWF", "MOVF", "COMF", "INCF", "ANDWF", "CLR", "DECF", "IORWF",
+    elif instruction in ["ADDWF", "MOVF", "COMF", "INCF", "ANDWF", "CLR", "DECF", "IORWF",
                                    "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "DECFSZ", "INCFSZ"]:
         binary_input += line_parts[1].strip()
         binary_input += decimal_to_binary(int(line_parts[2].strip()), 7)
-    elif line_parts[0].strip() in ["BCF", "BSF"]:
+    elif instruction in ["BCF", "BSF"]:
         binary_input += decimal_to_binary(int(line_parts[1].strip()), 3)
         binary_input += decimal_to_binary(int(line_parts[2].strip()), 7)
-    elif line_parts[0].strip() in ["READ_ADDRESS"]:
+    elif instruction in ["READ_ADDRESS"]:
         binary_input += decimal_to_binary(int(line_parts[1].strip()), 8)
     else:
         binary_input += decimal_to_binary(0, 8)
