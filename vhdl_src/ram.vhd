@@ -22,8 +22,10 @@ architecture rtl of ram is
     type memory is array(126 downto 0) of std_logic_vector(7 downto 0);
     signal ram_block : memory;
     constant status_address : std_logic_vector(6 downto 0) := "0000011";
+    constant fsr_address : std_logic_vector(6 downto 0) := "0000100";
+    constant indf_address : std_logic_vector(6 downto 0) := "0000000";
 
-    function ram_to_linear(memory_data : in memory)
+    function ram_to_linear (memory_data : in memory)
         return std_logic_vector is
     variable linear_data : std_logic_vector(1015 downto 0);
     begin
@@ -37,6 +39,41 @@ architecture rtl of ram is
 begin
 
     func : process(all) is
+
+        procedure write_ram (
+            signal address : in std_logic_vector(6 downto 0);
+            signal data : in std_logic_vector(7 downto 0)) is
+        variable fsr_value : std_logic_vector(6 downto 0);
+        begin
+            fsr_value := "0000000";
+            if (address = status_address) then
+                ram_block(to_integer(unsigned(address)))(7 downto 5) <= data(7 downto 5);
+            elsif (address = indf_address) then
+                fsr_value := ram_block(to_integer(unsigned(fsr_address)))(6 downto 0);
+                if (fsr_value = "0000000") then
+                    ram_block(to_integer(unsigned(fsr_value))) <= "00000000";
+                else
+                    ram_block(to_integer(unsigned(fsr_value))) <= data;
+                end if;
+            else
+                ram_block(to_integer(unsigned(address))) <= data;
+            end if;
+        end write_ram;
+
+        procedure read_ram (
+            signal address : in std_logic_vector(6 downto 0);
+            signal data_out : out std_logic_vector(7 downto 0)) is
+        variable fsr_value : std_logic_vector(6 downto 0);
+        begin
+            fsr_value := "0000000";
+            if (address = indf_address) then
+                fsr_value := ram_block(to_integer(unsigned(fsr_address)))(6 downto 0);
+                data_out <= ram_block(to_integer(unsigned(fsr_value)));
+            else
+                data_out <= ram_block(to_integer(unsigned(address)));
+            end if;
+        end read_ram;
+
     begin
 
         if (reset = '1') then
@@ -49,13 +86,9 @@ begin
             if (mem_dump_enable = '1') then
                 mem_dump <= ram_to_linear(ram_block);
             elsif (read_enable = '1') then
-                data_out <= ram_block(to_integer(unsigned(address)));
+                read_ram(address, data_out);
             elsif (write_enable = '1') then
-                if (address = status_address) then
-                    ram_block(to_integer(unsigned(address)))(7 downto 5) <= data(7 downto 5);
-                else
-                    ram_block(to_integer(unsigned(address))) <= data;
-                end if;
+                write_ram(address, data);
             end if;
             if (status_write_enable = '1') then
                 ram_block(to_integer(unsigned(status_address)))(2 downto 0) <= status_in(2 downto 0);
