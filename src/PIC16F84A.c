@@ -472,12 +472,12 @@ int main(int argc, char *argv[])
         strcpy(tb_input_file, pwd);
         strcat(tb_input_file, "/");
         strcat(tb_input_file, script_relative_path);
-        strcat(tb_input_file, "/");
+        strcat(tb_input_file, "/test_data/");
         strcat(tb_input_file, "real_hw_tb_input.txt");
         strcpy(tb_result_file, pwd);
         strcat(tb_result_file, "/");
         strcat(tb_result_file, script_relative_path);
-        strcat(tb_result_file, "/");
+        strcat(tb_result_file, "/test_data/");
         strcat(tb_result_file, "real_hw_tb_result.txt");
         FILE *tb_input = fopen(tb_input_file, "r");
         FILE *result_file = fopen(tb_result_file, "w");

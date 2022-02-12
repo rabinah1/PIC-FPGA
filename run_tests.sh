@@ -16,5 +16,5 @@ if [[ ! -e "`dirname "$0"`/PIC16F84A" ]]; then
 fi
 
 sudo `dirname "$0"`/PIC16F84A $1 testing
-python3 `dirname "$0"`/verify_real_hw_result.py `dirname "$0"`
-rm -f `dirname "$0"`/real_hw_tb_result.txt
+python3 `dirname "$0"`/test_data/verify_real_hw_result.py `dirname "$0"`/test_data
+rm -f `dirname "$0"`/test_data/real_hw_tb_result.txt
