@@ -117,5 +117,7 @@ begin
                 trig_state_machine <= '0';
             end if;
         end if;
+
     end process func;
+
 end architecture rtl;

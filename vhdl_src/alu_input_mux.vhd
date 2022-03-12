@@ -21,7 +21,6 @@ begin
 
         if (reset = '1') then
             data_out <= (others => '0');
-
         elsif (rising_edge(clk)) then
             if (enable = '1') then
                 if (sel = '0') then
@@ -31,5 +30,7 @@ begin
                 end if;
             end if;
         end if;
+
     end process func;
+
 end architecture rtl;

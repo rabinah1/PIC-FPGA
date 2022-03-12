@@ -34,7 +34,6 @@ begin
             idx := 0;
             mem_dump_process := '0';
             data_send_process := '0';
-
         elsif (rising_edge(clk)) then
             if (idx > 0) then
                 if (data_send_process = '1') then
@@ -63,5 +62,7 @@ begin
                 mem_dump_process := '0';
             end if;
         end if;
+
     end process func;
+
 end architecture rtl;

@@ -17,8 +17,10 @@ architecture rtl of input_receive is
     signal counter : integer := 0;
     signal mosi_detected : std_logic;
 begin
+
     func : process(all) is
     begin
+
         if (reset = '1') then
             binary_string <= (others => '0');
             trig_instruction_process <= '0';
@@ -43,5 +45,7 @@ begin
                 end if;
             end if;
         end if;
+
     end process func;
+
 end architecture rtl;

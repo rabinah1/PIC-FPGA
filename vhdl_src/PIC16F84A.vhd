@@ -9,6 +9,7 @@ entity PIC16F84A is
           reset : in std_logic;
           miso : out std_logic;
           mosi : in std_logic;
+          timer_external_input : in std_logic;
           alu_output_raspi : out std_logic);
 end PIC16F84A;
 
@@ -33,6 +34,7 @@ architecture struct of PIC16F84A is
     signal from_alu_to_wreg : std_logic_vector(7 downto 0);
     signal from_alu_to_ram : std_logic_vector(7 downto 0);
     signal ram_write_enable_int : std_logic;
+    signal timer_write_enable_int : std_logic;
     signal instruction_type_int : std_logic_vector(2 downto 0);
     signal status_out_alu : std_logic_vector(7 downto 0);
     signal status_in_alu : std_logic_vector(7 downto 0);
@@ -43,6 +45,9 @@ architecture struct of PIC16F84A is
     signal result_enable_mem_dump_int : std_logic;
     signal binary_string_int : std_logic_vector(13 downto 0);
     signal bit_idx_out_int : std_logic_vector(2 downto 0);
+    signal edge_trigger_int : std_logic;
+    signal timer_external_counter_falling_int : std_logic_vector(7 downto 0);
+    signal timer_external_counter_rising_int : std_logic_vector(7 downto 0);
 
     component alu_output_demux is
         port (clk : in std_logic;
@@ -75,6 +80,10 @@ architecture struct of PIC16F84A is
               read_enable : in std_logic;
               mem_dump_enable : in std_logic;
               status_write_enable : in std_logic;
+              timer_write_enable : in std_logic;
+              edge_trigger : out std_logic;
+              timer_external_counter_falling : in std_logic_vector(7 downto 0);
+              timer_external_counter_rising : in std_logic_vector(7 downto 0);
               mem_dump : out std_logic_vector(1015 downto 0);
               data_out : out std_logic_vector(7 downto 0);
               status_out : out std_logic_vector(7 downto 0));
@@ -93,6 +102,7 @@ architecture struct of PIC16F84A is
               mem_dump_enable : out std_logic;
               status_write_enable : out std_logic;
               result_enable : out std_logic;
+              timer_write_enable : out std_logic;
               result_enable_mem_dump : out std_logic);
     end component state_machine;
 
@@ -156,109 +166,128 @@ architecture struct of PIC16F84A is
               serial_out : out std_logic);
     end component parallel_to_serial_output;
 
-    begin
+    component timer is
+        port (trigger : in std_logic;
+              reset : in std_logic;
+              edge_trigger : in std_logic;
+              data_out_falling : out std_logic_vector(7 downto 0);
+              data_out_rising : out std_logic_vector(7 downto 0));
+    end component timer;
+begin
 
-        alu_input_mux_unit : component alu_input_mux
-            port map (clk => clk,
-                      reset => reset,
-                      enable => alu_input_mux_enable_int,
-                      input_ram => from_ram_to_alu,
-                      input_literal => literal_input_mux,
-                      sel => sel_alu_input_mux_int,
-                      data_out => output_mux);
+    alu_input_mux_unit : component alu_input_mux
+        port map (clk => clk,
+                  reset => reset,
+                  enable => alu_input_mux_enable_int,
+                  input_ram => from_ram_to_alu,
+                  input_literal => literal_input_mux,
+                  sel => sel_alu_input_mux_int,
+                  data_out => output_mux);
 
-        alu_output_demux_unit : component alu_output_demux
-            port map (clk => clk,
-                      reset => reset,
-                      d => d_int,
-                      transfer_to_sw => transfer_to_sw_int,
-                      input_data => alu_output_int,
-                      data_to_ram => from_alu_to_ram,
-                      data_to_sw => data_to_sw_int,
-                      data_to_wreg => from_alu_to_wreg);
+    alu_output_demux_unit : component alu_output_demux
+        port map (clk => clk,
+                  reset => reset,
+                  d => d_int,
+                  transfer_to_sw => transfer_to_sw_int,
+                  input_data => alu_output_int,
+                  data_to_ram => from_alu_to_ram,
+                  data_to_sw => data_to_sw_int,
+                  data_to_wreg => from_alu_to_wreg);
 
-        ram_unit : component ram
-            port map (clk => clk,
-                      reset => reset,
-                      data => from_alu_to_ram,
-                      status_in => status_out_alu,
-                      address => ram_address_int,
-                      write_enable => ram_write_enable_int,
-                      read_enable => ram_read_enable_int,
-                      mem_dump_enable => mem_dump_enable_int,
-                      status_write_enable => status_write_enable_int,
-                      mem_dump => mem_dump_int,
-                      data_out => from_ram_to_alu,
-                      status_out => status_in_alu);
+    ram_unit : component ram
+        port map (clk => clk,
+                  reset => reset,
+                  data => from_alu_to_ram,
+                  status_in => status_out_alu,
+                  address => ram_address_int,
+                  write_enable => ram_write_enable_int,
+                  read_enable => ram_read_enable_int,
+                  mem_dump_enable => mem_dump_enable_int,
+                  status_write_enable => status_write_enable_int,
+                  timer_write_enable => timer_write_enable_int,
+                  edge_trigger => edge_trigger_int,
+                  timer_external_counter_falling => timer_external_counter_falling_int,
+                  timer_external_counter_rising => timer_external_counter_rising_int,
+                  mem_dump => mem_dump_int,
+                  data_out => from_ram_to_alu,
+                  status_out => status_in_alu);
 
-        ALU_unit : component ALU
-            generic map (N => 8)
-            port map (input_w => w_output_int,
-                      output_mux => output_mux,
-                      opcode => opcode,
-                      status_in => status_in_alu,
-                      status_out => status_out_alu,
-                      alu_output => alu_output_int,
-                      clk => clk,
-                      enable => alu_enable_int,
-                      bit_idx => bit_idx_out_int,
-                      reset => reset);
+    ALU_unit : component ALU
+        generic map (N => 8)
+        port map (input_w => w_output_int,
+                  output_mux => output_mux,
+                  opcode => opcode,
+                  status_in => status_in_alu,
+                  status_out => status_out_alu,
+                  alu_output => alu_output_int,
+                  clk => clk,
+                  enable => alu_enable_int,
+                  bit_idx => bit_idx_out_int,
+                  reset => reset);
 
-        state_machine_unit : component state_machine
-            port map (clk => clk,
-                      reset => reset,
-                      trig_state_machine => trig_state_machine_int,
-                      instruction_type => instruction_type_int,
-                      ram_read_enable => ram_read_enable_int,
-                      alu_input_mux_enable => alu_input_mux_enable_int,
-                      alu_enable => alu_enable_int,
-                      wreg_enable => wreg_enable_int,
-                      ram_write_enable => ram_write_enable_int,
-                      mem_dump_enable => mem_dump_enable_int,
-                      status_write_enable => status_write_enable_int,
-                      result_enable => result_enable_int,
-                      result_enable_mem_dump => result_enable_mem_dump_int);
+    state_machine_unit : component state_machine
+        port map (clk => clk,
+                  reset => reset,
+                  trig_state_machine => trig_state_machine_int,
+                  instruction_type => instruction_type_int,
+                  ram_read_enable => ram_read_enable_int,
+                  alu_input_mux_enable => alu_input_mux_enable_int,
+                  alu_enable => alu_enable_int,
+                  wreg_enable => wreg_enable_int,
+                  ram_write_enable => ram_write_enable_int,
+                  mem_dump_enable => mem_dump_enable_int,
+                  status_write_enable => status_write_enable_int,
+                  result_enable => result_enable_int,
+                  timer_write_enable => timer_write_enable_int,
+                  result_enable_mem_dump => result_enable_mem_dump_int);
 
-        serial_to_parallel_instruction_unit : component serial_to_parallel_instruction
-            port map (clk => clk,
-                      reset => reset,
-                      enable => trig_instruction_process_int,
-                      binary_string => binary_string_int,
-                      instruction_type => instruction_type_int,
-                      sel_alu_input_mux => sel_alu_input_mux_int,
-                      d => d_int,
-                      trig_state_machine => trig_state_machine_int,
-                      transfer_to_sw => transfer_to_sw_int,
-                      literal_out => literal_input_mux,
-                      address_out => ram_address_int, 
-                      bit_idx_out => bit_idx_out_int,
-                      opcode_out => opcode);
+    serial_to_parallel_instruction_unit : component serial_to_parallel_instruction
+        port map (clk => clk,
+                  reset => reset,
+                  enable => trig_instruction_process_int,
+                  binary_string => binary_string_int,
+                  instruction_type => instruction_type_int,
+                  sel_alu_input_mux => sel_alu_input_mux_int,
+                  d => d_int,
+                  trig_state_machine => trig_state_machine_int,
+                  transfer_to_sw => transfer_to_sw_int,
+                  literal_out => literal_input_mux,
+                  address_out => ram_address_int, 
+                  bit_idx_out => bit_idx_out_int,
+                  opcode_out => opcode);
 
-        input_receive_unit : component input_receive
-            port map (clk => clk,
-                      reset => reset,
-                      serial_in => serial_in,
-                      mosi => mosi,
-                      trig_instruction_process => trig_instruction_process_int,
-                      binary_string => binary_string_int);
+    input_receive_unit : component input_receive
+        port map (clk => clk,
+                  reset => reset,
+                  serial_in => serial_in,
+                  mosi => mosi,
+                  trig_instruction_process => trig_instruction_process_int,
+                  binary_string => binary_string_int);
 
-        parallel_to_serial_output_unit : component parallel_to_serial_output
-            generic map (N => 8)
-            port map (clk => clk,
-                      reset => reset,
-                      enable => result_enable_int,
-                      result_enable_mem_dump => result_enable_mem_dump_int,
-                      data_to_sw => data_to_sw_int,
-                      mem_dump_to_sw => mem_dump_int,
-                      miso => miso,
-                      serial_out => alu_output_raspi);
+    parallel_to_serial_output_unit : component parallel_to_serial_output
+        generic map (N => 8)
+        port map (clk => clk,
+                  reset => reset,
+                  enable => result_enable_int,
+                  result_enable_mem_dump => result_enable_mem_dump_int,
+                  data_to_sw => data_to_sw_int,
+                  mem_dump_to_sw => mem_dump_int,
+                  miso => miso,
+                  serial_out => alu_output_raspi);
 
-        W_register_unit : component W_register
-            generic map (N => 8)
-            port map (data_in => from_alu_to_wreg,
-                      data_out => w_output_int,
-                      clk => clk,
-                      enable => wreg_enable_int,
-                      reset => reset);
+    W_register_unit : component W_register
+        generic map (N => 8)
+        port map (data_in => from_alu_to_wreg,
+                  data_out => w_output_int,
+                  clk => clk,
+                  enable => wreg_enable_int,
+                  reset => reset);
+
+    timer_unit : component timer
+        port map (trigger => timer_external_input,
+                  reset => reset,
+                  edge_trigger => edge_trigger_int,
+                  data_out_falling => timer_external_counter_falling_int,
+                  data_out_rising => timer_external_counter_rising_int);
 
 end architecture struct;

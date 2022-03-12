@@ -24,7 +24,6 @@ begin
             data_to_ram <= (others => '0');
             data_to_wreg <= (others => '0');
             data_to_sw <= (others => '0');
-
         else
             if (transfer_to_sw = '1') then
                 data_to_wreg <= (others => '0');
@@ -40,5 +39,7 @@ begin
                 data_to_sw <= (others => '0');
             end if;
         end if;
+
     end process func;
+
 end architecture rtl;

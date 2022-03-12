@@ -10,12 +10,14 @@
 #define BINARY_COMMAND_SIZE 14
 #define MAX_INSTRUCTION_SIZE 32
 #define CLK_FREQ_HZ 4000
+#define TIMER_EXT_CLK_FREQ_HZ 1
 #define CLK_PIN 5
 #define RESET_PIN 6
 #define MISO_PIN 13
 #define RESULT_PIN 16
 #define MOSI_PIN 19
 #define DATA_PIN 26
+#define TIMER_EXT_CLK_PIN 25
 #define GPIO_SET *(gpio+7)
 #define GPIO_CLR *(gpio+10)
 #define MAX_STRING_SIZE 256

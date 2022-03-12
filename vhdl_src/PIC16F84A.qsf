@@ -77,6 +77,10 @@ set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to miso
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to mosi
 set_location_assignment PIN_V12 -to mosi
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mosi
+set_location_assignment PIN_AH14 -to timer_external_input
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to timer_external_input
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to timer_external_input
+set_global_assignment -name VHDL_FILE timer.vhd
 set_global_assignment -name TEXT_FILE tb_input.txt
 set_global_assignment -name VHDL_FILE parallel_to_serial_output.vhd
 set_global_assignment -name VHDL_FILE states_package.vhd

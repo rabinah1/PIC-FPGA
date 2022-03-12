@@ -17,6 +17,7 @@ begin
 
     operation : process(all) is
     begin
+
         if (reset = '1') then
             data_out <= (others => '0');
         elsif rising_edge(clk) then
@@ -24,5 +25,7 @@ begin
                 data_out <= data_in;
             end if;
         end if;
+
     end process operation;
+
 end architecture rtl;

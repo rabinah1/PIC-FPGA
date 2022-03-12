@@ -1,10 +1,13 @@
 # result 1
 100
+2
 # result 2
 66
 66
+4
 # result 3
 23
+5
 # result 4
 100
 1
@@ -12,16 +15,21 @@
 1
 0
 0
+10
 # result 5
 132
 123
+5
 # result 6
 99
+4
 # result 7
 127
+5
 # result 8
 80
 4
+6
 # result 9
 1
 144
@@ -31,6 +39,7 @@
 1
 1
 0
+14
 # result 10
 1
 100
@@ -40,46 +49,63 @@
 1
 128
 0
+14
 # result 11
 1
+5
 # result 12
 250
 250
+6
 # result 13
 211
+5
 # result 14
 4
+3
 # result 15
 207
+3
 # result 16
 20
+3
 # result 17
 19
+3
 # result 18
 36
+4
 # result 19
 108
+4
 # result 20
 0
+10
 10
 10
 # result 21
 0
 30
 30
+10
 # result 22
 96
 96
 100
 100
+7
 # result 23
 123
 0
+6
 # result 24
 0
 4
+4
 # result 25
 0
+3
 # result 26
 1
 70
+5

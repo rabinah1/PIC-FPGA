@@ -17,8 +17,10 @@ architecture behavior of PIC16F84A_tb is
     signal reset : std_logic := '0';
     signal miso : std_logic := '0';
     signal mosi : std_logic := '0';
+    signal timer_external_input : std_logic := '0';
     signal alu_output_raspi : std_logic := '0';
     constant clk_period : time := 250 us;
+    constant ext_clk_period : time := 1000 ms;
     signal check : natural := 0;
     signal write_comment : std_logic := '0';
     signal result_num : integer := 1;
@@ -29,6 +31,7 @@ architecture behavior of PIC16F84A_tb is
               reset : in std_logic;
               miso : out std_logic;
               mosi : in std_logic;
+              timer_external_input : in std_logic;
               alu_output_raspi : out std_logic);
     end component;
 
@@ -39,6 +42,7 @@ architecture behavior of PIC16F84A_tb is
                      reset => reset,
                      miso => miso,
                      mosi => mosi,
+                     timer_external_input => timer_external_input,
                      alu_output_raspi => alu_output_raspi);
 
         clk_process : process is
@@ -50,7 +54,18 @@ architecture behavior of PIC16F84A_tb is
                 if (check = 1) then
                     wait;
                 end if;
-        end process clk_process;
+            end process clk_process;
+
+        timer_clk_process : process is
+            begin
+                timer_external_input <= '0';
+                wait for ext_clk_period/2;
+                timer_external_input <= '1';
+                wait for ext_clk_period/2;
+                if (check = 1) then
+                    wait;
+                end if;
+        end process timer_clk_process;
 
         write_to_file : process is
             file result_file : text open write_mode is input_file;

@@ -28,3 +28,5 @@ input_receive.vhd.bak
 tb_input_parsed.txt
 tb_result.txt
 tb_result_formatted.txt
+timer.vhd.bak
+vsim.wlf

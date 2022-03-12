@@ -89,7 +89,7 @@ void init_pins(void *arguments)
     volatile unsigned *gpio;
     gpio = (volatile unsigned *)arguments;
 
-    int arr[] = {CLK_PIN, RESET_PIN, DATA_PIN, MOSI_PIN};
+    int arr[] = {CLK_PIN, TIMER_EXT_CLK_PIN, RESET_PIN, DATA_PIN, MOSI_PIN};
     size_t len = sizeof(arr) / sizeof(arr[0]);
     uint16_t idx = 0;
     while (idx < len) {
@@ -259,6 +259,26 @@ void *clk_thread(void *arguments)
             usleep(clk_period / 2);
             GPIO_CLR = 1 << CLK_PIN;
             usleep(clk_period / 2);
+        }
+    }
+
+    return NULL;
+}
+
+void *timer_ext_clk_thread(void *arguments)
+{
+    volatile unsigned *gpio;
+    gpio = (volatile unsigned *)arguments;
+
+    double timer_ext_clk_period = 1000000 / TIMER_EXT_CLK_FREQ_HZ;
+    while(1) {
+        if (clk_exit)
+            break;
+        if (clk_enable) {
+            GPIO_SET = 1 << TIMER_EXT_CLK_PIN;
+            usleep(timer_ext_clk_period / 2);
+            GPIO_CLR = 1 << TIMER_EXT_CLK_PIN;
+            usleep(timer_ext_clk_period / 2);
         }
     }
 
@@ -443,9 +463,11 @@ int main(int argc, char *argv[])
     char instruction[MAX_INSTRUCTION_SIZE];
     int slave_sel = 0;
     pthread_t clk_thread_id;
+    pthread_t timer_ext_clk_thread_id;
     volatile unsigned *gpio = init_gpio_map();
     init_pins((void *)gpio);
     pthread_create(&clk_thread_id, NULL, clk_thread, (void *)gpio);
+    pthread_create(&timer_ext_clk_thread_id, NULL, timer_ext_clk_thread, (void *)gpio);
 
     if (verify_on_hw) {
         printf("Running tests on HW, please wait...\n");
@@ -578,5 +600,6 @@ int main(int argc, char *argv[])
         free(command);
     }
     pthread_join(clk_thread_id, NULL);
+    pthread_join(timer_ext_clk_thread_id, NULL);
     exit(0);
 }
