@@ -29,4 +29,6 @@ tb_input_parsed.txt
 tb_result.txt
 tb_result_formatted.txt
 timer.vhd.bak
+clk_div.vhd.bak
 vsim.wlf
+i2c.vhd.bak

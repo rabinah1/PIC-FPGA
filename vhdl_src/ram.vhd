@@ -14,22 +14,31 @@ entity ram is
           mem_dump_enable : in std_logic;
           status_write_enable : in std_logic;
           timer_write_enable : in std_logic;
+          eeprom_read : in std_logic;
           edge_trigger : out std_logic;
           timer_external_counter_falling : in std_logic_vector(7 downto 0);
           timer_external_counter_rising : in std_logic_vector(7 downto 0);
           mem_dump : out std_logic_vector(1015 downto 0);
           data_out : out std_logic_vector(7 downto 0);
-          status_out : out std_logic_vector(7 downto 0));
+          status_out : out std_logic_vector(7 downto 0);
+          eedata_out : out std_logic_vector(7 downto 0);
+          eeadr_out : out std_logic_vector(7 downto 0);
+          eecon_out : out std_logic_vector(7 downto 0);
+          eeprom_data_in : in std_logic_vector(7 downto 0));
 end ram;
 
 architecture rtl of ram is
     type memory is array(126 downto 0) of std_logic_vector(7 downto 0);
     signal ram_block : memory;
-    constant status_address : std_logic_vector(6 downto 0) := "0000011";
-    constant fsr_address : std_logic_vector(6 downto 0) := "0000100";
+    signal reset_eecon : std_logic;
     constant indf_address : std_logic_vector(6 downto 0) := "0000000";
     constant tmr0_address : std_logic_vector(6 downto 0) := "0000001";
     constant option_address : std_logic_vector(6 downto 0) := "0000010";
+    constant status_address : std_logic_vector(6 downto 0) := "0000011";
+    constant fsr_address : std_logic_vector(6 downto 0) := "0000100";
+    constant eecon_address : std_logic_vector(6 downto 0) := "0000111";
+    constant eedata_address : std_logic_vector(6 downto 0) := "0001000";
+    constant eeadr_address : std_logic_vector(6 downto 0) := "0001001";
 
     function ram_to_linear (memory_data : in memory)
         return std_logic_vector is
@@ -64,6 +73,9 @@ begin
                 end if;
             else
                 ram_block(to_integer(unsigned(address))) <= data;
+                if (address = eecon_address) then
+                    reset_eecon <= '1';
+                end if;
             end if;
 
         end write_ram;
@@ -91,9 +103,23 @@ begin
             status_out <= (others => '0');
             edge_trigger <= '0';
             mem_dump <= (others => '0');
+            eedata_out <= (others => '0');
+            eeadr_out <= (others => '0');
+            eecon_out <= (others => '0');
+            reset_eecon <= '0';
         elsif (rising_edge(clk)) then
             status_out <= ram_block(to_integer(unsigned(status_address)));
             edge_trigger <= ram_block(to_integer(unsigned(option_address)))(4);
+            eedata_out <= ram_block(to_integer(unsigned(eedata_address)));
+            eeadr_out <= ram_block(to_integer(unsigned(eeadr_address)));
+            eecon_out <= ram_block(to_integer(unsigned(eecon_address)));
+            if (eeprom_read = '1') then
+                ram_block(to_integer(unsigned(eedata_address))) <= eeprom_data_in;
+            end if;
+            if (reset_eecon = '1') then
+                ram_block(to_integer(unsigned(address))) <= (others => '0');
+                reset_eecon <= '0';
+            end if;
             if (mem_dump_enable = '1') then
                 mem_dump <= ram_to_linear(ram_block);
             elsif (read_enable = '1') then

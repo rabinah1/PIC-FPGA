@@ -13,6 +13,8 @@ vcom -2008 -reportprogress 300 -work $PSScriptRoot/vhdl_src/work $PSScriptRoot/v
 vcom -2008 -reportprogress 300 -work $PSScriptRoot/vhdl_src/work $PSScriptRoot/vhdl_src/state_machine.vhd
 vcom -2008 -reportprogress 300 -work $PSScriptRoot/vhdl_src/work $PSScriptRoot/vhdl_src/W_register.vhd
 vcom -2008 -reportprogress 300 -work $PSScriptRoot/vhdl_src/work $PSScriptRoot/vhdl_src/timer.vhd
+vcom -2008 -reportprogress 300 -work $PSScriptRoot/vhdl_src/work $PSScriptRoot/vhdl_src/clk_div.vhd
+vcom -2008 -reportprogress 300 -work $PSScriptRoot/vhdl_src/work $PSScriptRoot/vhdl_src/i2c.vhd
 vsim -c -lib $PSScriptRoot/vhdl_src/work -l $PSScriptRoot/vhdl_src/transcript -wlf $PSScriptRoot/vhdl_src/vsim.wlf -ginput_file="$PSScriptRoot/test_data/tb_result.txt" -goutput_file="$PSScriptRoot/test_data/tb_input_parsed.txt" -do "$PSScriptRoot/vsim_commands.txt" pic16f84a_tb
 python3 $PSScriptRoot/test_data/verify_simulation_result.py $PSScriptRoot/test_data
 rm $PSScriptRoot/vhdl_src/transcript

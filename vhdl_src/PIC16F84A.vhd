@@ -6,9 +6,12 @@ use ieee.std_logic_unsigned.all;
 entity PIC16F84A is
     port (serial_in : in std_logic;
           clk : in std_logic;
+          clk_50mhz_in : in std_logic;
           reset : in std_logic;
           miso : out std_logic;
           mosi : in std_logic;
+          sda : inout std_logic;
+          scl : out std_logic;
           timer_external_input : in std_logic;
           alu_output_raspi : out std_logic);
 end PIC16F84A;
@@ -46,8 +49,15 @@ architecture struct of PIC16F84A is
     signal binary_string_int : std_logic_vector(13 downto 0);
     signal bit_idx_out_int : std_logic_vector(2 downto 0);
     signal edge_trigger_int : std_logic;
+    signal clk_100khz_int : std_logic;
+    signal clk_200khz_int : std_logic;
+    signal write_to_ram_trig : std_logic;
     signal timer_external_counter_falling_int : std_logic_vector(7 downto 0);
     signal timer_external_counter_rising_int : std_logic_vector(7 downto 0);
+    signal data_from_eeprom : std_logic_vector(7 downto 0);
+    signal eedata_int : std_logic_vector(7 downto 0);
+    signal eeadr_int : std_logic_vector(7 downto 0);
+    signal eecon_int : std_logic_vector(7 downto 0);
 
     component alu_output_demux is
         port (clk : in std_logic;
@@ -81,12 +91,17 @@ architecture struct of PIC16F84A is
               mem_dump_enable : in std_logic;
               status_write_enable : in std_logic;
               timer_write_enable : in std_logic;
+              eeprom_read : in std_logic;
               edge_trigger : out std_logic;
               timer_external_counter_falling : in std_logic_vector(7 downto 0);
               timer_external_counter_rising : in std_logic_vector(7 downto 0);
               mem_dump : out std_logic_vector(1015 downto 0);
               data_out : out std_logic_vector(7 downto 0);
-              status_out : out std_logic_vector(7 downto 0));
+              status_out : out std_logic_vector(7 downto 0);
+              eedata_out : out std_logic_vector(7 downto 0);
+              eeadr_out : out std_logic_vector(7 downto 0);
+              eecon_out : out std_logic_vector(7 downto 0);
+              eeprom_data_in : in std_logic_vector(7 downto 0));
     end component ram;
 
     component state_machine is
@@ -173,6 +188,26 @@ architecture struct of PIC16F84A is
               data_out_falling : out std_logic_vector(7 downto 0);
               data_out_rising : out std_logic_vector(7 downto 0));
     end component timer;
+
+    component clk_div is
+        port (clk_in : in std_logic;
+              clk_100khz : out std_logic;
+              clk_200khz : out std_logic;
+              reset : in std_logic);
+    end component clk_div;
+
+    component i2c is
+        port (reset : in std_logic;
+              clk_100khz : in std_logic;
+              clk_200khz : in std_logic;
+              sda : inout std_logic;
+              scl : out std_logic;
+              enable_write_to_ram : out std_logic;
+              control : in std_logic_vector(7 downto 0);
+              data_in : in std_logic_vector(7 downto 0);
+              address_in : in std_logic_vector(7 downto 0);
+              data_out : out std_logic_vector(7 downto 0));
+    end component i2c;
 begin
 
     alu_input_mux_unit : component alu_input_mux
@@ -205,12 +240,17 @@ begin
                   mem_dump_enable => mem_dump_enable_int,
                   status_write_enable => status_write_enable_int,
                   timer_write_enable => timer_write_enable_int,
+                  eeprom_read => write_to_ram_trig,
                   edge_trigger => edge_trigger_int,
                   timer_external_counter_falling => timer_external_counter_falling_int,
                   timer_external_counter_rising => timer_external_counter_rising_int,
                   mem_dump => mem_dump_int,
                   data_out => from_ram_to_alu,
-                  status_out => status_in_alu);
+                  status_out => status_in_alu,
+                  eedata_out => eedata_int,
+                  eeadr_out => eeadr_int,
+                  eecon_out => eecon_int,
+                  eeprom_data_in => data_from_eeprom);
 
     ALU_unit : component ALU
         generic map (N => 8)
@@ -289,5 +329,23 @@ begin
                   edge_trigger => edge_trigger_int,
                   data_out_falling => timer_external_counter_falling_int,
                   data_out_rising => timer_external_counter_rising_int);
+
+    clk_div_unit : component clk_div
+        port map (clk_in => clk_50mhz_in,
+                  clk_100khz => clk_100khz_int,
+                  clk_200khz => clk_200khz_int,
+                  reset => reset);
+
+    i2c_unit : component i2c
+        port map (reset => reset,
+                  clk_100khz => clk_100khz_int,
+                  clk_200khz => clk_200khz_int,
+                  sda => sda,
+                  scl => scl,
+                  enable_write_to_ram => write_to_ram_trig,
+                  control => eecon_int,
+                  data_in => eedata_int,
+                  address_in => eeadr_int,
+                  data_out => data_from_eeprom);
 
 end architecture struct;
