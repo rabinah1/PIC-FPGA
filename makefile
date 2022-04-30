@@ -1,5 +1,4 @@
 TARGET_EXEC := PIC16F84A
-
 SRC_DIR := ./src
 TEST_DIR := ./test
 LDFLAGS = -lm -pthread -lwiringPi

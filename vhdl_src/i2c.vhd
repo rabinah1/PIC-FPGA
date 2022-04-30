@@ -8,19 +8,19 @@ entity i2c is
     port (reset : in std_logic;
           clk_100khz : in std_logic;
           clk_200khz : in std_logic;
-          sda : inout std_logic;
-          scl : out std_logic;
-          enable_write_to_ram : out std_logic;
           control : in std_logic_vector(7 downto 0);
           data_in : in std_logic_vector(7 downto 0);
           address_in : in std_logic_vector(7 downto 0);
+          sda : inout std_logic;
+          scl : out std_logic;
+          enable_write_to_ram : out std_logic;
           data_out : out std_logic_vector(7 downto 0));
 end i2c;
 
 architecture rtl of i2c is
-    signal state : i2c_state;
-    signal next_state : i2c_state;
-    signal prev_state : i2c_state;
+    signal state : i2c_state_master;
+    signal next_state : i2c_state_master;
+    signal prev_state : i2c_state_master;
     signal sda_output : std_logic;
     signal sda_output_enable : std_logic;
     signal sda_input : std_logic;
@@ -98,7 +98,6 @@ begin
             cycles_waited <= to_unsigned(0, cycles_waited'length);
             trig_state_machine <= '0';
         elsif (rising_edge(clk_200khz)) then
-            trig_state_machine <= '0';
             if (clk_100khz = '1') then
                 if (i2c_wait = '1' and cycles_waited < num_wait_cycles) then
                     cycles_waited <= cycles_waited + 1;
@@ -108,6 +107,8 @@ begin
                     state <= next_state;
                     cycles_waited <= to_unsigned(0, cycles_waited'length);
                 end if;
+            else
+                trig_state_machine <= '0';
             end if;
         end if;
 
@@ -209,8 +210,13 @@ begin
                     enable_create_stop_cond <= '0';
                     enable_write_data <= '0';
                     enable_write_to_ram <= '0';
-                    next_state <= write_slave_addr_read_mode;
-                    prev_state <= create_repeated_start_cond;
+                    if (is_ack_received = '1') then
+                        next_state <= write_slave_addr_read_mode;
+                        prev_state <= create_repeated_start_cond;
+                    else
+                        next_state <= create_stop_cond;
+                        prev_state <= create_repeated_start_cond;
+                    end if;
                 when enable_scl =>
                     num_wait_cycles <= to_unsigned(0, num_wait_cycles'length);
                     start_idx <= to_unsigned(0, start_idx'length);
@@ -311,8 +317,13 @@ begin
                     enable_create_stop_cond <= '0';
                     enable_write_data <= '0';
                     enable_write_to_ram <= '0';
-                    next_state <= receive_ack;
-                    prev_state <= write_word_addr;
+                    if (is_ack_received = '1') then
+                        next_state <= receive_ack;
+                        prev_state <= write_word_addr;
+                    else
+                        next_state <= create_stop_cond;
+                        prev_state <= write_word_addr;
+                    end if;
                 when write_slave_addr_read_mode =>
                     num_wait_cycles <= to_unsigned(7, num_wait_cycles'length);
                     bit_count <= to_unsigned(7, bit_count'length);
@@ -351,8 +362,13 @@ begin
                     enable_create_stop_cond <= '0';
                     enable_write_data <= '0';
                     enable_write_to_ram <= '0';
-                    next_state <= send_ack;
-                    prev_state <= read_data;
+                    if (is_ack_received = '1') then
+                        next_state <= send_ack;
+                        prev_state <= read_data;
+                    else
+                        next_state <= create_stop_cond;
+                        prev_state <= read_data;
+                    end if;
                 when write_data =>
                     num_wait_cycles <= to_unsigned(7, num_wait_cycles'length);
                     start_idx <= to_unsigned(7, start_idx'length);
@@ -371,8 +387,13 @@ begin
                     enable_create_stop_cond <= '0';
                     enable_write_data <= '1';
                     enable_write_to_ram <= '0';
-                    next_state <= receive_ack;
-                    prev_state <= write_data;
+                    if (is_ack_received = '1') then
+                        next_state <= receive_ack;
+                        prev_state <= write_data;
+                    else
+                        next_state <= create_stop_cond;
+                        prev_state <= write_data;
+                    end if;
                 when send_ack =>
                     num_wait_cycles <= to_unsigned(0, num_wait_cycles'length);
                     start_idx <= to_unsigned(0, start_idx'length);
@@ -546,9 +567,13 @@ begin
 
         if (reset = '1') then
             is_ack_received <= '0';
-        elsif (rising_edge(clk_200khz) and clk_100khz = '1' and enable_check_ack = '1') then
-            if (sda_input = '0') then
-                is_ack_received <= '1';
+        elsif (rising_edge(clk_200khz) and clk_100khz = '1') then
+            if (enable_check_ack = '1') then
+                if (sda_input = '0') then
+                    is_ack_received <= '1';
+                else
+                    is_ack_received <= '0';
+                end if;
             else
                 is_ack_received <= '0';
             end if;

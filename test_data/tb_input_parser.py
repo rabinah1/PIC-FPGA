@@ -101,4 +101,5 @@ def main():
     in_file.close()
     out_file.close()
 
-main()
+if __name__ == "__main__":
+    main()

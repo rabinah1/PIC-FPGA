@@ -15,6 +15,8 @@ architecture behavior of PIC16F84A_tb is
     signal serial_in : std_logic := '0';
     signal clk : std_logic := '0';
     signal clk_50mhz_in : std_logic := '0';
+    signal clk_100khz : std_logic := '0';
+    signal clk_200khz : std_logic := '0';
     signal reset : std_logic := '0';
     signal miso : std_logic := '0';
     signal mosi : std_logic := '0';
@@ -34,16 +36,31 @@ architecture behavior of PIC16F84A_tb is
               clk : in std_logic;
               clk_50mhz_in : in std_logic;
               reset : in std_logic;
-              miso : out std_logic;
               mosi : in std_logic;
-              sda : inout std_logic;
-              scl : out std_logic;
               timer_external_input : in std_logic;
+              sda : inout std_logic;
+              miso : out std_logic;
+              scl : out std_logic;
               alu_output_raspi : out std_logic);
     end component;
 
+    component pcf8582_simulator is
+        port (reset : in std_logic;
+              clk_100khz : in std_logic;
+              clk_200khz : in std_logic;
+              scl : in std_logic;
+              sda : inout std_logic);
+    end component pcf8582_simulator;
+
+    component clk_div is
+        port (clk_in : in std_logic;
+              reset : in std_logic;
+              clk_100khz : out std_logic;
+              clk_200khz : out std_logic);
+    end component clk_div;
+
     begin
-        dut : PIC16F84A
+        dut_1 : PIC16F84A
             port map(serial_in => serial_in,
                      clk => clk,
                      clk_50mhz_in => clk_50mhz_in,
@@ -54,6 +71,19 @@ architecture behavior of PIC16F84A_tb is
                      scl => scl,
                      timer_external_input => timer_external_input,
                      alu_output_raspi => alu_output_raspi);
+
+        dut_2 : pcf8582_simulator
+            port map(reset => reset,
+                     clk_100khz => clk_100khz,
+                     clk_200khz => clk_200khz,
+                     scl => scl,
+                     sda => sda);
+
+        dut_3 : clk_div
+            port map(clk_in => clk_50mhz_in,
+                     reset => reset,
+                     clk_100khz => clk_100khz,
+                     clk_200khz => clk_200khz);
 
         clk_process : process is
         begin

@@ -8,11 +8,11 @@ entity PIC16F84A is
           clk : in std_logic;
           clk_50mhz_in : in std_logic;
           reset : in std_logic;
-          miso : out std_logic;
           mosi : in std_logic;
-          sda : inout std_logic;
-          scl : out std_logic;
           timer_external_input : in std_logic;
+          sda : inout std_logic;
+          miso : out std_logic;
+          scl : out std_logic;
           alu_output_raspi : out std_logic);
 end PIC16F84A;
 
@@ -66,8 +66,8 @@ architecture struct of PIC16F84A is
               transfer_to_sw : in std_logic;
               input_data : in std_logic_vector(7 downto 0);
               data_to_ram : out std_logic_vector(7 downto 0);
-              data_to_wreg : out std_logic_vector(7 downto 0);
-              data_to_sw : out std_logic_vector(7 downto 0));
+              data_to_sw : out std_logic_vector(7 downto 0);
+              data_to_wreg : out std_logic_vector(7 downto 0));
     end component alu_output_demux;
 
     component alu_input_mux is
@@ -92,16 +92,16 @@ architecture struct of PIC16F84A is
               status_write_enable : in std_logic;
               timer_write_enable : in std_logic;
               eeprom_read : in std_logic;
-              edge_trigger : out std_logic;
               timer_external_counter_falling : in std_logic_vector(7 downto 0);
               timer_external_counter_rising : in std_logic_vector(7 downto 0);
+              eeprom_data_in : in std_logic_vector(7 downto 0);
+              edge_trigger : out std_logic;
               mem_dump : out std_logic_vector(1015 downto 0);
               data_out : out std_logic_vector(7 downto 0);
               status_out : out std_logic_vector(7 downto 0);
               eedata_out : out std_logic_vector(7 downto 0);
               eeadr_out : out std_logic_vector(7 downto 0);
-              eecon_out : out std_logic_vector(7 downto 0);
-              eeprom_data_in : in std_logic_vector(7 downto 0));
+              eecon_out : out std_logic_vector(7 downto 0));
     end component ram;
 
     component state_machine is
@@ -147,35 +147,32 @@ architecture struct of PIC16F84A is
     end component input_receive;
 
     component ALU is
-        generic (N : natural := 8);
-        port (input_w : in std_logic_vector(N-1 downto 0);
-              output_mux : in std_logic_vector(N-1 downto 0);
+        port (input_w : in std_logic_vector(7 downto 0);
+              output_mux : in std_logic_vector(7 downto 0);
               opcode : in std_logic_vector(5 downto 0);
-              status_in : in std_logic_vector(N-1 downto 0);
-              status_out : out std_logic_vector(N-1 downto 0);
-              alu_output : out std_logic_vector(N-1 downto 0);
+              status_in : in std_logic_vector(7 downto 0);
               clk : in std_logic;
+              reset : in std_logic;
               enable : in std_logic;
               bit_idx : in std_logic_vector(2 downto 0);
-              reset : in std_logic);
+              status_out : out std_logic_vector(7 downto 0);
+              alu_output : out std_logic_vector(7 downto 0));
     end component ALU;
 
     component W_register is
-        generic (N : natural := 8);
-        port (data_in : in std_logic_vector(N-1 downto 0);
-              data_out : out std_logic_vector(N-1 downto 0);
+        port (data_in : in std_logic_vector(7 downto 0);
               clk : in std_logic;
               enable : in std_logic;
-              reset : in std_logic);
+              reset : in std_logic;
+              data_out : out std_logic_vector(7 downto 0));
     end component W_register;
 
     component parallel_to_serial_output is
-        generic (N : natural := 8);
         port (clk : in std_logic;
               reset : in std_logic;
               enable : in std_logic;
               result_enable_mem_dump : in std_logic;
-              data_to_sw : in std_logic_vector(N-1 downto 0);
+              data_to_sw : in std_logic_vector(7 downto 0);
               mem_dump_to_sw : in std_logic_vector(1015 downto 0);
               miso : out std_logic;
               serial_out : out std_logic);
@@ -191,21 +188,21 @@ architecture struct of PIC16F84A is
 
     component clk_div is
         port (clk_in : in std_logic;
+              reset : in std_logic;
               clk_100khz : out std_logic;
-              clk_200khz : out std_logic;
-              reset : in std_logic);
+              clk_200khz : out std_logic);
     end component clk_div;
 
     component i2c is
         port (reset : in std_logic;
               clk_100khz : in std_logic;
               clk_200khz : in std_logic;
-              sda : inout std_logic;
-              scl : out std_logic;
-              enable_write_to_ram : out std_logic;
               control : in std_logic_vector(7 downto 0);
               data_in : in std_logic_vector(7 downto 0);
               address_in : in std_logic_vector(7 downto 0);
+              sda : inout std_logic;
+              scl : out std_logic;
+              enable_write_to_ram : out std_logic;
               data_out : out std_logic_vector(7 downto 0));
     end component i2c;
 begin
@@ -241,29 +238,28 @@ begin
                   status_write_enable => status_write_enable_int,
                   timer_write_enable => timer_write_enable_int,
                   eeprom_read => write_to_ram_trig,
-                  edge_trigger => edge_trigger_int,
                   timer_external_counter_falling => timer_external_counter_falling_int,
                   timer_external_counter_rising => timer_external_counter_rising_int,
+                  eeprom_data_in => data_from_eeprom,
+                  edge_trigger => edge_trigger_int,
                   mem_dump => mem_dump_int,
                   data_out => from_ram_to_alu,
                   status_out => status_in_alu,
                   eedata_out => eedata_int,
                   eeadr_out => eeadr_int,
-                  eecon_out => eecon_int,
-                  eeprom_data_in => data_from_eeprom);
+                  eecon_out => eecon_int);
 
     ALU_unit : component ALU
-        generic map (N => 8)
         port map (input_w => w_output_int,
                   output_mux => output_mux,
                   opcode => opcode,
                   status_in => status_in_alu,
-                  status_out => status_out_alu,
-                  alu_output => alu_output_int,
                   clk => clk,
+                  reset => reset,
                   enable => alu_enable_int,
                   bit_idx => bit_idx_out_int,
-                  reset => reset);
+                  status_out => status_out_alu,
+                  alu_output => alu_output_int);
 
     state_machine_unit : component state_machine
         port map (clk => clk,
@@ -305,7 +301,6 @@ begin
                   binary_string => binary_string_int);
 
     parallel_to_serial_output_unit : component parallel_to_serial_output
-        generic map (N => 8)
         port map (clk => clk,
                   reset => reset,
                   enable => result_enable_int,
@@ -316,12 +311,11 @@ begin
                   serial_out => alu_output_raspi);
 
     W_register_unit : component W_register
-        generic map (N => 8)
         port map (data_in => from_alu_to_wreg,
-                  data_out => w_output_int,
                   clk => clk,
                   enable => wreg_enable_int,
-                  reset => reset);
+                  reset => reset,
+                  data_out => w_output_int);
 
     timer_unit : component timer
         port map (trigger => timer_external_input,
@@ -332,20 +326,20 @@ begin
 
     clk_div_unit : component clk_div
         port map (clk_in => clk_50mhz_in,
+                  reset => reset,
                   clk_100khz => clk_100khz_int,
-                  clk_200khz => clk_200khz_int,
-                  reset => reset);
+                  clk_200khz => clk_200khz_int);
 
     i2c_unit : component i2c
         port map (reset => reset,
                   clk_100khz => clk_100khz_int,
                   clk_200khz => clk_200khz_int,
-                  sda => sda,
-                  scl => scl,
-                  enable_write_to_ram => write_to_ram_trig,
                   control => eecon_int,
                   data_in => eedata_int,
                   address_in => eeadr_int,
+                  sda => sda,
+                  scl => scl,
+                  enable_write_to_ram => write_to_ram_trig,
                   data_out => data_from_eeprom);
 
 end architecture struct;

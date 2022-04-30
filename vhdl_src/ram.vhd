@@ -15,16 +15,16 @@ entity ram is
           status_write_enable : in std_logic;
           timer_write_enable : in std_logic;
           eeprom_read : in std_logic;
-          edge_trigger : out std_logic;
           timer_external_counter_falling : in std_logic_vector(7 downto 0);
           timer_external_counter_rising : in std_logic_vector(7 downto 0);
+          eeprom_data_in : in std_logic_vector(7 downto 0);
+          edge_trigger : out std_logic;
           mem_dump : out std_logic_vector(1015 downto 0);
           data_out : out std_logic_vector(7 downto 0);
           status_out : out std_logic_vector(7 downto 0);
           eedata_out : out std_logic_vector(7 downto 0);
           eeadr_out : out std_logic_vector(7 downto 0);
-          eecon_out : out std_logic_vector(7 downto 0);
-          eeprom_data_in : in std_logic_vector(7 downto 0));
+          eecon_out : out std_logic_vector(7 downto 0));
 end ram;
 
 architecture rtl of ram is

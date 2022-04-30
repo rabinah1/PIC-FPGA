@@ -1,7 +1,5 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use ieee.std_logic_unsigned.all;
 
 entity alu_input_mux is
     port (clk : in std_logic;
@@ -25,7 +23,7 @@ begin
             if (enable = '1') then
                 if (sel = '0') then
                     data_out <= input_literal;
-                elsif (sel = '1') then
+                else
                     data_out <= input_ram;
                 end if;
             end if;

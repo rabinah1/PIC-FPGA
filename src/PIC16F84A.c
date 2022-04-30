@@ -13,11 +13,16 @@
 #include "code.h"
 #include "defines.h"
 
+static const char *usage = "\
+Usage: This is the control software to be run on the Raspberry Pi 4. This requires 1 argument, which can be either \n\
+ * Serial port to which Arduino Nano is connected to, or\n\
+ * 'testing', which will trigger the test automation.\n\
+";
+
 bool clk_enable = false;
 bool clk_exit = false;
 char serial_port[MAX_STRING_SIZE];
-char slave_1_commands[][MAX_STRING_SIZE] = {"read_temperature"};
-
+char slave_1_commands[][MAX_STRING_SIZE] = {"read_temperature", "echo"};
 struct result_thread_args {
     volatile unsigned *gpio;
     FILE *result_file;
@@ -80,7 +85,8 @@ void print_help(void)
            "DISABLE_RESET\n"
            "EXIT\n\n"
            "For slave 1, the following operations are available:\n"
-           "read_temperature\n\n");
+           "read_temperature\n"
+           "echo <message>\n\n");
     return;
 }
 
@@ -428,7 +434,7 @@ int send_to_arduino(char *command)
         return 1;
     if ((fd = serialOpen(serial_port, 9600)) < 0)
         return 1;
-    usleep(2000000); // Wait for serial connection to stabilize
+    sleep(2); // Wait for serial connection to stabilize
     serialPuts(fd, command);
 
     while (1) {
@@ -449,15 +455,18 @@ int main(int argc, char *argv[])
     bool verify_on_hw = false;
 
     if (argc == 2) {
-        printf("Running in application mode, using %s as a serial port to Arduino\n", argv[1]);
-    } else if (argc == 3 && strcmp(argv[2], "testing") == 0) {
-        printf("Running in testing mode, using %s as a serial port to Arduino\n", argv[1]);
-        verify_on_hw = true;
+        if (strcmp(argv[1], "testing") == 0) {
+            printf("Running in testing mode\n");
+            verify_on_hw = true;
+            strcpy(serial_port, "");
+        } else {
+            printf("Running in application mode, using %s as a serial port to Arduino\n", argv[1]);
+            strcpy(serial_port, argv[1]);
+        }
     } else {
-        printf("Invalid arguments\n");
-        return 0;
+        puts(usage);
+        return 1;
     }
-    strcpy(serial_port, argv[1]);
     bool is_valid = true;
     char filename[MAX_STRING_SIZE];
     char instruction[MAX_INSTRUCTION_SIZE];
@@ -491,16 +500,8 @@ int main(int argc, char *argv[])
         last_slash = strrchr(script_relative_path, '/');
         script_relative_path[last_slash - script_relative_path] = '\0';
         getcwd(pwd, sizeof(char) * MAX_STRING_SIZE);
-        strcpy(tb_input_file, pwd);
-        strcat(tb_input_file, "/");
-        strcat(tb_input_file, script_relative_path);
-        strcat(tb_input_file, "/test_data/");
-        strcat(tb_input_file, "real_hw_tb_input.txt");
-        strcpy(tb_result_file, pwd);
-        strcat(tb_result_file, "/");
-        strcat(tb_result_file, script_relative_path);
-        strcat(tb_result_file, "/test_data/");
-        strcat(tb_result_file, "real_hw_tb_result.txt");
+        sprintf(tb_input_file, "%s/%s/test_data/real_hw_tb_input.txt", pwd, script_relative_path);
+        sprintf(tb_result_file, "%s/%s/test_data/real_hw_tb_result.txt", pwd, script_relative_path);
         FILE *tb_input = fopen(tb_input_file, "r");
         FILE *result_file = fopen(tb_result_file, "w");
         is_valid = true;
@@ -551,14 +552,14 @@ int main(int argc, char *argv[])
                 printf("Slave %d\n", slave_sel);
 
         } else if (slave_sel == 0) { // Slave is FPGA
-            if (strstr(command, "READ_FILE") == NULL) { // READ_FILE not found
+            if (strstr(command, "READ_FILE") == NULL) {
                 if (is_command_valid(command)) {
                     if (!process_command(command, (void *)gpio, NULL, false)) {
                         free(command);
                         break;
                     }
                 }
-            } else { // READ_FILE found
+            } else {
                 sscanf(command, "%s %s", instruction, filename);
                 FILE *input_file = fopen(filename, "r");
                 char line[MAX_STRING_SIZE];
@@ -587,7 +588,7 @@ int main(int argc, char *argv[])
             bool command_found = false;
             int num_instructions = sizeof(slave_1_commands) / sizeof(slave_1_commands[0]);
             for (int i = 0; i < num_instructions; i++) {
-                if (strcmp(slave_1_commands[i], command) == 0) {
+                if (strstr(command, slave_1_commands[i]) != NULL) {
                     command_found = true;
                     break;
                 }

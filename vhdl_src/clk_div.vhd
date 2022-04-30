@@ -5,9 +5,9 @@ use ieee.std_logic_unsigned.all;
 
 entity clk_div is
     port (clk_in : in std_logic;
+          reset : in std_logic;
           clk_100khz : out std_logic;
-          clk_200khz : out std_logic;
-          reset : in std_logic);
+          clk_200khz : out std_logic);
 end clk_div;
 
 architecture rtl of clk_div is
