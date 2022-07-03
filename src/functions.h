@@ -1,0 +1,13 @@
+int binary_to_decimal(volatile int *data);
+void decimal_to_binary(uint32_t decimal_in, char *binary_out, int num_bits);
+int get_expected_num_of_arguments(char *instruction);
+bool get_command_in_binary(char *instruction, char *opcode);
+bool create_binary_command(char *command, char *binary_command, char *instruction);
+int get_num_instructions_slave_0(void);
+int get_num_instructions_slave_1(void);
+char *get_slave_0_command(int idx);
+char *get_slave_1_command(int idx);
+int handle_slave_commands(char *command);
+int get_slave_id(void);
+void set_slave_id(int id);
+bool is_command_valid(char *command);

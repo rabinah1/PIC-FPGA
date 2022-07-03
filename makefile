@@ -1,8 +1,8 @@
-TARGET_EXEC := PIC16F84A
+TARGET_EXEC := main
 SRC_DIR := ./src
 TEST_DIR := ./test
 LDFLAGS = -lm -pthread -lwiringPi
-CC = gcc
+CC = C:\SysGCC\raspberry\bin\arm-linux-gnueabihf-gcc.exe
 CFLAGS = -Wall
 
 test_run:
@@ -11,14 +11,14 @@ test_run:
 test_clean:
 	make -C ${TEST_DIR} clean
 
-code.o:
-	${CC} -c -I$(SRC_DIR) $(SRC_DIR)/code.c -o $(SRC_DIR)/code.o
+functions.o:
+	${CC} -c -I$(SRC_DIR) $(SRC_DIR)/functions.c -o $(SRC_DIR)/functions.o
 
-PIC16F84A: code.o
-	sudo ${CC} ${CFLAGS} ${LDFLAGS} ${SRC_DIR}/code.o ${SRC_DIR}/PIC16F84A.c -o ${TARGET_EXEC}
+build: functions.o
+	${CC} ${CFLAGS} ${LDFLAGS} ${SRC_DIR}/functions.o ${SRC_DIR}/main.c -o ${TARGET_EXEC}
 
-all: PIC16F84A test_run
+all: build test_run
 
 clean: test_clean
 	rm ${SRC_DIR}/*.o
-	rm -f PIC16F84A
+	rm -f main

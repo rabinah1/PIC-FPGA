@@ -26,7 +26,7 @@ if ($build) {
 }
 
 if ($test) {
-   python3 $PSScriptRoot/test_data/tb_input_parser.py $PSScriptRoot/test_data
+   python3.8 $PSScriptRoot/test_data/tb_input_parser.py $PSScriptRoot/test_data
    vlib $PSScriptRoot/vhdl_src/work
    vcom -2008 -reportprogress 300 -work $PSScriptRoot/vhdl_src/work $PSScriptRoot/vhdl_src/states_package.vhd
    vcom -2008 -reportprogress 300 -work $PSScriptRoot/vhdl_src/work $PSScriptRoot/vhdl_src/ALU.vhd
@@ -47,7 +47,7 @@ if ($test) {
    vsim -c -lib $PSScriptRoot/vhdl_src/work -l $PSScriptRoot/vhdl_src/transcript -wlf $PSScriptRoot/vhdl_src/vsim.wlf `
    -ginput_file="$PSScriptRoot/test_data/tb_result.txt" -goutput_file="$PSScriptRoot/test_data/tb_input_parsed.txt" `
    -do "$PSScriptRoot/vsim_commands.txt" pic16f84a_tb
-   python3 $PSScriptRoot/test_data/verify_simulation_result.py $PSScriptRoot/test_data
+   python3.8 $PSScriptRoot/test_data/verify_simulation_result.py $PSScriptRoot/test_data
    if (-not ($save_test_output)) {
       rm $PSScriptRoot/vhdl_src/transcript
       Remove-Item $PSScriptRoot\vhdl_src\work\ -Force -Recurse

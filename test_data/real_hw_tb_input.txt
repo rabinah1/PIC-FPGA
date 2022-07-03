@@ -1,5 +1,8 @@
-# Premilinary setup
+# Preliminary setup
 ENABLE_CLOCK
+ENABLE_RESET
+DISABLE_RESET
+# Set DE10-Nano as slave
 SELECT_SLAVE 0
 ENABLE_RESET
 DISABLE_RESET
@@ -348,6 +351,10 @@ INCF 1 7
 READ_ADDRESS 8
 ENABLE_RESET
 DISABLE_RESET
+# Set Arduino Nano as slave
+SELECT_SLAVE 1
+# test 28
+echo This is a test
 # Teardown
 SELECT_SLAVE 0
 DISABLE_CLOCK
