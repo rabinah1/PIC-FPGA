@@ -18,3 +18,9 @@ This project is an implementation of a simple microcontroller on the Intel Cyclo
 - fpga_tool.ps1: Script for building the FPGA design, running tests using Modelsim, and loading the bitfile to the FPGA.
 - test_file.txt: File that can be read by the Raspberry Pi, all commands in it are executed.
 - vsim_commands.txt: List of waves that are added to the Modelsim simulation.
+- vsg_config.json: Configuration file for VHDL style check (VSG).
+
+## Static analysis
+
+- Run Pylint: pylint <file.py>
+- Run flake8: flake8 <file.py> --max-line-length=100

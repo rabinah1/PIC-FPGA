@@ -42,7 +42,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ! -e "${BINARY_FILE}" ]]; then
-    echo "Executable main was not found"
+    echo "Executable 'main' was not found"
     echo "${usage}"
     exit 1
 fi

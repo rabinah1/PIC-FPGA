@@ -91,8 +91,8 @@
 # result 22
 96
 96
-100
-100
+103
+103
 7
 # result 23
 123
@@ -110,9 +110,23 @@
 70
 5
 # result 27
+201
+3
+# result 28
+179
+200
+6
+# result 29
+14
+3
+# result 30
+2
+163
+4
+# result 31
 10
 68
 123
 99
-# result 28
+# result 32
 I received a message This is a test

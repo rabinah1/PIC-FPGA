@@ -4,17 +4,20 @@ use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 
 entity timer is
-    port (trigger : in std_logic;
-          reset : in std_logic;
-          edge_trigger : in std_logic;
-          data_out_falling : out std_logic_vector(7 downto 0);
-          data_out_rising : out std_logic_vector(7 downto 0));
-end timer;
+    port (
+        trigger          : in    std_logic;
+        reset            : in    std_logic;
+        edge_trigger     : in    std_logic;
+        data_out_falling : out   std_logic_vector(7 downto 0);
+        data_out_rising  : out   std_logic_vector(7 downto 0)
+    );
+end entity timer;
 
 architecture rtl of timer is
+
 begin
 
-    func_rising : process(all) is
+    func_rising : process (all) is
     begin
 
         if (reset = '1') then
@@ -25,7 +28,7 @@ begin
 
     end process func_rising;
 
-    func_falling : process(all) is
+    func_falling : process (all) is
     begin
 
         if (reset = '1') then
@@ -35,5 +38,5 @@ begin
         end if;
 
     end process func_falling;
-    
+
 end architecture rtl;

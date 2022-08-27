@@ -1,5 +1,8 @@
+# pylint: disable=missing-docstring
+# pylint: disable=consider-using-with
 import argparse
 import os
+
 
 def parse_args():
     descr = """
@@ -17,6 +20,7 @@ with the reference file created by the user.
 
     return args
 
+
 def binary_to_decimal(binary):
     idx = 0
     decimal = 0
@@ -26,10 +30,11 @@ def binary_to_decimal(binary):
 
     return decimal
 
+
 def main():
     args = parse_args()
-    in_file = open(os.path.join(args.input_dir, "tb_result.txt"), "r")
-    out_file = open(os.path.join(args.input_dir, "tb_result_formatted.txt"), "w")
+    in_file = open(os.path.join(args.input_dir, "tb_result.txt"), "r", encoding="utf-8")
+    out_file = open(os.path.join(args.input_dir, "tb_result_formatted.txt"), "w", encoding="utf-8")
 
     line = in_file.readline()
     while line:
@@ -45,8 +50,9 @@ def main():
     in_file.close()
     out_file.close()
 
-    result_file = open(os.path.join(args.input_dir, "tb_result_formatted.txt"), "r")
-    reference_file = open(os.path.join(args.input_dir, "tb_reference.txt"), "r")
+    result_file = open(os.path.join(args.input_dir, "tb_result_formatted.txt"), "r",
+                       encoding="utf-8")
+    reference_file = open(os.path.join(args.input_dir, "tb_reference.txt"), "r", encoding="utf-8")
     result_line = result_file.readline()
     reference_line = reference_file.readline()
     case_passed = True
@@ -74,15 +80,15 @@ def main():
         if reference_line:
             print("Test suite failed: reference file contains more lines than result file")
             return
-        else:
-            print(f"Test {test_num} passed")
-            print("Test suite passed")
+        print(f"Test {test_num} passed")
+        print("Test suite passed")
     else:
         print(f"Test {test_num} failed")
         print("Test suite failed")
 
     reference_file.close()
     result_file.close()
+
 
 if __name__ == "__main__":
     main()

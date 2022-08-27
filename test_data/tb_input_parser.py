@@ -1,3 +1,5 @@
+# pylint: disable=missing-docstring
+# pylint: disable=consider-using-with
 import argparse
 import os
 
@@ -30,6 +32,7 @@ opcode_dict = {
     "READ_STATUS":  "110010"
 }
 
+
 def parse_args():
     descr = """
 This script converts the human-readable VHDL tb stimulus file into a format
@@ -47,6 +50,7 @@ the VHDL tb.
 
     return args
 
+
 def decimal_to_binary(decimal_in, num_bits):
     binary_out = ["0" for i in range(num_bits)]
     idx = num_bits - 1
@@ -61,6 +65,7 @@ def decimal_to_binary(decimal_in, num_bits):
         idx -= 1
     return "".join(binary_out)
 
+
 def parse(line_parts):
     instruction = line_parts[0].strip()
     if instruction == "RESET" or instruction.startswith("#"):
@@ -70,7 +75,7 @@ def parse(line_parts):
     if instruction in ["ADDLW", "SUBLW", "MOVLW", "ANDLW", "IORLW", "SUBLW", "XORLW"]:
         binary_input += decimal_to_binary(int(line_parts[1].strip()), 8)
     elif instruction in ["ADDWF", "MOVF", "COMF", "INCF", "ANDWF", "CLR", "DECF", "IORWF",
-                                   "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "DECFSZ", "INCFSZ"]:
+                         "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "DECFSZ", "INCFSZ"]:
         binary_input += line_parts[1].strip()
         binary_input += decimal_to_binary(int(line_parts[2].strip()), 7)
     elif instruction in ["BCF", "BSF"]:
@@ -82,10 +87,11 @@ def parse(line_parts):
         binary_input += decimal_to_binary(0, 8)
     return binary_input
 
+
 def main():
     args = parse_args()
-    in_file = open(os.path.join(args.input_dir, "tb_input.txt"), "r")
-    out_file = open(os.path.join(args.input_dir, "tb_input_parsed.txt"), "w")
+    in_file = open(os.path.join(args.input_dir, "tb_input.txt"), "r", encoding="utf-8")
+    out_file = open(os.path.join(args.input_dir, "tb_input_parsed.txt"), "w", encoding="utf-8")
 
     line = in_file.readline()
     while line:
@@ -100,6 +106,7 @@ def main():
 
     in_file.close()
     out_file.close()
+
 
 if __name__ == "__main__":
     main()
