@@ -115,7 +115,8 @@ ifeq ($(findstring $(CLANG_STR),$(CC_VERSION_OUTPUT)),$(CLANG_STR))
 endif
 
 #Kludge for mingw, it does not have cc.exe, but gcc.exe will do
-CC := C:\SysGCC\raspberry\bin\arm-linux-gnueabihf-gcc.exe
+
+# CC := C:\SysGCC\raspberry\bin\arm-linux-gnueabihf-gcc.exe
 ifeq ($(UNAME_OS),$(MINGW_STR))
 	CC := gcc
 endif

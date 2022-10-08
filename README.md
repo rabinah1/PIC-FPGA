@@ -14,6 +14,7 @@ This project is an implementation of a simple microcontroller on the Intel Cyclo
     - Software unit tests.
 - test_data/
     - Reference and input data for test automation, and python-scripts for processing the data.
+- setup_env.sh: Environment setup script for GPIO usage.
 - run_tests.sh: Script for running test on real HW.
 - fpga_tool.ps1: Script for building the FPGA design, running tests using Modelsim, and loading the bitfile to the FPGA.
 - test_file.txt: File that can be read by the Raspberry Pi, all commands in it are executed.

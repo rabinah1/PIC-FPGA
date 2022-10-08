@@ -12,6 +12,7 @@
 #define CLK_FREQ_HZ 4000
 #define TIMER_EXT_CLK_FREQ_HZ 1
 #define CLK_PIN 5
+#define CLK_IN_PIN 21
 #define RESET_PIN 6
 #define MISO_PIN 13
 #define RESULT_PIN 16
@@ -29,3 +30,4 @@
 #define NUM_BITS_RAM 1016
 #define SLAVE_ID_FPGA 0
 #define SLAVE_ID_ARDUINO 1
+#define POLL_GPIO (POLLPRI | POLLERR)

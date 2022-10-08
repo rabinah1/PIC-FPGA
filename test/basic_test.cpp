@@ -1,8 +1,8 @@
 #include <string.h>
-#include <stdbool.h>
+#include <stdint.h>
 extern "C"
 {
-#include "functions.c"
+#include "functions.h"
 #include "defines.h"
 }
 #include "C:/Users/henry/PIC-FPGA/cpputest/include/CppUTest/TestHarness.h"

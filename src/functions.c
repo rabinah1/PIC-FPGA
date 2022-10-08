@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
-#include "functions.h"
 #include "defines.h"
 
 struct mapping {
@@ -170,7 +169,7 @@ int get_expected_num_of_arguments(char *instruction)
         idx++;
     }
 
-    printf("Instruction %s does not exist\n", instruction);
+    printf("%s, Instruction %s does not exist\n", __func__, instruction);
     return -1;
 }
 
@@ -189,7 +188,7 @@ bool get_command_in_binary(char *instruction, char *opcode)
         idx++;
     }
 
-    printf("Invalid instruction %s\n", instruction);
+    printf("%s, Invalid instruction %s\n", __func__, instruction);
     return false;
 }
 
@@ -226,7 +225,8 @@ bool create_binary_command(char *command, char *binary_command, char *instructio
         else
             decimal_to_binary(bit_or_d, binary_data_bit_or_d, 1);
         decimal_to_binary(literal_or_address, binary_data_operand, 7);
-        sprintf(binary_command, "%s%s%s", binary_data_opcode, binary_data_bit_or_d, binary_data_operand);
+        sprintf(binary_command, "%s%s%s", binary_data_opcode, binary_data_bit_or_d,
+                binary_data_operand);
     } else if (num_spaces == 1) { // literal instruction
         sscanf(command, "%s %d", instruction, &literal_or_address);
         if (!get_command_in_binary(instruction, binary_data_opcode)) {
@@ -249,7 +249,7 @@ bool create_binary_command(char *command, char *binary_command, char *instructio
         decimal_to_binary(literal_or_address, binary_data_operand, 8);
         sprintf(binary_command, "%s%s", binary_data_opcode, binary_data_operand);
     } else {
-        printf("Invalid number of spaces %d in command %s\n", num_spaces, command);
+        printf("%s, Invalid number of spaces %d in command %s\n", __func__, num_spaces, command);
         free(binary_data_opcode);
         free(binary_data_operand);
         free(binary_data_bit_or_d);
@@ -279,12 +279,13 @@ int handle_slave_commands(char *command)
 
     if (strcmp(cmd, "SELECT_SLAVE") == 0) {
         if (sscanf(command, "%s %d", instruction, &slave_id) != 2) {
-            printf("Failed to parse command %s\n", command);
+            printf("%s, Failed to parse command %s\n", __func__, command);
             return 1;
         } else {
             if (slave_id != SLAVE_ID_FPGA && slave_id != SLAVE_ID_ARDUINO) {
-                printf("Invalid slave_id %d, setting to 0\n", slave_id);
-                slave_id = 0;
+                printf("%s, Invalid slave_id %d, setting to %d\n", __func__, slave_id,
+                       SLAVE_ID_FPGA);
+                slave_id = SLAVE_ID_FPGA;
                 return 1;
             }
             return 0;
@@ -314,35 +315,36 @@ bool is_command_valid(char *command)
         memset(instruction, '\0', sizeof(char) * MAX_INSTRUCTION_SIZE);
         if (num_spaces == 2) { // bit- or byte-oriented instruction
             if (sscanf(command, "%s %d %d", instruction, &arg_1, &arg_2) != 3) {
-                printf("Failed to parse command %s\n", command);
+                printf("%s, Failed to parse command %s\n", __func__, command);
                 return false;
             }
         } else if (num_spaces == 1) { // literal instruction
             if (sscanf(command, "%s %d", instruction, &arg_1) != 2) {
-                printf("Failed to parse command %s\n", command);
+                printf("%s, Failed to parse command %s\n", __func__, command);
                 return false;
             }
         } else if (num_spaces == 0) {
             if (sscanf(command, "%s", instruction) != 1) {
-                printf("Failed to parse command %s\n", command);
+                printf("%s, Failed to parse command %s\n", __func__, command);
                 return false;
             }
         } else {
-            printf("Invalid number of spaces %d in command %s", num_spaces, command);
+            printf("%s, Invalid number of spaces %d in command %s", __func__, num_spaces, command);
             return false;
         }
 
         int expected_num_args = get_expected_num_of_arguments(instruction);
         if (expected_num_args != num_spaces) {
             if (expected_num_args != -1)
-                printf("Invalid number of arguments %d for instruction %s\n", num_spaces, instruction);
+                printf("%s, Invalid number of arguments %d for instruction %s\n", __func__,
+                       num_spaces, instruction);
             return false;
         }
         return true;
     } else if (get_slave_id() == SLAVE_ID_ARDUINO) {
         return true;
     } else {
-        printf("Invalid slave_id %d\n", get_slave_id());
+        printf("%s, Invalid slave_id %d\n", __func__, get_slave_id());
         return false;
     }
 }
