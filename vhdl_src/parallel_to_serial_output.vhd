@@ -23,7 +23,7 @@ architecture rtl of parallel_to_serial_output is
 
 begin
 
-    func : process (all) is
+    parallel_to_serial_output : process (all) is
 
         variable idx               : integer := 0;
         variable mem_dump_process  : std_logic;
@@ -68,6 +68,6 @@ begin
             end if;
         end if;
 
-    end process func;
+    end process parallel_to_serial_output;
 
 end architecture rtl;

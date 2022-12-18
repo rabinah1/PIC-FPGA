@@ -22,7 +22,7 @@ architecture rtl of input_receive is
 
 begin
 
-    func : process (all) is
+    input_receive : process (all) is
     begin
 
         if (reset = '1') then
@@ -50,6 +50,6 @@ begin
             end if;
         end if;
 
-    end process func;
+    end process input_receive;
 
 end architecture rtl;

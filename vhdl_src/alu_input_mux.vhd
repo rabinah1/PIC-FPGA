@@ -6,9 +6,9 @@ entity alu_input_mux is
         clk           : in    std_logic;
         reset         : in    std_logic;
         enable        : in    std_logic;
+        sel           : in    std_logic;
         input_ram     : in    std_logic_vector(7 downto 0);
         input_literal : in    std_logic_vector(7 downto 0);
-        sel           : in    std_logic;
         data_out      : out   std_logic_vector(7 downto 0)
     );
 end entity alu_input_mux;
@@ -17,7 +17,7 @@ architecture rtl of alu_input_mux is
 
 begin
 
-    func : process (all) is
+    alu_input_mux : process (all) is
     begin
 
         if (reset = '1') then
@@ -32,6 +32,6 @@ begin
             end if;
         end if;
 
-    end process func;
+    end process alu_input_mux;
 
 end architecture rtl;

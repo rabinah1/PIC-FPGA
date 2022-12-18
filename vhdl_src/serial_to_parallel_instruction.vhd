@@ -11,11 +11,11 @@ entity serial_to_parallel_instruction is
         reset              : in    std_logic;
         enable             : in    std_logic;
         binary_string      : in    std_logic_vector(13 downto 0);
-        instruction_type   : out   std_logic_vector(2 downto 0);
         sel_alu_input_mux  : out   std_logic;
         d                  : out   std_logic;
         trig_state_machine : out   std_logic;
         transfer_to_sw     : out   std_logic;
+        instruction_type   : out   std_logic_vector(2 downto 0);
         literal_out        : out   std_logic_vector(7 downto 0);
         address_out        : out   std_logic_vector(6 downto 0);
         bit_idx_out        : out   std_logic_vector(2 downto 0);
@@ -28,7 +28,7 @@ architecture rtl of serial_to_parallel_instruction is
 begin
 
     -- Incoming data type: <6 bit opcode> + <7 bit address or operand>
-    func : process (all) is
+    serial_to_parallel_instruction : process (all) is
 
         variable opcode_var : std_logic_vector(5 downto 0);
 
@@ -59,7 +59,7 @@ begin
                     trig_state_machine <= '1';
                 else
                     opcode_var := binary_string(13 downto 8);
-                    if (opcode_var = DUMP_MEM) then -- dump_mem
+                    if (opcode_var = DUMP_MEM) then
                         opcode_out         <= binary_string(13 downto 8);
                         bit_idx_out        <= (others => '0');
                         address_out        <= (others => '0');
@@ -124,6 +124,6 @@ begin
             end if;
         end if;
 
-    end process func;
+    end process serial_to_parallel_instruction;
 
 end architecture rtl;

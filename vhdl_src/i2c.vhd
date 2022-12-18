@@ -3,6 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use work.states_package.all;
+use work.constants_package.all;
 
 entity i2c is
     port (
@@ -14,6 +15,7 @@ entity i2c is
         address_in          : in    std_logic_vector(7 downto 0);
         scl                 : out   std_logic;
         enable_write_to_ram : out   std_logic;
+        write_completed     : out   std_logic;
         data_out            : out   std_logic_vector(7 downto 0);
         sda                 : inout std_logic
     );
@@ -21,38 +23,37 @@ end entity i2c;
 
 architecture rtl of i2c is
 
-    signal   state                              : i2c_state_master;
-    signal   next_state                         : i2c_state_master;
-    signal   prev_state                         : i2c_state_master;
-    signal   sda_output                         : std_logic;
-    signal   sda_output_enable                  : std_logic;
-    signal   sda_input                          : std_logic;
-    signal   scl_enable                         : std_logic;
-    signal   start_read_procedure               : std_logic;
-    signal   start_write_procedure              : std_logic;
-    signal   i2c_wait                           : std_logic;
-    signal   num_wait_cycles                    : unsigned(7 downto 0);
-    signal   cycles_waited                      : unsigned(7 downto 0);
-    signal   start_idx                          : unsigned(3 downto 0);
-    signal   bit_count                          : unsigned(3 downto 0);
-    signal   read_bits_used                     : unsigned(3 downto 0);
-    signal   write_bits_used                    : unsigned(3 downto 0);
-    signal   enable_create_start_cond           : std_logic;
-    signal   enable_create_stop_cond            : std_logic;
-    signal   enable_enable_scl                  : std_logic;
-    signal   disable_enable_scl                 : std_logic;
-    signal   enable_write_slave_addr_write_mode : std_logic;
-    signal   enable_write_slave_addr_read_mode  : std_logic;
-    signal   enable_check_ack                   : std_logic;
-    signal   enable_send_ack                    : std_logic;
-    signal   enable_write_word_addr             : std_logic;
-    signal   enable_repeated_start              : std_logic;
-    signal   enable_read_data                   : std_logic;
-    signal   enable_write_data                  : std_logic;
-    signal   is_ack_received                    : std_logic;
-    signal   trig_state_machine                 : std_logic;
-    constant SLAVE_ADDRESS_READ                 : std_logic_vector(7 downto 0) := "10100001";
-    constant SLAVE_ADDRESS_WRITE                : std_logic_vector(7 downto 0) := "10100000";
+    signal state                              : i2c_state_master;
+    signal next_state                         : i2c_state_master;
+    signal prev_state                         : i2c_state_master;
+    signal sda_output                         : std_logic;
+    signal sda_output_enable                  : std_logic;
+    signal sda_input                          : std_logic;
+    signal scl_enable                         : std_logic;
+    signal start_read_procedure               : std_logic;
+    signal start_write_procedure              : std_logic;
+    signal eeprom_write_enable_bit            : std_logic;
+    signal i2c_wait                           : std_logic;
+    signal num_wait_cycles                    : unsigned(7 downto 0);
+    signal cycles_waited                      : unsigned(7 downto 0);
+    signal start_idx                          : unsigned(3 downto 0);
+    signal bit_count                          : unsigned(3 downto 0);
+    signal read_bits_used                     : unsigned(3 downto 0);
+    signal write_bits_used                    : unsigned(3 downto 0);
+    signal enable_create_start_cond           : std_logic;
+    signal enable_create_stop_cond            : std_logic;
+    signal enable_enable_scl                  : std_logic;
+    signal disable_enable_scl                 : std_logic;
+    signal enable_write_slave_addr_write_mode : std_logic;
+    signal enable_write_slave_addr_read_mode  : std_logic;
+    signal enable_check_ack                   : std_logic;
+    signal enable_send_ack                    : std_logic;
+    signal enable_write_word_addr             : std_logic;
+    signal enable_repeated_start              : std_logic;
+    signal enable_read_data                   : std_logic;
+    signal enable_write_data                  : std_logic;
+    signal is_ack_received                    : std_logic;
+    signal trig_state_machine                 : std_logic;
 
 begin
 
@@ -139,6 +140,8 @@ begin
             enable_create_stop_cond            <= '0';
             enable_write_data                  <= '0';
             enable_write_to_ram                <= '0';
+            write_completed                    <= '0';
+            eeprom_write_enable_bit            <= '0';
             num_wait_cycles                    <= to_unsigned(0, num_wait_cycles'length);
             start_idx                          <= to_unsigned(0, start_idx'length);
             bit_count                          <= to_unsigned(0, bit_count'length);
@@ -165,12 +168,19 @@ begin
                     enable_create_stop_cond            <= '0';
                     enable_write_data                  <= '0';
                     enable_write_to_ram                <= '0';
-                    if (start_read_procedure = '1' or start_write_procedure = '1') then
-                        next_state <= create_start_cond;
-                        prev_state <= i2c_nop;
+                    write_completed                    <= '0';
+                    if (start_read_procedure = '1') then
+                        eeprom_write_enable_bit <= '0';
+                        next_state              <= create_start_cond;
+                        prev_state              <= i2c_nop;
+                    elsif (start_write_procedure = '1' and control(2) = '1') then
+                        eeprom_write_enable_bit <= '1';
+                        next_state              <= create_start_cond;
+                        prev_state              <= i2c_nop;
                     else
-                        next_state <= i2c_nop;
-                        prev_state <= i2c_nop;
+                        eeprom_write_enable_bit <= '0';
+                        next_state              <= i2c_nop;
+                        prev_state              <= i2c_nop;
                     end if;
 
                 when create_start_cond =>
@@ -192,6 +202,7 @@ begin
                     enable_create_stop_cond            <= '0';
                     enable_write_data                  <= '0';
                     enable_write_to_ram                <= '0';
+                    write_completed                    <= '0';
                     if (prev_state = receive_ack) then
                         next_state <= write_slave_addr_read_mode;
                         prev_state <= create_start_cond;
@@ -222,6 +233,7 @@ begin
                     enable_create_stop_cond            <= '0';
                     enable_write_data                  <= '0';
                     enable_write_to_ram                <= '0';
+                    write_completed                    <= '0';
                     if (is_ack_received = '1') then
                         next_state <= write_slave_addr_read_mode;
                         prev_state <= create_repeated_start_cond;
@@ -249,6 +261,7 @@ begin
                     enable_create_stop_cond            <= '0';
                     enable_write_data                  <= '0';
                     enable_write_to_ram                <= '0';
+                    write_completed                    <= '0';
                     next_state                         <= write_slave_addr_write_mode;
                     prev_state                         <= enable_scl;
 
@@ -271,6 +284,7 @@ begin
                     enable_create_stop_cond            <= '0';
                     enable_write_data                  <= '0';
                     enable_write_to_ram                <= '0';
+                    write_completed                    <= '0';
                     next_state                         <= receive_ack;
                     prev_state                         <= write_slave_addr_write_mode;
 
@@ -293,6 +307,7 @@ begin
                     enable_create_stop_cond            <= '0';
                     enable_write_data                  <= '0';
                     enable_write_to_ram                <= '0';
+                    write_completed                    <= '0';
                     if (prev_state = write_slave_addr_write_mode) then
                         next_state <= write_word_addr;
                         prev_state <= receive_ack;
@@ -337,6 +352,7 @@ begin
                     enable_create_stop_cond            <= '0';
                     enable_write_data                  <= '0';
                     enable_write_to_ram                <= '0';
+                    write_completed                    <= '0';
                     if (is_ack_received = '1') then
                         next_state <= receive_ack;
                         prev_state <= write_word_addr;
@@ -364,6 +380,7 @@ begin
                     enable_create_stop_cond            <= '0';
                     enable_write_data                  <= '0';
                     enable_write_to_ram                <= '0';
+                    write_completed                    <= '0';
                     next_state                         <= receive_ack;
                     prev_state                         <= write_slave_addr_read_mode;
 
@@ -386,6 +403,7 @@ begin
                     enable_create_stop_cond            <= '0';
                     enable_write_data                  <= '0';
                     enable_write_to_ram                <= '0';
+                    write_completed                    <= '0';
                     if (is_ack_received = '1') then
                         next_state <= send_ack;
                         prev_state <= read_data;
@@ -413,6 +431,7 @@ begin
                     enable_create_stop_cond            <= '0';
                     enable_write_data                  <= '1';
                     enable_write_to_ram                <= '0';
+                    write_completed                    <= '0';
                     if (is_ack_received = '1') then
                         next_state <= receive_ack;
                         prev_state <= write_data;
@@ -440,6 +459,7 @@ begin
                     enable_create_stop_cond            <= '0';
                     enable_write_data                  <= '0';
                     enable_write_to_ram                <= '0';
+                    write_completed                    <= '0';
                     next_state                         <= create_stop_cond;
                     prev_state                         <= send_ack;
 
@@ -462,6 +482,7 @@ begin
                     enable_create_stop_cond            <= '1';
                     enable_write_data                  <= '0';
                     enable_write_to_ram                <= '0';
+                    write_completed                    <= '0';
                     next_state                         <= write_to_ram;
                     prev_state                         <= create_stop_cond;
 
@@ -486,6 +507,11 @@ begin
                     enable_write_to_ram                <= '1';
                     next_state                         <= i2c_nop;
                     prev_state                         <= write_to_ram;
+                    if (eeprom_write_enable_bit = '1') then
+                        write_completed <= '1';
+                    else
+                        write_completed <= '0';
+                    end if;
 
             end case;
 

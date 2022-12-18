@@ -6,13 +6,13 @@ use work.constants_package.all;
 
 entity alu is
     port (
+        clk         : in    std_logic;
+        reset       : in    std_logic;
+        enable      : in    std_logic;
         input_w_reg : in    std_logic_vector(7 downto 0);
         output_mux  : in    std_logic_vector(7 downto 0);
         opcode      : in    std_logic_vector(5 downto 0);
         status_in   : in    std_logic_vector(7 downto 0);
-        clk         : in    std_logic;
-        reset       : in    std_logic;
-        enable      : in    std_logic;
         bit_idx     : in    std_logic_vector(2 downto 0);
         status_out  : out   std_logic_vector(7 downto 0);
         alu_output  : out   std_logic_vector(7 downto 0)
@@ -45,12 +45,12 @@ architecture rtl of alu is
 
 begin
 
-    func : process (all) is
+    alu : process (all) is
 
-        variable op_temp      : std_logic_vector(5 downto 0);
+        variable opcode_temp  : std_logic_vector(5 downto 0);
         variable result       : std_logic_vector(8 downto 0);
         variable dc_check     : std_logic_vector(4 downto 0);
-        variable temp_mem     : std_logic_vector(7 downto 0);
+        variable temp_data    : std_logic_vector(7 downto 0);
         variable status_carry : std_logic;
 
     begin
@@ -59,21 +59,21 @@ begin
             alu_output   <= (others => '0');
             skip_next    <= '0';
             status_out   <= (others => '0');
-            op_temp      := (others => '0');
+            opcode_temp  := (others => '0');
             result       := (others => '0');
             dc_check     := (others => '0');
-            temp_mem     := (others => '0');
+            temp_data    := (others => '0');
             status_carry := '0';
         elsif (rising_edge(clk)) then
             if (enable = '1') then
                 if (skip_next = '1') then
-                    skip_next <= '0';
-                    op_temp   := (others => '0');
+                    skip_next   <= '0';
+                    opcode_temp := (others => '0');
                 else
-                    op_temp := opcode;
+                    opcode_temp := opcode;
                 end if;
 
-                case op_temp is
+                case opcode_temp is
 
                     when ADDWF =>
 
@@ -92,19 +92,19 @@ begin
 
                     when BCF =>
 
-                        temp_mem                                := output_mux;
-                        temp_mem(to_integer(unsigned(bit_idx))) := '0';
-                        result                                  := '0' & temp_mem;
-                        status_out(2)                           <= update_status_z(result(7 downto 0));
-                        alu_output                              <= result(7 downto 0);
+                        temp_data                                := output_mux;
+                        temp_data(to_integer(unsigned(bit_idx))) := '0';
+                        result                                   := '0' & temp_data;
+                        status_out(2)                            <= update_status_z(result(7 downto 0));
+                        alu_output                               <= result(7 downto 0);
 
                     when BSF =>
 
-                        temp_mem                                := output_mux;
-                        temp_mem(to_integer(unsigned(bit_idx))) := '1';
-                        result                                  := '0' & temp_mem;
-                        status_out(2)                           <= update_status_z(result(7 downto 0));
-                        alu_output                              <= result(7 downto 0);
+                        temp_data                                := output_mux;
+                        temp_data(to_integer(unsigned(bit_idx))) := '1';
+                        result                                   := '0' & temp_data;
+                        status_out(2)                            <= update_status_z(result(7 downto 0));
+                        alu_output                               <= result(7 downto 0);
 
                     when CLR =>
 
@@ -267,6 +267,6 @@ begin
             end if;
         end if;
 
-    end process func;
+    end process alu;
 
 end architecture rtl;

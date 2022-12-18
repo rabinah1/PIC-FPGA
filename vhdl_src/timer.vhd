@@ -17,7 +17,7 @@ architecture rtl of timer is
 
 begin
 
-    func_rising : process (all) is
+    timer_rising : process (all) is
     begin
 
         if (reset = '1') then
@@ -26,9 +26,9 @@ begin
             data_out_rising <= std_logic_vector(unsigned(data_out_rising) + 1);
         end if;
 
-    end process func_rising;
+    end process timer_rising;
 
-    func_falling : process (all) is
+    timer_falling : process (all) is
     begin
 
         if (reset = '1') then
@@ -37,6 +37,6 @@ begin
             data_out_falling <= std_logic_vector(unsigned(data_out_falling) + 1);
         end if;
 
-    end process func_falling;
+    end process timer_falling;
 
 end architecture rtl;

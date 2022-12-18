@@ -18,7 +18,7 @@ architecture rtl of alu_output_demux is
 
 begin
 
-    func : process (all) is
+    alu_output_demux : process (all) is
     begin
 
         if (reset = '1') then
@@ -41,6 +41,6 @@ begin
             end if;
         end if;
 
-    end process func;
+    end process alu_output_demux;
 
 end architecture rtl;

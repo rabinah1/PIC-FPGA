@@ -3,10 +3,10 @@ use ieee.std_logic_1164.all;
 
 entity w_register is
     port (
-        data_in  : in    std_logic_vector(7 downto 0);
         clk      : in    std_logic;
         enable   : in    std_logic;
         reset    : in    std_logic;
+        data_in  : in    std_logic_vector(7 downto 0);
         data_out : out   std_logic_vector(7 downto 0)
     );
 end entity w_register;
@@ -15,7 +15,7 @@ architecture rtl of w_register is
 
 begin
 
-    operation : process (all) is
+    w_register : process (all) is
     begin
 
         if (reset = '1') then
@@ -26,6 +26,6 @@ begin
             end if;
         end if;
 
-    end process operation;
+    end process w_register;
 
 end architecture rtl;

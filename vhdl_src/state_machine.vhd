@@ -39,7 +39,7 @@ begin
 
     end process state_change;
 
-    func : process (all) is
+    state_machine : process (all) is
     begin
 
         if (reset = '1') then
@@ -224,6 +224,6 @@ begin
 
         end if;
 
-    end process func;
+    end process state_machine;
 
 end architecture rtl;
