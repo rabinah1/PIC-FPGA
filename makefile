@@ -1,13 +1,14 @@
 SRC_DIR = ./src
 TEST_DIR = ./test
 
+.DELETE_ON_ERROR:
 .PHONY: all build_app test_run test_clean clean
 
 build_app:
-	make -C $(SRC_DIR)
+	$(MAKE) -C $(SRC_DIR)
 
 test_run:
-	make -C $(TEST_DIR)
+	$(MAKE) -C $(TEST_DIR)
 
 all: build_app test_run
 
@@ -16,4 +17,4 @@ clean: test_clean
 	-rm -f $(SRC_DIR)/main
 
 test_clean:
-	make -C $(TEST_DIR) clean
+	$(MAKE) -C $(TEST_DIR) clean

@@ -1,0 +1,14 @@
+void set_clk_freq(int value);
+int get_clk_freq(void);
+void set_clk_exit(bool value);
+bool get_clk_exit(void);
+void set_clk_enable(bool value);
+bool get_clk_enable(void);
+int get_slave_id(void);
+void set_slave_id(int id);
+int get_num_instructions_slave_0(void);
+int get_num_instructions_slave_1(void);
+char *get_slave_0_binary(int idx);
+char *get_slave_0_command(int idx);
+char *get_slave_1_command(int idx);
+int get_expected_num_of_arguments(char *instruction);

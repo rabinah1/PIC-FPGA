@@ -6,10 +6,10 @@
 #include <sys/mman.h>
 #include "defines.h"
 
-void init_pins(void *arguments)
+void init_pins(void *gpio_void)
 {
     volatile unsigned *gpio;
-    gpio = (volatile unsigned *)arguments;
+    gpio = (volatile unsigned *)gpio_void;
 
     int out_pins[] = {CLK_PIN, TIMER_EXT_CLK_PIN, RESET_PIN, DATA_PIN, MOSI_PIN};
     size_t num_out_pins = sizeof(out_pins) / sizeof(out_pins[0]);
@@ -32,7 +32,7 @@ volatile unsigned* init_gpio_map(void)
     volatile unsigned *gpio;
     if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC)) < 0) {
         printf("%s, Can't open /dev/mem \n", __func__);
-        exit(-1);
+        return NULL;
     }
 
     gpio_map = mmap(NULL,                 // Any adddress in our space will do
@@ -45,7 +45,7 @@ volatile unsigned* init_gpio_map(void)
 
     if (gpio_map == MAP_FAILED) {
         printf("%s, mmap error %d\n", __func__, (int)gpio_map);
-        exit(-1);
+        return NULL;
     }
     gpio = (volatile unsigned *)gpio_map;
 

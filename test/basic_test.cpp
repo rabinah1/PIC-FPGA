@@ -2,7 +2,9 @@
 #include <stdint.h>
 extern "C"
 {
-#include "functions.h"
+#include "process_command.h"
+#include "hw_if.h"
+#include "common_data.h"
 #include "defines.h"
 }
 #include "C:/Users/henry/PIC-FPGA/cpputest/include/CppUTest/TestHarness.h"
@@ -15,7 +17,7 @@ TEST_GROUP(basic_test_group)
 TEST(basic_test_group, test_get_num_instructions_slave_0)
 {
     int num_instructions = get_num_instructions_slave_0();
-    CHECK_EQUAL(num_instructions, 37);
+    CHECK_EQUAL(num_instructions, 39);
 }
 
 TEST(basic_test_group, test_get_num_instructions_slave_1)
@@ -34,9 +36,8 @@ TEST(basic_test_group, test_get_slave_0_command_with_idx)
         "ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ", "INCF", "INCFSZ", "IORWF",
         "MOVF", "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW", "MOVLW",
         "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG", "READ_STATUS", "READ_ADDRESS", "DUMP_MEM",
-        "NOP", "READ_FILE", "ENABLE_CLOCK", "DISABLE_CLOCK", "ENABLE_RESET", "DISABLE_RESET",
-        "EXIT", "HELP", "SELECT_SLAVE", "SHOW_SLAVE"};
-    for (int idx = 0; idx < 37; idx++) {
+        "NOP", "READ_FILE"};
+    for (int idx = 0; idx < 29; idx++) {
         strcpy(command, get_slave_0_command(idx));
         strcpy(expected_command, expected_commands[idx]);
         int ret = strcmp(command, expected_command);
@@ -111,16 +112,14 @@ TEST(basic_test_group, test_that_all_fpga_instructions_in_binary_are_found)
         "ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ", "INCF", "INCFSZ", "IORWF",
         "MOVF", "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW", "MOVLW",
         "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG", "READ_STATUS", "READ_ADDRESS", "DUMP_MEM",
-        "NOP", "READ_FILE", "ENABLE_CLOCK", "DISABLE_CLOCK", "ENABLE_RESET", "DISABLE_RESET",
-        "EXIT", "HELP", "SELECT_SLAVE", "SHOW_SLAVE"};
+        "NOP"};
     const char *expected_binary[] = {
         "000111", "000101", "000001", "001001", "000011", "001011", "001010", "001111",
         "000100", "001000", "001101", "001100", "000010", "001110", "000110", "111110",
         "111001", "111000", "110000", "111101", "111010", "0100", "0101", "110001", "110010",
-        "110011", "101000", "000000", "000000", "000000", "000000", "000000", "000000",
-        "000000", "000000", "000000", "000000"};
+        "110011", "101000", "000000"};
     int idx = 0;
-    while (idx < 37) {
+    while (idx < 28) {
         char *command = (char *)expected_commands[idx];
         bool ret = get_command_in_binary(command, binary_data);
         CHECK(ret);
@@ -136,13 +135,12 @@ TEST(basic_test_group, test_that_expected_number_of_arguments_for_all_fpga_instr
         "ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ", "INCF", "INCFSZ", "IORWF",
         "MOVF", "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW", "MOVLW",
         "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG", "READ_STATUS", "READ_ADDRESS", "DUMP_MEM",
-        "NOP", "READ_FILE", "ENABLE_CLOCK", "DISABLE_CLOCK", "ENABLE_RESET", "DISABLE_RESET",
-        "EXIT", "HELP", "SELECT_SLAVE", "SHOW_SLAVE"};
+        "NOP", "READ_FILE"};
     const int expected_args[] = {
         2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1,
-        2, 2, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0};
+        2, 2, 0, 0, 1, 0, 0, 1};
     int idx = 0;
-    while (idx < 37) {
+    while (idx < 29) {
         char *command = (char *)expected_commands[idx];
         num_args = get_expected_num_of_arguments(command);
         CHECK_EQUAL(expected_args[idx], num_args);
@@ -165,19 +163,6 @@ TEST(basic_test_group, test_binary_command_creation)
         bool ret = create_binary_command(command, binary_command, instruction);
         CHECK_TRUE(ret);
         STRCMP_EQUAL(expected_binary, binary_command);
-    }
-}
-
-TEST(basic_test_group, test_slave_commands_processing)
-{
-    const char *commands[] = {"NOT_SLAVE_COMMAND", "SELECT_SLAVE 0", "SELECT_SLAVE 1",
-                              "SELECT_SLAVE 2", "SHOW_SLAVE"};
-    const int expected_return_values[] = {-1, 0, 0, 1, 0};
-    for (int idx = 0; idx < 5; idx++) {
-        char *command = (char *)commands[idx];
-        int expected_return_value = expected_return_values[idx];
-        int ret = handle_slave_commands(command);
-        CHECK_EQUAL(ret, expected_return_value);
     }
 }
 
@@ -209,6 +194,52 @@ TEST(basic_test_group, test_command_validation)
         char *command = (char *)invalid_slave_test_commands[idx];
         bool expected_return_value = expected_return_values_invalid_slave[idx];
         bool ret = is_command_valid(command);
+        CHECK_EQUAL(ret, expected_return_value);
+    }
+}
+
+TEST(basic_test_group, test_is_hw_command)
+{
+    const char *commands[] = {"ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ",
+                              "INCF", "INCFSZ", "IORWF", "MOVF", "RLF", "RRF",
+                              "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW",
+                              "MOVLW", "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG",
+                              "READ_STATUS", "READ_ADDRESS", "DUMP_MEM", "NOP",
+                              "READ_FILE", "ENABLE_CLOCK", "DISABLE_CLOCK", "ENABLE_RESET",
+                              "DISABLE_RESET", "EXIT", "HELP", "SELECT_SLAVE",
+                              "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"};
+    const bool expected_return_values[] = {true, true, true, true, true, true, true, true, true,
+                                           true, true, true, true, true, true, true, true, true,
+                                           true, true, true, true, true, true, true, true, true,
+                                           true, true, false, false, false, false, false, false,
+                                           false, false, false, false};
+    for (int idx = 0; idx < 39; idx++) {
+        char *command = (char *)commands[idx];
+        int expected_return_value = expected_return_values[idx];
+        int ret = is_hw_command(command);
+        CHECK_EQUAL(ret, expected_return_value);
+    }
+}
+
+TEST(basic_test_group, test_is_sw_command)
+{
+    const char *commands[] = {"ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ",
+                              "INCF", "INCFSZ", "IORWF", "MOVF", "RLF", "RRF",
+                              "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW",
+                              "MOVLW", "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG",
+                              "READ_STATUS", "READ_ADDRESS", "DUMP_MEM", "NOP",
+                              "READ_FILE", "ENABLE_CLOCK", "DISABLE_CLOCK", "ENABLE_RESET",
+                              "DISABLE_RESET", "EXIT", "HELP", "SELECT_SLAVE",
+                              "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"};
+    const bool expected_return_values[] = {false, false, false, false, false, false, false, false,
+                                           false, false, false, false, false, false, false, false,
+                                           false, false, false, false, false, false, false, false,
+                                           false, false, false, false, false, true, true, true,
+                                           true, true, true, true, true, true, true};
+    for (int idx = 0; idx < 39; idx++) {
+        char *command = (char *)commands[idx];
+        int expected_return_value = expected_return_values[idx];
+        int ret = is_sw_command(command);
         CHECK_EQUAL(ret, expected_return_value);
     }
 }
