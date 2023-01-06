@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <unistd.h>
+#ifndef UNIT_TEST
 #include <wiringSerial.h>
+#else
+#include "mocks/wiringSerial.h"
+#endif
 
 int send_to_arduino(char *command, FILE *result_file, char *serial_port)
 {

@@ -1,0 +1,1 @@
+int wiringPiSetup(void);

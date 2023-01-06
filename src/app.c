@@ -5,7 +5,11 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#ifndef UNIT_TEST
 #include <wiringPi.h>
+#else
+#include "mocks/wiringPi.h"
+#endif
 #include "gpio_setup.h"
 #include "functions.h"
 #include "defines.h"
@@ -39,7 +43,7 @@ bool is_tb_input_valid(FILE *tb_input)
     return true;
 }
 
-void run_tests(char *serial_port, bool is_valid, volatile unsigned *gpio)
+void run_tests(char *serial_port, volatile unsigned *gpio)
 {
     printf("%s, Running tests on HW, please wait...\n", __func__);
     FILE *tb_input;
@@ -62,7 +66,6 @@ void run_tests(char *serial_port, bool is_valid, volatile unsigned *gpio)
     sprintf(tb_result_file, "%s/test_data/real_hw_tb_result.txt", pwd);
     tb_input = fopen(tb_input_file, "r");
     result_file = fopen(tb_result_file, "w");
-    is_valid = true;
 
     if (is_tb_input_valid(tb_input)) {
         rewind(tb_input);
@@ -186,7 +189,7 @@ int main(int argc, char *argv[])
     pthread_create(&timer_ext_clk_thread_id, NULL, timer_ext_clk_thread, (void *)gpio);
 
     if (verify_on_hw)
-        run_tests(serial_port, is_valid, gpio);
+        run_tests(serial_port, gpio);
     else
         run_app(serial_port, is_valid, gpio);
 

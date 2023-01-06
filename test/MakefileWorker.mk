@@ -524,7 +524,7 @@ $(CPPUTEST_OBJS_DIR)/%.o: %.cpp
 $(CPPUTEST_OBJS_DIR)/%.o: %.c
 	@echo compiling $(notdir $<)
 	$(SILENCE)mkdir -p $(dir $@)
-	$(SILENCE)$(COMPILE.c) $(DEP_FLAGS) $(OUTPUT_OPTION) $<
+	$(SILENCE)$(COMPILE.c) $(DEP_FLAGS) -D UNIT_TEST=1 $(OUTPUT_OPTION) $<
 
 ifneq "$(MAKECMDGOALS)" "clean"
 -include $(DEP_FILES)
