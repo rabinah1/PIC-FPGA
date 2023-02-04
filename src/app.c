@@ -8,7 +8,7 @@
 #ifndef UNIT_TEST
 #include <wiringPi.h>
 #else
-#include "mocks/wiringPi.h"
+#include "mock_wiringPi.h"
 #endif
 #include "gpio_setup.h"
 #include "common_data.h"

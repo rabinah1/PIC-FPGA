@@ -1,15 +1,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <fcntl.h>
 #include <unistd.h>
+#ifndef UNIT_TEST
+#include <fcntl.h>
 #include <sys/mman.h>
+#else
+#include "mock_fcntl.h"
+#include "mock_mman.h"
+#include "mock_gpio.h"
+#endif
 #include "defines.h"
+#include "gpio_setup.h"
 
 void init_pins(void *gpio_void)
 {
-    volatile unsigned *gpio;
-    gpio = (volatile unsigned *)gpio_void;
+    volatile unsigned *gpio = (volatile unsigned *)gpio_void;
+    (void) gpio;
 
     int out_pins[] = {CLK_PIN, TIMER_EXT_CLK_PIN, RESET_PIN, DATA_PIN, MOSI_PIN};
     size_t num_out_pins = sizeof(out_pins) / sizeof(out_pins[0]);
@@ -44,7 +51,7 @@ volatile unsigned* init_gpio_map(void)
     close(mem_fd);
 
     if (gpio_map == MAP_FAILED) {
-        printf("%s, mmap error %d\n", __func__, (int)gpio_map);
+        printf("%s, mmap error %ld\n", __func__, (long unsigned int)gpio_map);
         return NULL;
     }
     gpio = (volatile unsigned *)gpio_map;

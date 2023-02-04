@@ -6,6 +6,7 @@
 #include "defines.h"
 #include "common_data.h"
 #include "hw_if.h"
+#include "process_command.h"
 
 static char hw_commands[][MAX_STRING_SIZE] = {"ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ",
                                               "INCF", "INCFSZ", "IORWF", "MOVF", "RLF", "RRF",
@@ -136,7 +137,7 @@ bool is_hw_command(char *command)
 {
     char cmd[MAX_STRING_SIZE];
     unsigned int idx = 0;
-    int num_hw_commands = sizeof(hw_commands) / sizeof(hw_commands[0]);
+    unsigned int num_hw_commands = sizeof(hw_commands) / sizeof(hw_commands[0]);
     memset(cmd, '\0', sizeof(char) * MAX_STRING_SIZE);
     
     while (command[idx] != '\0') {
@@ -147,7 +148,7 @@ bool is_hw_command(char *command)
     strncpy(cmd, command, idx);
     cmd[idx] = '\0';
 
-    for (int idx = 0; idx < num_hw_commands; idx++) {
+    for (idx = 0; idx < num_hw_commands; idx++) {
         char *test_command = (char *)hw_commands[idx];
         if (strcmp(cmd, test_command) == 0)
             return true;
@@ -160,7 +161,7 @@ bool is_sw_command(char *command)
 {
     char cmd[MAX_STRING_SIZE];
     unsigned int idx = 0;
-    int num_sw_commands = sizeof(sw_commands) / sizeof(sw_commands[0]);
+    unsigned int num_sw_commands = sizeof(sw_commands) / sizeof(sw_commands[0]);
     memset(cmd, '\0', sizeof(char) * MAX_STRING_SIZE);
 
     while (command[idx] != '\0') {
@@ -171,7 +172,7 @@ bool is_sw_command(char *command)
     strncpy(cmd, command, idx);
     cmd[idx] = '\0';
 
-    for (int idx = 0; idx < num_sw_commands; idx++) {
+    for (idx = 0; idx < num_sw_commands; idx++) {
         char *test_command = (char *)sw_commands[idx];
         if (strcmp(cmd, test_command) == 0)
             return true;

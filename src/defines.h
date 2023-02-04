@@ -1,8 +1,10 @@
 #define BCM2835_PERI_BASE 0xFE000000  // peripheral base address
 #define GPIO_BASE (BCM2835_PERI_BASE + 0x200000) // GPIO controller base address
 #define BLOCK_SIZE (4*20) // only using gpio registers region
+#ifndef UNIT_TEST
 #define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
 #define OUT_GPIO(g) *(gpio+((g)/10)) |=  (1<<(((g)%10)*3))
+#endif
 #define GET_GPIO(g) (*(gpio+13)&(1<<g))
 #define MAX_OPERAND_SIZE 8
 #define MAX_OPCODE_SIZE 6

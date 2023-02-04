@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <math.h>
 #include "defines.h"
+#include "common_data.h"
 
 struct command_to_binary {
     char *command;

@@ -13,7 +13,9 @@ This project is an implementation of a simple microcontroller on the Intel Cyclo
 - test/
     - Software unit tests.
 - test_data/
-    - Reference and input data for test automation, and python-scripts for processing the data.
+    - Reference and input data for test automation, and Python-scripts for processing the data.
+- doc/
+    - Technical documents.
 - setup_env.sh: Environment setup script for GPIO usage.
 - run_tests.sh: Script for running test on real HW.
 - fpga_tool.ps1: Script for building the FPGA design, running tests using Modelsim, and loading the bitfile to the FPGA.

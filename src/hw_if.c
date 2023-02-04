@@ -12,8 +12,9 @@
 #ifndef UNIT_TEST
 #include <wiringSerial.h>
 #else
-#include "mocks/wiringSerial.h"
+#include "mock_wiringSerial.h"
 #endif
+#include "hw_if.h"
 #include "defines.h"
 #include "common_data.h"
 
@@ -23,15 +24,19 @@ struct result_thread_args {
     bool write_to_file;
 };
 
+#ifndef UNIT_TEST
 void set_gpio_high(int pin, volatile unsigned *gpio)
 {
     GPIO_SET = 1 << pin;
 }
+#endif
 
+#ifndef UNIT_TEST
 void set_gpio_low(int pin, volatile unsigned *gpio)
 {
     GPIO_CLR = 1 << pin;
 }
+#endif
 
 int binary_to_decimal(volatile int *data)
 {
@@ -160,7 +165,7 @@ void *result_thread(void *arguments)
     int data_count = 0;
     int result_decimal = 0;
     int timeout = 0;
-    int poll_timeout = round((float)1000 / (float)get_clk_freq() * 10);
+    int poll_timeout = (int)round((float)1000 / (float)get_clk_freq() * 10);
     gpio = args->gpio;
     result_file = args->result_file;
     write_to_file = args->write_to_file;
@@ -238,7 +243,7 @@ void *mem_dump_thread(void *arguments)
     int result = 0;
     int counter = 0;
     int timeout = 0;
-    int poll_timeout = round((float)1000 / (float)get_clk_freq() * 10);
+    int poll_timeout = (int)round((float)1000 / (float)get_clk_freq() * 10);
     gpio = (volatile unsigned *)arguments;
 
     struct pollfd pfds[1];
@@ -323,9 +328,9 @@ void *clk_thread(void *arguments)
             break;
         if (get_clk_enable()) {
             set_gpio_high(CLK_PIN, gpio);
-            usleep(clk_period / 2);
+            usleep((useconds_t)(clk_period / 2));
             set_gpio_low(CLK_PIN, gpio);
-            usleep(clk_period / 2);
+            usleep((useconds_t)(clk_period / 2));
         }
     }
 
@@ -343,9 +348,9 @@ void *timer_ext_clk_thread(void *arguments)
             break;
         if (get_clk_enable()) {
             set_gpio_high(TIMER_EXT_CLK_PIN, gpio);
-            usleep(timer_ext_clk_period / 2);
+            usleep((useconds_t)(timer_ext_clk_period / 2));
             set_gpio_low(TIMER_EXT_CLK_PIN, gpio);
-            usleep(timer_ext_clk_period / 2);
+            usleep((useconds_t)(timer_ext_clk_period / 2));
         }
     }
 
@@ -366,7 +371,7 @@ int send_to_arduino(char *command, FILE *result_file, char *serial_port)
 
     while (true) {
         if (serialDataAvail(fd) > 0) {
-            input = serialGetchar(fd);
+            input = (char)serialGetchar(fd);
             if (input == '\n') {
                 if (result_file != NULL)
                     fprintf(result_file, "%c", input);
@@ -391,7 +396,7 @@ bool send_command_to_hw(char *command, void *arguments, FILE *result_file, bool 
     struct pollfd pfds[1];
     char clk_in_pin_file[MAX_STRING_SIZE] = "/sys/class/gpio/gpio21/value";
     int clk_in_pin_fd = open(clk_in_pin_file, O_RDONLY);
-    int poll_timeout = round((float)1000 / (float)get_clk_freq() * 10);
+    int poll_timeout = (int)round((float)1000 / (float)get_clk_freq() * 10);
     if (clk_in_pin_fd < 0) {
         printf("%s, Error with opening file for gpio 21\n", __func__);
         return false;
@@ -431,8 +436,8 @@ bool send_command_to_hw(char *command, void *arguments, FILE *result_file, bool 
         }
         // binary_command = <opcode_in_binary> + <argument_in_binary>
         // This data is sent to FPGA one bit at a time, starting from the first (idx = 0) bit.
-        uint32_t length = strlen(binary_command);
-        uint32_t idx = 0;
+        size_t length = strlen(binary_command);
+        size_t idx = 0;
         while (idx <= length) {
             char buff[32] = {0};
             lseek(clk_in_pin_fd, 0, SEEK_SET);
