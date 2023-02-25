@@ -24,7 +24,7 @@ TEST(test_process_command_group, test_command_validation)
     const char *slave_1_test_commands[] = {"read_temperature", "echo test", "invalid"};
     const char *invalid_slave_test_commands[] = {"command_a", "command_b", "command_c"};
     const bool expected_return_values_slave_0[] = {true, false, true, false, true, false, false};
-    const bool expected_return_values_slave_1[] = {true, true, true};
+    const bool expected_return_values_slave_1[] = {true, true, false};
     const bool expected_return_values_invalid_slave[] = {false, false, false};
     set_slave_id(SLAVE_ID_FPGA);
     for (int idx = 0; idx < 7; idx++) {
@@ -56,18 +56,18 @@ TEST(test_process_command_group, test_is_hw_command)
                               "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW",
                               "MOVLW", "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG",
                               "READ_STATUS", "READ_ADDRESS", "DUMP_MEM", "NOP",
-                              "READ_FILE", "ENABLE_CLOCK", "DISABLE_CLOCK", "ENABLE_RESET",
-                              "DISABLE_RESET", "EXIT", "HELP", "SELECT_SLAVE",
-                              "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"};
+                              "READ_FILE", "read_temperature", "echo", "ENABLE_CLOCK",
+                              "DISABLE_CLOCK", "ENABLE_RESET", "DISABLE_RESET", "EXIT", "HELP",
+                              "SELECT_SLAVE", "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"};
     const bool expected_return_values[] = {true, true, true, true, true, true, true, true, true,
                                            true, true, true, true, true, true, true, true, true,
                                            true, true, true, true, true, true, true, true, true,
-                                           true, true, false, false, false, false, false, false,
-                                           false, false, false, false};
-    for (int idx = 0; idx < 39; idx++) {
+                                           true, true, true, true, false, false, false, false,
+                                           false, false, false, false, false, false};
+    for (int idx = 0; idx < 41; idx++) {
         char *command = (char *)commands[idx];
         int expected_return_value = expected_return_values[idx];
-        int ret = is_hw_command(command);
+        int ret = is_expected_command_type(command, "hw");
         CHECK_EQUAL(ret, expected_return_value);
     }
 }
@@ -79,18 +79,18 @@ TEST(test_process_command_group, test_is_sw_command)
                               "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW",
                               "MOVLW", "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG",
                               "READ_STATUS", "READ_ADDRESS", "DUMP_MEM", "NOP",
-                              "READ_FILE", "ENABLE_CLOCK", "DISABLE_CLOCK", "ENABLE_RESET",
-                              "DISABLE_RESET", "EXIT", "HELP", "SELECT_SLAVE",
-                              "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"};
+                              "READ_FILE", "read_temperature", "echo", "ENABLE_CLOCK",
+                              "DISABLE_CLOCK", "ENABLE_RESET", "DISABLE_RESET", "EXIT", "HELP",
+                              "SELECT_SLAVE", "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"};
     const bool expected_return_values[] = {false, false, false, false, false, false, false, false,
                                            false, false, false, false, false, false, false, false,
                                            false, false, false, false, false, false, false, false,
-                                           false, false, false, false, false, true, true, true,
-                                           true, true, true, true, true, true, true};
-    for (int idx = 0; idx < 39; idx++) {
+                                           false, false, false, false, false, false, false, true,
+                                           true, true, true, true, true, true, true, true, true};
+    for (int idx = 0; idx < NUM_HW_COMMANDS + NUM_SW_COMMANDS; idx++) {
         char *command = (char *)commands[idx];
         int expected_return_value = expected_return_values[idx];
-        int ret = is_sw_command(command);
+        int ret = is_expected_command_type(command, "sw");
         CHECK_EQUAL(ret, expected_return_value);
     }
 }

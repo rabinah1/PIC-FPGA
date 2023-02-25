@@ -36,3 +36,9 @@
 #define INVALID_MODE -1
 #define APPLICATION_MODE 0
 #define TESTING_MODE 1
+#define NUM_HW_COMMANDS 31
+#define NUM_SW_COMMANDS 10
+#define SW_SUCCESS 0
+#define SW_FAILED 1
+#define SW_EXIT -1
+#define INVALID_NUM_ARGS -1

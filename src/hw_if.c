@@ -29,9 +29,7 @@ void set_gpio_high(int pin, volatile unsigned *gpio)
 {
     GPIO_SET = 1 << pin;
 }
-#endif
 
-#ifndef UNIT_TEST
 void set_gpio_low(int pin, volatile unsigned *gpio)
 {
     GPIO_CLR = 1 << pin;
@@ -42,7 +40,7 @@ int binary_to_decimal(volatile int *data)
 {
     int result = 0;
     for (int idx = DATA_BIT_WIDTH - 1; idx >= 0; idx--)
-        result += data[idx] * (int)pow(2, 7 - idx);
+        result += data[idx] * (int)pow(2, DATA_BIT_WIDTH - 1 - idx);
 
     return result;
 }
@@ -51,7 +49,6 @@ void decimal_to_binary(uint32_t decimal_in, char *binary_out, int num_bits)
 {
     int idx = num_bits - 1;
     bool zero_flag = false;
-    memset(binary_out, '\0', sizeof(char) * (uint32_t)num_bits);
     while (idx >= 0) {
         if ((uint32_t)pow(2, idx) > decimal_in || zero_flag) {
             binary_out[num_bits - 1 - idx] = '0';
@@ -70,11 +67,8 @@ bool get_command_in_binary(char *instruction, char *opcode)
 {
     int idx = 0;
     int num_instructions = get_num_instructions_slave_0();
-    char *name;
     while (idx < num_instructions) {
-        name = get_slave_0_command(idx);
-        if (strcmp(name, instruction) == 0) {
-            memset(opcode, '\0', sizeof(char) * MAX_OPCODE_SIZE);
+        if (strcmp(get_slave_0_command(idx), instruction) == 0) {
             strcpy(opcode, get_slave_0_binary(idx));
             return true;
         }
@@ -87,9 +81,9 @@ bool get_command_in_binary(char *instruction, char *opcode)
 
 bool create_binary_command(char *command, char *binary_command, char *instruction)
 {
-    char *binary_data_operand = (char *)malloc(MAX_OPERAND_SIZE);
-    char *binary_data_opcode = (char *)malloc(MAX_OPCODE_SIZE);
-    char *binary_data_bit_or_d = (char *)malloc(MAX_BIT_OR_D_SIZE);
+    char *binary_data_operand = malloc(MAX_OPERAND_SIZE);
+    char *binary_data_opcode = malloc(MAX_OPCODE_SIZE);
+    char *binary_data_bit_or_d = malloc(MAX_BIT_OR_D_SIZE);
     uint32_t literal_or_address = 0;
     uint32_t bit_or_d = 0;
     int num_spaces = 0;
@@ -103,8 +97,6 @@ bool create_binary_command(char *command, char *binary_command, char *instructio
     memset(binary_data_bit_or_d, '\0', sizeof(char) * MAX_BIT_OR_D_SIZE);
     memset(binary_data_operand, '\0', sizeof(char) * MAX_OPERAND_SIZE);
     memset(binary_data_opcode, '\0', sizeof(char) * MAX_OPCODE_SIZE);
-    memset(binary_command, '\0', sizeof(char) * BINARY_COMMAND_SIZE);
-    memset(instruction, '\0', sizeof(char) * MAX_INSTRUCTION_SIZE);
     if (num_spaces == 2) { // bit-oriented or byte-oriented instruction
         sscanf(command, "%s %d %d", instruction, &bit_or_d, &literal_or_address);
         if (!get_command_in_binary(instruction, binary_data_opcode)) {
@@ -151,6 +143,7 @@ bool create_binary_command(char *command, char *binary_command, char *instructio
     free(binary_data_opcode);
     free(binary_data_operand);
     free(binary_data_bit_or_d);
+
     return true;
 }
 
@@ -158,7 +151,7 @@ void *result_thread(void *arguments)
 {
     struct result_thread_args *args = (struct result_thread_args *)arguments;
     volatile unsigned *gpio;
-    volatile int data[8] = {0};
+    volatile int data[DATA_BIT_WIDTH] = {0};
     FILE *result_file;
     bool write_to_file;
     bool miso_trigger = false;
@@ -238,7 +231,7 @@ void *mem_dump_thread(void *arguments)
     volatile unsigned *gpio;
     volatile int data[NUM_BITS_RAM] = {0};
     bool miso_trigger = false;
-    int byte_data[8] = {0};
+    int byte_data[DATA_BIT_WIDTH] = {0};
     int data_count = 0;
     int result = 0;
     int counter = 0;
@@ -357,14 +350,14 @@ void *timer_ext_clk_thread(void *arguments)
     return NULL;
 }
 
-int send_to_arduino(char *command, FILE *result_file, char *serial_port)
+bool send_command_to_arduino(char *command, FILE *result_file, char *serial_port)
 {
     int fd;
     char input = '\0';
     if ((fd = serialOpen(serial_port, 9600)) < 0) {
         printf("%s, Failed to open serial connection to port %s, exiting...\n", __func__,
                serial_port);
-        return 1;
+        return false;
     }
     sleep(2); // Wait for serial connection to stabilize
     serialPuts(fd, command);
@@ -387,130 +380,107 @@ int send_to_arduino(char *command, FILE *result_file, char *serial_port)
     }
     serialClose(fd);
     printf("\n%s, Connection closed\n", __func__);
-    return 0;
+
+    return true;
 }
 
-bool send_command_to_hw(char *command, void *arguments, FILE *result_file, bool write_to_file,
-                        char *serial_port)
+bool send_command_to_fpga(void *arguments, char *command, FILE *result_file, bool write_to_file)
 {
-    struct pollfd pfds[1];
     char clk_in_pin_file[MAX_STRING_SIZE] = "/sys/class/gpio/gpio21/value";
     int clk_in_pin_fd = open(clk_in_pin_file, O_RDONLY);
-    int poll_timeout = (int)round((float)1000 / (float)get_clk_freq() * 10);
     if (clk_in_pin_fd < 0) {
         printf("%s, Error with opening file for gpio 21\n", __func__);
         return false;
     }
+    struct pollfd pfds[1];
+    volatile unsigned *gpio;
+    struct result_thread_args args;
+    char binary_command[BINARY_COMMAND_SIZE];
+    char instruction[MAX_INSTRUCTION_SIZE];
+    pthread_t read_result_thread_id;
+    pthread_t mem_dump_thread_id;
+    int poll_timeout = (int)round((float)1000 / (float)get_clk_freq() * 10);
+    memset(binary_command, '\0', sizeof(binary_command));
+    memset(instruction, '\0', sizeof(instruction));
+    gpio = (volatile unsigned *)arguments;
+    args.gpio = gpio;
+    args.result_file = result_file;
+    args.write_to_file = write_to_file;
     pfds[0].fd = clk_in_pin_fd;
     pfds[0].events = POLL_GPIO;
-    if (get_slave_id() == SLAVE_ID_FPGA) {
-        volatile unsigned *gpio;
-        struct result_thread_args args;
-        char binary_command[BINARY_COMMAND_SIZE];
-        char instruction[MAX_INSTRUCTION_SIZE];
-        pthread_t read_result_thread_id;
-        pthread_t mem_dump_thread_id;
-        gpio = (volatile unsigned *)arguments;
-        args.gpio = gpio;
-        args.result_file = result_file;
-        args.write_to_file = write_to_file;
 
-        if (!create_binary_command(command, binary_command, instruction)) {
-            printf("%s, Could not create binary command from command %s\n", __func__, command);
-            close(clk_in_pin_fd);
-            return false;
-        }
-        if (!get_clk_enable()) {
-            printf("%s, Clock is not enabled, please enable it first\n", __func__);
-            close(clk_in_pin_fd);
-            return false;
-        }
-        if (strcmp(instruction, "READ_WREG") == 0 ||
-                   strcmp(instruction, "READ_ADDRESS") == 0 ||
-                   strcmp(instruction, "READ_STATUS") == 0) {
-            pthread_create(&read_result_thread_id, NULL, result_thread, (void *)&args);
-            usleep(1000);
-        } else if (strcmp(instruction, "DUMP_MEM") == 0) {
-            pthread_create(&mem_dump_thread_id, NULL, mem_dump_thread, (void *)gpio);
-            usleep(1000);
-        }
-        // binary_command = <opcode_in_binary> + <argument_in_binary>
-        // This data is sent to FPGA one bit at a time, starting from the first (idx = 0) bit.
-        size_t length = strlen(binary_command);
-        size_t idx = 0;
-        while (idx <= length) {
-            char buff[32] = {0};
-            lseek(clk_in_pin_fd, 0, SEEK_SET);
-            read(clk_in_pin_fd, buff, 32);
-            int poll_ret = poll(pfds, 1, poll_timeout);
-            if (poll_ret == 0) {
-                printf("%s, Waiting for clock edge timed out\n", __func__);
-                close(clk_in_pin_fd);
-                return false;
-            } else if (poll_ret < 0) {
-                printf("%s, Error %d happened for poll\n", __func__,
-                       errno);
-                close(clk_in_pin_fd);
-                return false;
-            } else if (poll_ret > 0 && !(GET_GPIO(CLK_PIN)) && (pfds[0].revents & POLL_GPIO)) {
-                // falling edge
-                if (idx < length) {
-                    if (idx == 0)
-                        set_gpio_high(MOSI_PIN, gpio);
-                    if (binary_command[idx] == '0')
-                        set_gpio_low(DATA_PIN, gpio);
-                    else
-                        set_gpio_high(DATA_PIN, gpio);
-                } else {
-                    set_gpio_low(MOSI_PIN, gpio);
-                }
-                idx++;
-            }
-        }
-        if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
-            strcmp(instruction, "READ_STATUS") == 0)
-            pthread_join(read_result_thread_id, NULL);
-        else if (strcmp(instruction, "DUMP_MEM") == 0)
-            pthread_join(mem_dump_thread_id, NULL);
-        close(clk_in_pin_fd);
-        return true;
-    } else if (get_slave_id() == SLAVE_ID_ARDUINO) {
-        char cmd[MAX_STRING_SIZE];
-        bool command_found = false;
-        int num_instructions = get_num_instructions_slave_1();
-        unsigned int idx = 0;
-        memset(cmd, '\0', sizeof(char) * MAX_STRING_SIZE);
-
-        while (command[idx] != '\0') {
-            if (command[idx] == ' ')
-                break;
-            if (command[idx] == '\n') {
-                command[idx] = '\0';
-                break;
-            }
-            idx++;
-        }
-        strncpy(cmd, command, idx);
-        for (int i = 0; i < num_instructions; i++) {
-            if (strcmp(cmd, get_slave_1_command(i)) == 0) {
-                command_found = true;
-                break;
-            }
-        }
-        if (command_found) {
-            send_to_arduino(command, result_file, serial_port);
-            close(clk_in_pin_fd);
-            return true;
-        } else {
-            printf("%s, Command \"%s\" is not valid for slave 1\n", __func__, cmd);
-            close(clk_in_pin_fd);
-            return false;
-        }
-    } else {
-        printf("%s, Invalid slave_id %d, cannot process command \"%s\"\n", __func__,
-               get_slave_id(), command);
+    if (!create_binary_command(command, binary_command, instruction)) {
+        printf("%s, Could not create binary command from command %s\n", __func__, command);
         close(clk_in_pin_fd);
         return false;
     }
+    if (!get_clk_enable()) {
+        printf("%s, Clock is not enabled, please enable it first\n", __func__);
+        close(clk_in_pin_fd);
+        return false;
+    }
+    if (strcmp(instruction, "READ_WREG") == 0 ||
+               strcmp(instruction, "READ_ADDRESS") == 0 ||
+               strcmp(instruction, "READ_STATUS") == 0) {
+        pthread_create(&read_result_thread_id, NULL, result_thread, (void *)&args);
+        usleep(1000);
+    } else if (strcmp(instruction, "DUMP_MEM") == 0) {
+        pthread_create(&mem_dump_thread_id, NULL, mem_dump_thread, (void *)gpio);
+        usleep(1000);
+    }
+    // binary_command = <opcode_in_binary> + <argument_in_binary>
+    // This data is sent to FPGA one bit at a time, starting from the first (idx = 0) bit.
+    size_t length = strlen(binary_command);
+    size_t idx = 0;
+    while (idx <= length) {
+        char buff[32] = {0};
+        lseek(clk_in_pin_fd, 0, SEEK_SET);
+        read(clk_in_pin_fd, buff, 32);
+        int poll_ret = poll(pfds, 1, poll_timeout);
+        if (poll_ret == 0) {
+            printf("%s, Waiting for clock edge timed out\n", __func__);
+            close(clk_in_pin_fd);
+            return false;
+        } else if (poll_ret < 0) {
+            printf("%s, Error %d happened for poll\n", __func__,
+                   errno);
+            close(clk_in_pin_fd);
+            return false;
+        } else if (poll_ret > 0 && !(GET_GPIO(CLK_PIN)) && (pfds[0].revents & POLL_GPIO)) {
+            // falling edge
+            if (idx < length) {
+                if (idx == 0)
+                    set_gpio_high(MOSI_PIN, gpio);
+                if (binary_command[idx] == '0')
+                    set_gpio_low(DATA_PIN, gpio);
+                else
+                    set_gpio_high(DATA_PIN, gpio);
+            } else {
+                set_gpio_low(MOSI_PIN, gpio);
+            }
+            idx++;
+        }
+    }
+    if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
+        strcmp(instruction, "READ_STATUS") == 0)
+        pthread_join(read_result_thread_id, NULL);
+    else if (strcmp(instruction, "DUMP_MEM") == 0)
+        pthread_join(mem_dump_thread_id, NULL);
     close(clk_in_pin_fd);
+
+    return true;
+}
+
+bool send_command_to_hw(char *command, void *arguments, FILE *result_file,
+                        bool write_to_file, char *serial_port)
+{
+    if (get_slave_id() == SLAVE_ID_FPGA) {
+        return send_command_to_fpga(arguments, command, result_file, write_to_file);
+    } else if (get_slave_id() == SLAVE_ID_ARDUINO) {
+        return send_command_to_arduino(command, result_file, serial_port);
+    } else {
+        printf("%s, Invalid slave_id %d, cannot process command \"%s\"\n", __func__,
+               get_slave_id(), command);
+        return false;
+    }
 }

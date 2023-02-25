@@ -8,15 +8,17 @@
 #include "hw_if.h"
 #include "process_command.h"
 
-static char hw_commands[][MAX_STRING_SIZE] = {"ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ",
-                                              "INCF", "INCFSZ", "IORWF", "MOVF", "RLF", "RRF",
-                                              "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW",
-                                              "MOVLW", "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG",
-                                              "READ_STATUS", "READ_ADDRESS", "DUMP_MEM", "NOP",
-                                              "READ_FILE", "read_temperature", "echo"};
-static char sw_commands[][MAX_STRING_SIZE] = {"ENABLE_CLOCK", "DISABLE_CLOCK", "ENABLE_RESET",
-                                              "DISABLE_RESET", "EXIT", "HELP", "SELECT_SLAVE",
-                                              "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"};
+static char hw_commands[NUM_HW_COMMANDS][MAX_STRING_SIZE] =
+    {"ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ",
+     "INCF", "INCFSZ", "IORWF", "MOVF", "RLF", "RRF",
+     "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW",
+     "MOVLW", "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG",
+     "READ_STATUS", "READ_ADDRESS", "DUMP_MEM", "NOP",
+     "READ_FILE", "read_temperature", "echo"};
+static char sw_commands[NUM_SW_COMMANDS][MAX_STRING_SIZE] =
+    {"ENABLE_CLOCK", "DISABLE_CLOCK", "ENABLE_RESET",
+     "DISABLE_RESET", "EXIT", "HELP", "SELECT_SLAVE",
+     "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"};
 
 
 void print_help(void)
@@ -96,7 +98,7 @@ bool is_command_valid(char *command)
                 num_spaces++;
             idx++;
         }
-        memset(instruction, '\0', sizeof(char) * MAX_INSTRUCTION_SIZE);
+        memset(instruction, '\0', sizeof(instruction));
         if (num_spaces == 2) { // bit- or byte-oriented instruction
             if (sscanf(command, "%s %d %d", instruction, &arg_1, &arg_2) != 3) {
                 printf("%s, Failed to parse command %s\n", __func__, command);
@@ -119,50 +121,60 @@ bool is_command_valid(char *command)
 
         int expected_num_args = get_expected_num_of_arguments(instruction);
         if (expected_num_args != num_spaces) {
-            if (expected_num_args != -1)
+            if (expected_num_args != INVALID_NUM_ARGS)
                 printf("%s, Invalid number of arguments %d for instruction %s\n", __func__,
                        num_spaces, instruction);
             return false;
         }
         return true;
     } else if (get_slave_id() == SLAVE_ID_ARDUINO) {
-        return true;
+        char cmd[MAX_STRING_SIZE];
+        unsigned int idx = 0;
+        int num_instructions = get_num_instructions_slave_1();
+        memset(cmd, '\0', sizeof(cmd));
+
+        while (command[idx] != '\0') {
+            if (command[idx] == ' ')
+                break;
+            if (command[idx] == '\n') {
+                command[idx] = '\0';
+                break;
+            }
+            idx++;
+        }
+        strncpy(cmd, command, idx);
+        for (int i = 0; i < num_instructions; i++) {
+            if (strcmp(cmd, get_slave_1_command(i)) == 0)
+                return true;
+        }
+
+        printf("%s, Command \"%s\" is not valid for slave 1\n", __func__, cmd);
+        return false;
     } else {
         printf("%s, Invalid slave_id %d\n", __func__, get_slave_id());
         return false;
     }
 }
 
-bool is_hw_command(char *command)
+bool is_expected_command_type(char *command, char *type)
 {
     char cmd[MAX_STRING_SIZE];
     unsigned int idx = 0;
-    unsigned int num_hw_commands = sizeof(hw_commands) / sizeof(hw_commands[0]);
-    memset(cmd, '\0', sizeof(char) * MAX_STRING_SIZE);
-    
-    while (command[idx] != '\0') {
-        if (command[idx] == ' ' || command[idx] == '\n')
-            break;
-        idx++;
+    unsigned int num_expected_commands = 0;
+    char expected_commands[NUM_HW_COMMANDS + NUM_SW_COMMANDS][MAX_STRING_SIZE] = {'\0'};
+
+    if (strcmp(type, "sw") == 0) {
+        for (int i = 0; i < NUM_SW_COMMANDS; i++)
+            strcpy(expected_commands[i], sw_commands[i]);
+    } else if (strcmp(type, "hw") == 0) {
+        for (int i = 0; i < NUM_HW_COMMANDS; i++)
+            strcpy(expected_commands[i], hw_commands[i]);
+    } else {
+        printf("%s, Invalid command type %s\n", __func__, type);
+        return false;
     }
-    strncpy(cmd, command, idx);
-    cmd[idx] = '\0';
-
-    for (idx = 0; idx < num_hw_commands; idx++) {
-        char *test_command = (char *)hw_commands[idx];
-        if (strcmp(cmd, test_command) == 0)
-            return true;
-    }
-
-    return false;
-}
-
-bool is_sw_command(char *command)
-{
-    char cmd[MAX_STRING_SIZE];
-    unsigned int idx = 0;
-    unsigned int num_sw_commands = sizeof(sw_commands) / sizeof(sw_commands[0]);
-    memset(cmd, '\0', sizeof(char) * MAX_STRING_SIZE);
+    num_expected_commands = sizeof(expected_commands) / sizeof(expected_commands[0]);
+    memset(cmd, '\0', sizeof(cmd));
 
     while (command[idx] != '\0') {
         if (command[idx] == ' ' || command[idx] == '\n')
@@ -172,9 +184,8 @@ bool is_sw_command(char *command)
     strncpy(cmd, command, idx);
     cmd[idx] = '\0';
 
-    for (idx = 0; idx < num_sw_commands; idx++) {
-        char *test_command = (char *)sw_commands[idx];
-        if (strcmp(cmd, test_command) == 0)
+    for (idx = 0; idx < num_expected_commands; idx++) {
+        if (strcmp(cmd, expected_commands[idx]) == 0)
             return true;
     }
 
@@ -188,8 +199,8 @@ int process_sw_command(char *command, volatile unsigned *gpio)
     unsigned int idx = 0;
     int slave_id = -1;
     int clk_freq = -1;
-    memset(cmd, '\0', sizeof(char) * MAX_STRING_SIZE);
-    memset(instruction, '\0', sizeof(char) * MAX_INSTRUCTION_SIZE);
+    memset(cmd, '\0', sizeof(cmd));
+    memset(instruction, '\0', sizeof(instruction));
 
     while (command[idx] != '\0') {
         if (command[idx] == ' ' || command[idx] == '\n')
@@ -202,54 +213,54 @@ int process_sw_command(char *command, volatile unsigned *gpio)
     if (strcmp(cmd, "SELECT_SLAVE") == 0) {
         if (sscanf(command, "%s %d", instruction, &slave_id) != 2) {
             printf("%s, Failed to parse command %s\n", __func__, command);
-            return 1;
+            return SW_FAILED;
         } else {
             if (slave_id != SLAVE_ID_FPGA && slave_id != SLAVE_ID_ARDUINO) {
                 printf("%s, Invalid slave_id %d, setting to %d\n", __func__, slave_id,
                        SLAVE_ID_FPGA);
                 slave_id = SLAVE_ID_FPGA;
-                return 1;
+                return SW_FAILED;
             }
             set_slave_id(slave_id);
-            return 0;
+            return SW_SUCCESS;
         }
     } else if (strcmp(cmd, "SHOW_SLAVE") == 0) {
         printf("Slave %d\n", get_slave_id());
-        return 0;
+        return SW_SUCCESS;
     } else if (strcmp(cmd, "ENABLE_CLOCK") == 0) {
         set_clk_enable(true);
-        return 0;
+        return SW_SUCCESS;
     } else if (strcmp(cmd, "DISABLE_CLOCK") == 0) {
         set_clk_enable(false);
-        return 0;
+        return SW_SUCCESS;
     } else if (strcmp(cmd, "ENABLE_RESET") == 0) {
         set_gpio_high(RESET_PIN, gpio);
-        return 0;
+        return SW_SUCCESS;
     } else if (strcmp(cmd, "DISABLE_RESET") == 0) {
         set_gpio_low(RESET_PIN, gpio);
-        return 0;
+        return SW_SUCCESS;
     } else if (strcmp(cmd, "EXIT") == 0) {
         set_gpio_low(RESET_PIN, gpio);
         set_clk_exit(true);
-        return -1;
+        return SW_EXIT;
     } else if (strcmp(cmd, "HELP") == 0) {
         print_help();
-        return 0;
+        return SW_SUCCESS;
     } else if (strcmp(cmd, "SET_CLK_FREQ") == 0) {
         if (sscanf(command, "%s %d", instruction, &clk_freq) != 2) {
             printf("%s, Failed to parse command %s\n", __func__, command);
-            return 1;            
+            return SW_FAILED;            
         } else {
             set_clk_freq(clk_freq);
-            return 0;
+            return SW_SUCCESS;
         }
     } else if (strcmp(cmd, "SHOW_CLK_FREQ") == 0) {
         printf("Clock frequency is %d\n", get_clk_freq());
-        return 0;
+        return SW_SUCCESS;
     }
     printf("%s, Command %s was not recognized\n", __func__, command);
 
-    return 1;
+    return SW_FAILED;
 }
 
 bool process_hw_command(char *command, volatile unsigned *gpio, char *serial_port,
@@ -259,9 +270,9 @@ bool process_hw_command(char *command, volatile unsigned *gpio, char *serial_por
     char instruction[MAX_INSTRUCTION_SIZE];
     char filename[MAX_STRING_SIZE];
     unsigned int idx = 0;
-    memset(instruction, '\0', sizeof(char) * MAX_INSTRUCTION_SIZE);
-    memset(filename, '\0', sizeof(char) * MAX_STRING_SIZE);
-    memset(cmd, '\0', sizeof(char) * MAX_STRING_SIZE);
+    memset(instruction, '\0', sizeof(instruction));
+    memset(filename, '\0', sizeof(filename));
+    memset(cmd, '\0', sizeof(cmd));
 
     while (command[idx] != '\0') {
         if (command[idx] == ' ' || command[idx] == '\n')
@@ -276,7 +287,7 @@ bool process_hw_command(char *command, volatile unsigned *gpio, char *serial_por
             if (is_command_valid(command)) {
                 if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
                                         serial_port)) {
-                    printf("%s, Sending command %s to HW failed.\n", __func__, command);
+                    printf("%s, Sending command %s to HW failed\n", __func__, command);
                     return false;
                 }
                 return true;
@@ -287,21 +298,20 @@ bool process_hw_command(char *command, volatile unsigned *gpio, char *serial_por
             sscanf(command, "%s %s", instruction, filename);
             FILE *input_file = fopen(filename, "r");
             char line[MAX_STRING_SIZE];
-            memset(line, '\0', sizeof(char) * MAX_STRING_SIZE);
+            memset(line, '\0', sizeof(line));
             while (fgets(line, sizeof(line), input_file)) {
                 line[strlen(line) - 1] = '\0'; // Remove trailing newline
                 if (!is_command_valid(line)) {
-                    printf("%s, Command %s in file %s was not valid.\n", __func__, line, filename);
+                    printf("%s, Command %s in file %s was not valid\n", __func__, line, filename);
                     return false;
                 }
             }
-
             rewind(input_file);
             while (fgets(line, sizeof(line), input_file)) {
                 line[strlen(line) - 1] = '\0';
                 if (!send_command_to_hw(line, (void *)gpio, result_file, write_to_file,
                                         serial_port)) {
-                    printf("%s, Sending command %s to HW failed.\n", __func__, command);
+                    printf("%s, Sending command %s to HW failed\n", __func__, command);
                     return false;
                 }
                 usleep(200000);
@@ -313,15 +323,15 @@ bool process_hw_command(char *command, volatile unsigned *gpio, char *serial_por
         if (is_command_valid(command)) {
             if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
                                     serial_port)) {
-                printf("%s, Sending command %s to HW failed.\n", __func__, command);
+                printf("%s, Sending command %s to HW failed\n", __func__, command);
                 return false;
             }
             return true;
         }
-        printf("%s, Command %s is not valid.\n", __func__, command);
+        printf("%s, Command %s is not valid\n", __func__, command);
         return false;
     } else {
-        printf("%s, Slave %d is not valid, cannot process command.\n", __func__, get_slave_id());
+        printf("%s, Slave %d is not valid, cannot process command\n", __func__, get_slave_id());
         return false;
     }
 }

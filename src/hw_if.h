@@ -10,5 +10,7 @@ void *result_thread(void *arguments);
 void *mem_dump_thread(void *arguments);
 void *clk_thread(void *arguments);
 void *timer_ext_clk_thread(void *arguments);
-bool send_command_to_hw(char *command, void *arguments, FILE *result_file, bool write_to_file, char *serial_port);
-int send_to_arduino(char *command, FILE *result_file, char *serial_port);
+bool send_command_to_fpga(void *arguments, char *command, FILE *result_file, bool write_to_file);
+bool send_command_to_hw(char *command, void *arguments, FILE *result_file, bool write_to_file,
+                        char *serial_port);
+bool send_command_to_arduino(char *command, FILE *result_file, char *serial_port);

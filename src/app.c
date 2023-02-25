@@ -37,21 +37,20 @@ void run_tests(char *serial_port, volatile unsigned *gpio)
     char header_start[MAX_STRING_SIZE];
     char result_header[MAX_STRING_SIZE];
     int test_num = 0;
-    int sw_ret = 0;
-    bool hw_ret = false;
-    memset(pwd, '\0', sizeof(char) * MAX_STRING_SIZE);
-    memset(tb_input_file, '\0', sizeof(char) * MAX_STRING_SIZE);
-    memset(tb_result_file, '\0', sizeof(char) * MAX_STRING_SIZE);
-    memset(line, '\0', sizeof(char) * MAX_STRING_SIZE);
-    memset(header_start, '\0', sizeof(char) * MAX_STRING_SIZE);
-    memset(result_header, '\0', sizeof(char) * MAX_STRING_SIZE);
-    getcwd(pwd, sizeof(char) * MAX_STRING_SIZE);
+    int sw_ret = SW_SUCCESS;
+    memset(pwd, '\0', sizeof(pwd));
+    memset(tb_input_file, '\0', sizeof(tb_input_file));
+    memset(tb_result_file, '\0', sizeof(tb_result_file));
+    memset(line, '\0', sizeof(line));
+    memset(header_start, '\0', sizeof(header_start));
+    memset(result_header, '\0', sizeof(result_header));
+    getcwd(pwd, sizeof(pwd));
     sprintf(tb_input_file, "%s/test_data/real_hw_tb_input.txt", pwd);
     sprintf(tb_result_file, "%s/test_data/real_hw_tb_result.txt", pwd);
     tb_input = fopen(tb_input_file, "r");
     result_file = fopen(tb_result_file, "w");
 
-    while (fgets(line, sizeof(char) * MAX_STRING_SIZE, tb_input)) {
+    while (fgets(line, sizeof(line), tb_input)) {
         if (line[0] == '*' || (line[0] == '#' && strstr(line, "test ") == NULL))
             continue;
         if (line[0] == '#' && strstr(line, "test ") != NULL) {
@@ -61,18 +60,17 @@ void run_tests(char *serial_port, volatile unsigned *gpio)
             continue;
         }
         line[strlen(line) - 1] = '\0';
-        if (is_sw_command(line)) {
+        if (is_expected_command_type(line, "sw")) {
             sw_ret = process_sw_command(line, gpio);
-            if (sw_ret == -1) {
+            if (sw_ret == SW_EXIT) {
                 printf("%s, Exiting...\n", __func__);
                 break;
-            } else if (sw_ret == 1) {
+            } else if (sw_ret == SW_FAILED) {
                 printf("%s, Failed to process command %s\n", __func__, line);
                 break;
             }
-        } else if (is_hw_command(line)) {
-            hw_ret = process_hw_command(line, gpio, serial_port, result_file, true);
-            if (hw_ret == false) {
+        } else if (is_expected_command_type(line, "hw")) {
+            if (!process_hw_command(line, gpio, serial_port, result_file, true)) {
                 printf("%s, Failed to process command %s\n", __func__, line);
                 break;
             }
@@ -91,30 +89,26 @@ void run_tests(char *serial_port, volatile unsigned *gpio)
 void run_app(char *serial_port, volatile unsigned *gpio)
 {
     printf("%s, Please enter command, or \"HELP\" for instructions\n", __func__);
-    int sw_ret = 0;
-    bool hw_ret = false;
+    int sw_ret = SW_SUCCESS;
 
     while (true) {
-        char *command = malloc(MAX_STRING_SIZE);
+        char command[MAX_STRING_SIZE];
         fgets(command, MAX_STRING_SIZE, stdin);
-        if (is_sw_command(command)) {
+        if (is_expected_command_type(command, "sw")) {
             sw_ret = process_sw_command(command, gpio);
-            if (sw_ret == -1) {
+            if (sw_ret == SW_EXIT) {
                 printf("%s, Exiting...\n", __func__);
-                free(command);
                 break;
-            } else if (sw_ret == 1) {
+            } else if (sw_ret == SW_FAILED) {
                 printf("%s, Failed to process command %s\n", __func__, command);
             }
-        } else if (is_hw_command(command)) {
-            hw_ret = process_hw_command(command, gpio, serial_port, NULL, false);
-            if (hw_ret == false)
+        } else if (is_expected_command_type(command, "hw")) {
+            if (!process_hw_command(command, gpio, serial_port, NULL, false))
                 printf("%s, Failed to process command %s\n", __func__, command);
         } else {
             command[strlen(command) - 1] = '\0';
             printf("%s, Command %s was not recognized\n", __func__, command);
         }
-        free(command);
     }
 }
 
@@ -127,7 +121,7 @@ int parse_args(int argc, char *serial_port, char *argv[])
     } else if (argc == 3) {
         strcpy(serial_port, argv[1]);
         if (strcmp(argv[2], "testing") != 0) {
-            printf("%s, Invalid argument %s, it should be 'testing'\n", argv[2], __func__);
+            printf("%s, Invalid argument %s, only 'testing' is supported\n", argv[2], __func__);
         } else {
             printf("%s, Running in testing mode, using %s as a serial port to Arduino\n",
                    __func__, serial_port);

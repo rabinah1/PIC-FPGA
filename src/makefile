@@ -1,13 +1,22 @@
-TARGET_EXEC = main
-LDFLAGS = -lm -pthread -lwiringPi
+TARGET_BINARY = main
+LDLIBS = -lm -pthread -lwiringPi
 CC = C:\SysGCC\raspberry\bin\arm-linux-gnueabihf-gcc.exe
 CFLAGS = -Wall
-OBJECTS = process_command.o common_data.o gpio_setup.o hw_if.o app.o
+OBJ_DIR = ./objs
+OBJECTS = $(addprefix $(OBJ_DIR)/, process_command.o common_data.o gpio_setup.o hw_if.o app.o)
 
 .DELETE_ON_ERROR:
 
+$(OBJ_DIR)/%.o: %.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 main: $(OBJECTS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJECTS) -o $(TARGET_EXEC)
+	$(CC) $(CFLAGS) $(LDLIBS) $(LDFLAGS) $(OBJECTS) -o $(TARGET_BINARY)
+
+$(OBJECTS): | $(OBJ_DIR)
+
+$(OBJ_DIR):
+	mkdir $(OBJ_DIR)
 
 app.o: gpio_setup.h common_data.h defines.h hw_if.h process_command.h
 

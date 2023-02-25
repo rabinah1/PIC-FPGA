@@ -102,17 +102,17 @@ TEST(test_hw_if_group, test_binary_command_creation)
     }
 }
 
-TEST(test_hw_if_group, test_send_to_arduino_serial_connection_failed)
+TEST(test_hw_if_group, test_send_command_to_arduino_serial_connection_failed)
 {
     char serial_port[] = "/dev/ttyUSB0";
     int baud_rate = 9600;
     mock().expectOneCall("serialOpen").withParameter("serial_port", serial_port).withParameter("baud_rate", baud_rate).andReturnValue(-1);
-    int ret = send_to_arduino("read_temperature", NULL, "/dev/ttyUSB0");
+    int ret = send_command_to_arduino("read_temperature", NULL, "/dev/ttyUSB0");
     mock().checkExpectations();
-    CHECK_EQUAL(1, ret);
+    CHECK_FALSE(ret);
 }
 
-TEST(test_hw_if_group, test_send_to_arduino_one_character)
+TEST(test_hw_if_group, test_send_command_to_arduino_one_character)
 {
     char serial_port[] = "/dev/ttyUSB0";
     int baud_rate = 9600;
@@ -121,12 +121,12 @@ TEST(test_hw_if_group, test_send_to_arduino_one_character)
     mock().expectOneCall("serialDataAvail").withParameter("fd", 0).andReturnValue(1);
     mock().expectOneCall("serialGetchar").withParameter("fd", 0).andReturnValue('\n');
     mock().expectOneCall("serialClose").withParameter("fd", 0);
-    int ret = send_to_arduino("read_temperature", NULL, "/dev/ttyUSB0");
+    int ret = send_command_to_arduino("read_temperature", NULL, "/dev/ttyUSB0");
     mock().checkExpectations();
-    CHECK_EQUAL(0, ret);
+    CHECK_TRUE(ret);
 }
 
-TEST(test_hw_if_group, test_send_to_arduino_multiple_characters)
+TEST(test_hw_if_group, test_send_command_to_arduino_multiple_characters)
 {
     char serial_port[] = "/dev/ttyUSB0";
     int baud_rate = 9600;
@@ -139,7 +139,7 @@ TEST(test_hw_if_group, test_send_to_arduino_multiple_characters)
     mock().expectOneCall("serialDataAvail").withParameter("fd", 0).andReturnValue(1);
     mock().expectOneCall("serialGetchar").withParameter("fd", 0).andReturnValue('\n');
     mock().expectOneCall("serialClose").withParameter("fd", 0);
-    int ret = send_to_arduino("some_command", NULL, "/dev/ttyUSB0");
+    int ret = send_command_to_arduino("some_command", NULL, "/dev/ttyUSB0");
     mock().checkExpectations();
-    CHECK_EQUAL(0, ret);
+    CHECK_TRUE(ret);
 }

@@ -11,7 +11,7 @@ struct command_to_binary {
     char *binary;
 };
 
-struct command_to_args {
+struct command_to_num_args {
     char *command;
     int num_args;
 };
@@ -21,7 +21,6 @@ static bool clk_enable = false;
 static bool clk_exit = false;
 static int clk_freq = CLK_FREQ_DEFAULT;
 static char slave_1_commands[][MAX_STRING_SIZE] = {"read_temperature", "echo"};
-
 static struct command_to_binary slave_0_commands[] = {
     {"ADDWF",         "000111"},
     {"ANDWF",         "000101"},
@@ -63,8 +62,7 @@ static struct command_to_binary slave_0_commands[] = {
     {"SET_CLK_FREQ",  "None"},
     {"SHOW_CLK_FREQ", "None"}
 };
-
-static struct command_to_args slave_0_commands_to_args[] = {
+static struct command_to_num_args slave_0_commands_to_args[] = {
     {"ADDWF",         2},
     {"ANDWF",         2},
     {"CLR",           2},
@@ -175,14 +173,12 @@ int get_expected_num_of_arguments(char *instruction)
 {
     int num_instructions = get_num_instructions_slave_0();
     int idx = 0;
-    char *name;
     while (idx < num_instructions) {
-        name = slave_0_commands_to_args[idx].command;
-        if (strcmp(name, instruction) == 0)
+        if (strcmp(slave_0_commands_to_args[idx].command, instruction) == 0)
             return slave_0_commands_to_args[idx].num_args;
         idx++;
     }
 
     printf("%s, Instruction %s does not exist\n", __func__, instruction);
-    return -1;
+    return INVALID_NUM_ARGS;
 }
