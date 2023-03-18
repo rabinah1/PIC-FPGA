@@ -22,8 +22,8 @@ begin
     begin
 
         if (reset = '1') then
-            data_to_ram  <= (others => '0');
             data_to_wreg <= (others => '0');
+            data_to_ram  <= (others => '0');
             data_to_sw   <= (others => '0');
         else
             if (transfer_to_sw = '1') then
@@ -35,8 +35,8 @@ begin
                 data_to_ram  <= (others => '0');
                 data_to_sw   <= (others => '0');
             else
-                data_to_ram  <= input_data;
                 data_to_wreg <= (others => '0');
+                data_to_ram  <= input_data;
                 data_to_sw   <= (others => '0');
             end if;
         end if;

@@ -49,22 +49,29 @@ begin
                 miso <= '1';
                 idx  := idx - 1;
             elsif (result_enable_mem_dump = '1') then
-                mem_dump_process := '1';
-                serial_out       <= '0';
-                miso             <= '1';
-                idx              := 1016;
+                data_to_send      <= (others => '0');
+                mem_to_send       <= mem_dump_to_sw;
+                data_send_process := '0';
+                mem_dump_process  := '1';
+                serial_out        <= '0';
+                miso              <= '1';
+                idx               := 1016;
             elsif (enable = '1') then
+                data_to_send      <= data_to_sw;
+                mem_to_send       <= (others => '0');
                 data_send_process := '1';
+                mem_dump_process  := '0';
                 serial_out        <= '0';
                 miso              <= '1';
                 idx               := 8;
-            elsif (enable = '0') then
-                data_to_send      <= data_to_sw;
-                mem_to_send       <= mem_dump_to_sw;
-                miso              <= '0';
-                idx               := 0;
+            else
+                data_to_send      <= (others => '0');
+                mem_to_send       <= (others => '0');
                 data_send_process := '0';
                 mem_dump_process  := '0';
+                serial_out        <= '0';
+                miso              <= '0';
+                idx               := 0;
             end if;
         end if;
 

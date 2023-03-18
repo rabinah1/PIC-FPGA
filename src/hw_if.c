@@ -271,7 +271,6 @@ void *mem_dump_thread(void *arguments)
                 else
                     miso_trigger = false;
             } else {
-                timeout++;
                 if (data_count < NUM_BITS_RAM) {
                     if (GET_GPIO(RESULT_PIN))
                         data[data_count] = 1;
