@@ -7,7 +7,7 @@ param(
     [switch] $show_netlist = $false,
     [switch] $clean = $false,
     [switch] $help = $false,
-    $bitfile = "$PSScriptRoot\vhdl_src\output_files\PIC16F84A.sof"
+    $bitfile = "$PSScriptRoot\output_files\PIC16F84A.sof"
 )
 
 if ((!$build -and !$test -and !$load -and !$check_style -and !$show_netlist -and !$clean) -or $help) {
@@ -20,7 +20,7 @@ if ((!$build -and !$test -and !$load -and !$check_style -and !$show_netlist -and
     "- check_style: Run VHDL style check with VSG."
     "- show_netlist: Generate and show gate-level netlist."
     "- clean: Remove all Quartus-generated files."
-    "- bitfile: Bitfile to use, defaults to $PSScriptRoot\vhdl_src\output_files\PIC16F84A.sof."
+    "- bitfile: Bitfile to use, defaults to $PSScriptRoot\output_files\PIC16F84A.sof."
     "- help: Print this help message."
     Exit
 }
@@ -33,43 +33,43 @@ if ($check_style) {
                    "pic16f84a_tb.vhd", "ram.vhd", "serial_to_parallel_instruction.vhd",
                    "states_package.vhd", "state_machine.vhd", "timer.vhd", "w_register.vhd")
     foreach ($file in $src_files) {
-        vsg -f $PSScriptRoot/vhdl_src/$file -c $PSScriptRoot/vsg_config.json
+        vsg -f $PSScriptRoot/$file -c $PSScriptRoot/vsg_config.json
     }
     Write-Host "Style check done"
 }
 
 if ($build) {
     Write-Host "Building..."
-    quartus_map --read_settings_files=on --write_settings_files=off $PSScriptRoot/vhdl_src/PIC16F84A -c PIC16F84A
-    quartus_fit --read_settings_files=off --write_settings_files=off $PSScriptRoot/vhdl_src/PIC16F84A -c PIC16F84A
-    quartus_asm --read_settings_files=off --write_settings_files=off $PSScriptRoot/vhdl_src/PIC16F84A -c PIC16F84A
-    quartus_sta $PSScriptRoot/vhdl_src/PIC16F84A -c PIC16F84A
-    quartus_eda --read_settings_files=off --write_settings_files=off $PSScriptRoot/vhdl_src/PIC16F84A -c PIC16F84A
+    quartus_map --read_settings_files=on --write_settings_files=off $PSScriptRoot/PIC16F84A -c PIC16F84A
+    quartus_fit --read_settings_files=off --write_settings_files=off $PSScriptRoot/PIC16F84A -c PIC16F84A
+    quartus_asm --read_settings_files=off --write_settings_files=off $PSScriptRoot/PIC16F84A -c PIC16F84A
+    quartus_sta $PSScriptRoot/PIC16F84A -c PIC16F84A
+    quartus_eda --read_settings_files=off --write_settings_files=off $PSScriptRoot/PIC16F84A -c PIC16F84A
     Write-Host "Build done"
 }
 
 if ($test) {
     Write-Host "Running VHDL testbench..."
-    python3.8 $PSScriptRoot/test_data/tb_input_parser.py $PSScriptRoot/test_data
-    vlib $PSScriptRoot/vhdl_src/work
+    python3.8 $PSScriptRoot/../test_data/tb_input_parser.py $PSScriptRoot/../test_data
+    vlib $PSScriptRoot/work
     $src_files = @("constants_package.vhd", "states_package.vhd", "alu.vhd", "alu_input_mux.vhd",
                    "alu_output_demux.vhd", "input_receive.vhd", "parallel_to_serial_output.vhd",
                    "pic16f84a.vhd", "pic16f84a_tb.vhd", "ram.vhd", "serial_to_parallel_instruction.vhd",
                    "state_machine.vhd", "w_register.vhd", "timer.vhd", "clk_div.vhd", "i2c.vhd",
                    "pcf8582_simulator.vhd")
     foreach ($file in $src_files) {
-        vcom -2008 -reportprogress 300 -work $PSScriptRoot/vhdl_src/work $PSScriptRoot/vhdl_src/$file
+        vcom -2008 -reportprogress 300 -work $PSScriptRoot/work $PSScriptRoot/$file
     }
-    vsim -c -lib $PSScriptRoot/vhdl_src/work -l $PSScriptRoot/vhdl_src/transcript -wlf $PSScriptRoot/vhdl_src/vsim.wlf `
-      -ginput_file="$PSScriptRoot/test_data/tb_result.txt" -goutput_file="$PSScriptRoot/test_data/tb_input_parsed.txt" `
+    vsim -c -lib $PSScriptRoot/work -l $PSScriptRoot/transcript -wlf $PSScriptRoot/vsim.wlf `
+      -ginput_file="$PSScriptRoot/../test_data/tb_result.txt" -goutput_file="$PSScriptRoot/../test_data/tb_input_parsed.txt" `
       -do "$PSScriptRoot/vsim_commands.txt" pic16f84a_tb
-    python3.8 $PSScriptRoot/test_data/verify_simulation_result.py $PSScriptRoot/test_data
+    python3.8 $PSScriptRoot/../test_data/verify_simulation_result.py $PSScriptRoot/../test_data
     if (-not ($save_test_output)) {
-        rm $PSScriptRoot/vhdl_src/transcript
-        Remove-Item $PSScriptRoot\vhdl_src\work\ -Force -Recurse
-        rm $PSScriptRoot/test_data/tb_input_parsed.txt
-        rm $PSScriptRoot/test_data/tb_result.txt
-        rm $PSScriptRoot/test_data/tb_result_formatted.txt
+        rm $PSScriptRoot/transcript
+        Remove-Item $PSScriptRoot/work -Force -Recurse
+        rm $PSScriptRoot/../test_data/tb_input_parsed.txt
+        rm $PSScriptRoot/../test_data/tb_result.txt
+        rm $PSScriptRoot/../test_data/tb_result_formatted.txt
     }
     Write-Host "VHDL tests done"
 }
@@ -86,16 +86,16 @@ if ($load) {
 
 if ($show_netlist) {
     Write-Host "Generating gate-level netlist..."
-    quartus_npp $PSScriptRoot/vhdl_src/PIC16F84A -c PIC16F84A --netlist_type=sgate
-    qnui $PSScriptRoot/vhdl_src/PIC16F84A
+    quartus_npp $PSScriptRoot/PIC16F84A -c PIC16F84A --netlist_type=sgate
+    qnui $PSScriptRoot/PIC16F84A
 }
 
 if ($clean) {
     Write-Host "Cleaning workspace..."
-    $to_remove = @("vhdl_src/db", "vhdl_src/incremental_db", "vhdl_src/output_files",
-                   "vhdl_src/simulation", "vhdl_src/c5_pin_model_dump.txt", "vhdl_src/vsim.wlf")
+    $to_remove = @("db", "incremental_db", "output_files", "simulation", "c5_pin_model_dump.txt",
+                   "vsim.wlf", "transcript", "work")
     foreach ($path in $to_remove) {
-        if (test-path $path) {
+        if (test-path $PSScriptRoot/$path) {
             Remove-Item -Force -Recurse $PSScriptRoot/$path
         }
     }

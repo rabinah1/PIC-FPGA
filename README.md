@@ -18,11 +18,8 @@ This project is an implementation of a simple microcontroller on the Intel Cyclo
     - Reference and input data for test automation, and Python-scripts for processing the data.
 - vhdl_src/
     - VHDL source code.
-- fpga_tool.ps1: Script for managing (e.g. building) the FPGA design.
 - install_cpputest.ps1: Install cpputest.
-- makefile: Makefile for the software code.
+- makefile: Top-level makefile that is used for both SW and HW.
 - run_tests.sh: Script for running test on real HW.
 - setup_env.sh: Environment setup script for GPIO usage.
 - test_file.txt: File that can be read by the Raspberry Pi, all commands in it are executed.
-- vsg_config.json: Configuration file for VHDL style check (VSG).
-- vsim_commands.txt: List of waves that are added to the Modelsim simulation.
