@@ -1,3 +1,4 @@
+SHELL = /bin/bash
 SRC_DIR = ./src
 VHDL_DIR = ./vhdl_src
 OBJ_DIR = $(SRC_DIR)/objs

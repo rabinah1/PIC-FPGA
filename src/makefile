@@ -1,6 +1,7 @@
+SHELL = /bin/bash
 TARGET_BINARY = main
 LDLIBS = -lm -pthread -lwiringPi
-CC = C:\SysGCC\raspberry\bin\arm-linux-gnueabihf-gcc.exe
+CC = C:/SysGCC/raspberry/bin/arm-linux-gnueabihf-gcc.exe
 CFLAGS = -Wall -O3
 OBJ_DIR = ./objs
 OBJECTS = $(addprefix $(OBJ_DIR)/, process_command.o common_data.o gpio_setup.o hw_if.o app.o)
