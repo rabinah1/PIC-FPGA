@@ -33,7 +33,9 @@ TEST(test_common_data_group, test_get_slave_0_command_with_idx)
         "ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ", "INCF", "INCFSZ", "IORWF",
         "MOVF", "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW", "MOVLW",
         "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG", "READ_STATUS", "READ_ADDRESS", "DUMP_MEM",
-        "NOP", "READ_FILE"};
+        "NOP", "READ_FILE"
+    };
+
     for (int idx = 0; idx < 29; idx++) {
         strcpy(command, get_slave_0_command(idx));
         strcpy(expected_command, expected_commands[idx]);
@@ -49,6 +51,7 @@ TEST(test_common_data_group, test_get_slave_1_command_with_idx)
     memset(command, '\0', sizeof(char) * MAX_STRING_SIZE);
     memset(expected_command, '\0', sizeof(char) * MAX_STRING_SIZE);
     const char *expected_commands[] = {"read_temperature", "echo"};
+
     for (int idx = 0; idx < 2; idx++) {
         strcpy(command, get_slave_1_command(idx));
         strcpy(expected_command, expected_commands[idx]);
@@ -57,18 +60,22 @@ TEST(test_common_data_group, test_get_slave_1_command_with_idx)
     }
 }
 
-TEST(test_common_data_group, test_that_expected_number_of_arguments_for_all_fpga_instructions_are_found)
+TEST(test_common_data_group,
+     test_that_expected_number_of_arguments_for_all_fpga_instructions_are_found)
 {
     int num_args = 0;
     const char *expected_commands[] = {
         "ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ", "INCF", "INCFSZ", "IORWF",
         "MOVF", "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW", "MOVLW",
         "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG", "READ_STATUS", "READ_ADDRESS", "DUMP_MEM",
-        "NOP", "READ_FILE"};
+        "NOP", "READ_FILE"
+    };
     const int expected_args[] = {
         2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1,
-        2, 2, 0, 0, 1, 0, 0, 1};
+        2, 2, 0, 0, 1, 0, 0, 1
+    };
     int idx = 0;
+
     while (idx < 29) {
         char *command = (char *)expected_commands[idx];
         num_args = get_expected_num_of_arguments(command);

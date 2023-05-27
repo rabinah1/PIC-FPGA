@@ -11,8 +11,7 @@ extern "C"
 
 TEST_GROUP(test_process_command_group)
 {
-    void teardown()
-    {
+    void teardown() {
         mock().clear();
     }
 };
@@ -20,27 +19,33 @@ TEST_GROUP(test_process_command_group)
 TEST(test_process_command_group, test_command_validation)
 {
     const char *slave_0_test_commands[] = {"MOVLW 123", "MOVLW INVALID", "ADDWF 1 10", "ADDWF A 14",
-                                           "READ_WREG", "INVALID_ARGS 1 2 3 4 5", "ADDLW 1 3"};
+                                           "READ_WREG", "INVALID_ARGS 1 2 3 4 5", "ADDLW 1 3"
+                                          };
     const char *slave_1_test_commands[] = {"read_temperature", "echo test", "invalid"};
     const char *invalid_slave_test_commands[] = {"command_a", "command_b", "command_c"};
     const bool expected_return_values_slave_0[] = {true, false, true, false, true, false, false};
     const bool expected_return_values_slave_1[] = {true, true, false};
     const bool expected_return_values_invalid_slave[] = {false, false, false};
     set_slave_id(SLAVE_ID_FPGA);
+
     for (int idx = 0; idx < 7; idx++) {
         char *command = (char *)slave_0_test_commands[idx];
         bool expected_return_value = expected_return_values_slave_0[idx];
         bool ret = is_command_valid(command);
         CHECK_EQUAL(ret, expected_return_value);
     }
+
     set_slave_id(SLAVE_ID_ARDUINO);
+
     for (int idx = 0; idx < 3; idx++) {
         char *command = (char *)slave_1_test_commands[idx];
         bool expected_return_value = expected_return_values_slave_1[idx];
         bool ret = is_command_valid(command);
         CHECK_EQUAL(ret, expected_return_value);
     }
+
     set_slave_id(2);
+
     for (int idx = 0; idx < 3; idx++) {
         char *command = (char *)invalid_slave_test_commands[idx];
         bool expected_return_value = expected_return_values_invalid_slave[idx];
@@ -58,12 +63,15 @@ TEST(test_process_command_group, test_is_hw_command)
                               "READ_STATUS", "READ_ADDRESS", "DUMP_MEM", "NOP",
                               "READ_FILE", "read_temperature", "echo", "ENABLE_CLOCK",
                               "DISABLE_CLOCK", "ENABLE_RESET", "DISABLE_RESET", "EXIT", "HELP",
-                              "SELECT_SLAVE", "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"};
+                              "SELECT_SLAVE", "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"
+                             };
     const bool expected_return_values[] = {true, true, true, true, true, true, true, true, true,
                                            true, true, true, true, true, true, true, true, true,
                                            true, true, true, true, true, true, true, true, true,
                                            true, true, true, true, false, false, false, false,
-                                           false, false, false, false, false, false};
+                                           false, false, false, false, false, false
+                                          };
+
     for (int idx = 0; idx < 41; idx++) {
         char *command = (char *)commands[idx];
         int expected_return_value = expected_return_values[idx];
@@ -81,12 +89,15 @@ TEST(test_process_command_group, test_is_sw_command)
                               "READ_STATUS", "READ_ADDRESS", "DUMP_MEM", "NOP",
                               "READ_FILE", "read_temperature", "echo", "ENABLE_CLOCK",
                               "DISABLE_CLOCK", "ENABLE_RESET", "DISABLE_RESET", "EXIT", "HELP",
-                              "SELECT_SLAVE", "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"};
+                              "SELECT_SLAVE", "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"
+                             };
     const bool expected_return_values[] = {false, false, false, false, false, false, false, false,
                                            false, false, false, false, false, false, false, false,
                                            false, false, false, false, false, false, false, false,
                                            false, false, false, false, false, false, false, true,
-                                           true, true, true, true, true, true, true, true, true};
+                                           true, true, true, true, true, true, true, true, true
+                                          };
+
     for (int idx = 0; idx < NUM_HW_COMMANDS + NUM_SW_COMMANDS; idx++) {
         char *command = (char *)commands[idx];
         int expected_return_value = expected_return_values[idx];

@@ -53,15 +53,19 @@ void run_tests(char *serial_port, volatile unsigned *gpio)
     while (fgets(line, sizeof(line), tb_input)) {
         if (line[0] == '*' || (line[0] == '#' && strstr(line, "test ") == NULL))
             continue;
+
         if (line[0] == '#' && strstr(line, "test ") != NULL) {
             sscanf(line, "# %s %d", header_start, &test_num);
             strcpy(result_header, "# result ");
             fprintf(result_file, "%s%d\n", result_header, test_num);
             continue;
         }
+
         line[strlen(line) - 1] = '\0';
+
         if (is_expected_command_type(line, "sw")) {
             sw_ret = process_sw_command(line, gpio);
+
             if (sw_ret == SW_EXIT) {
                 printf("%s, Exiting...\n", __func__);
                 break;
@@ -79,8 +83,10 @@ void run_tests(char *serial_port, volatile unsigned *gpio)
             printf("%s, Command %s was not recognized\n", __func__, line);
             break;
         }
+
         usleep(200000);
     }
+
     fclose(tb_input);
     fclose(result_file);
     printf("%s, Tests finished\n", __func__);
@@ -94,8 +100,10 @@ void run_app(char *serial_port, volatile unsigned *gpio)
     while (true) {
         char command[MAX_STRING_SIZE];
         fgets(command, MAX_STRING_SIZE, stdin);
+
         if (is_expected_command_type(command, "sw")) {
             sw_ret = process_sw_command(command, gpio);
+
             if (sw_ret == SW_EXIT) {
                 printf("%s, Exiting...\n", __func__);
                 break;
@@ -120,6 +128,7 @@ int parse_args(int argc, char *serial_port, char *argv[])
         puts(usage);
     } else if (argc == 3) {
         strcpy(serial_port, argv[1]);
+
         if (strcmp(argv[2], "testing") != 0) {
             printf("%s, Invalid argument %s, only 'testing' is supported\n", argv[2], __func__);
         } else {
@@ -145,27 +154,31 @@ int main(int argc, char *argv[])
         printf("%s, Setting up wiringPi failed, exiting...\n", __func__);
         return 1;
     }
+
     char serial_port[MAX_STRING_SIZE];
     pthread_t clk_thread_id;
     pthread_t timer_ext_clk_thread_id;
     volatile unsigned *gpio = init_gpio_map();
+
     if (gpio == NULL) {
         printf("%s, Failed to initialize GPIO, exiting...\n", __func__);
         return 1;
     }
+
     init_pins((void *)gpio);
     pthread_create(&clk_thread_id, NULL, clk_thread, (void *)gpio);
     pthread_create(&timer_ext_clk_thread_id, NULL, timer_ext_clk_thread, (void *)gpio);
     int mode = parse_args(argc, serial_port, argv);
+
     if (mode == TESTING_MODE)
         run_tests(serial_port, gpio);
     else if (mode == APPLICATION_MODE)
         run_app(serial_port, gpio);
     else
         printf("%s, Invalid mode %d was detected, exiting\n", __func__, mode);
+
     set_clk_exit(true);
     pthread_join(clk_thread_id, NULL);
     pthread_join(timer_ext_clk_thread_id, NULL);
-
     return 0;
 }

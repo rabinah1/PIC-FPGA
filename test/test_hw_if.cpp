@@ -10,8 +10,7 @@ extern "C"
 
 TEST_GROUP(test_hw_if_group)
 {
-    void teardown()
-    {
+    void teardown() {
         mock().clear();
     }
 };
@@ -68,13 +67,16 @@ TEST(test_hw_if_group, test_that_all_fpga_instructions_in_binary_are_found)
         "ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ", "INCF", "INCFSZ", "IORWF",
         "MOVF", "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW", "MOVLW",
         "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG", "READ_STATUS", "READ_ADDRESS", "DUMP_MEM",
-        "NOP"};
+        "NOP"
+    };
     const char *expected_binary[] = {
         "000111", "000101", "000001", "001001", "000011", "001011", "001010", "001111",
         "000100", "001000", "001101", "001100", "000010", "001110", "000110", "111110",
         "111001", "111000", "110000", "111101", "111010", "0100", "0101", "110001", "110010",
-        "110011", "101000", "000000"};
+        "110011", "101000", "000000"
+    };
     int idx = 0;
+
     while (idx < 28) {
         char *command = (char *)expected_commands[idx];
         bool ret = get_command_in_binary(command, binary_data);
@@ -87,12 +89,15 @@ TEST(test_hw_if_group, test_that_all_fpga_instructions_in_binary_are_found)
 TEST(test_hw_if_group, test_binary_command_creation)
 {
     const char *commands[] = {"ADDWF 1 5", "COMF 0 50", "ADDLW 123",
-                              "IORLW 27", "BCF 0 12", "BSF 3 99", "READ_WREG"};
+                              "IORLW 27", "BCF 0 12", "BSF 3 99", "READ_WREG"
+                             };
     const char *expected_binary_strings[] = {"00011110000101", "00100100110010", "11111001111011",
                                              "11100000011011", "01000000001100", "01010111100011",
-                                             "11000100000000"};
+                                             "11000100000000"
+                                            };
     char binary_command[BINARY_COMMAND_SIZE];
     char instruction[MAX_INSTRUCTION_SIZE];
+
     for (int idx = 0; idx < 7; idx++) {
         char *command = (char *)commands[idx];
         char *expected_binary = (char *)expected_binary_strings[idx];
@@ -106,7 +111,8 @@ TEST(test_hw_if_group, test_send_command_to_arduino_serial_connection_failed)
 {
     char serial_port[] = "/dev/ttyUSB0";
     int baud_rate = 9600;
-    mock().expectOneCall("serialOpen").withParameter("serial_port", serial_port).withParameter("baud_rate", baud_rate).andReturnValue(-1);
+    mock().expectOneCall("serialOpen").withParameter("serial_port", serial_port).
+    withParameter("baud_rate", baud_rate).andReturnValue(-1);
     int ret = send_command_to_arduino("read_temperature", NULL, "/dev/ttyUSB0");
     mock().checkExpectations();
     CHECK_FALSE(ret);
@@ -116,8 +122,10 @@ TEST(test_hw_if_group, test_send_command_to_arduino_one_character)
 {
     char serial_port[] = "/dev/ttyUSB0";
     int baud_rate = 9600;
-    mock().expectOneCall("serialOpen").withParameter("serial_port", serial_port).withParameter("baud_rate", baud_rate).andReturnValue(0);
-    mock().expectOneCall("serialPuts").withParameter("fd", 0).withParameter("command", "read_temperature");
+    mock().expectOneCall("serialOpen").withParameter("serial_port", serial_port).
+    withParameter("baud_rate", baud_rate).andReturnValue(0);
+    mock().expectOneCall("serialPuts").withParameter("fd", 0).
+    withParameter("command", "read_temperature");
     mock().expectOneCall("serialDataAvail").withParameter("fd", 0).andReturnValue(1);
     mock().expectOneCall("serialGetchar").withParameter("fd", 0).andReturnValue('\n');
     mock().expectOneCall("serialClose").withParameter("fd", 0);
@@ -130,7 +138,8 @@ TEST(test_hw_if_group, test_send_command_to_arduino_multiple_characters)
 {
     char serial_port[] = "/dev/ttyUSB0";
     int baud_rate = 9600;
-    mock().expectOneCall("serialOpen").withParameter("serial_port", serial_port).withParameter("baud_rate", baud_rate).andReturnValue(0);
+    mock().expectOneCall("serialOpen").withParameter("serial_port", serial_port).
+    withParameter("baud_rate", baud_rate).andReturnValue(0);
     mock().expectOneCall("serialPuts").withParameter("fd", 0).withParameter("command", "some_command");
     mock().expectOneCall("serialDataAvail").withParameter("fd", 0).andReturnValue(1);
     mock().expectOneCall("serialGetchar").withParameter("fd", 0).andReturnValue('a');

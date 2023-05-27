@@ -8,7 +8,7 @@ extern "C"
 int serialOpen(char *port, int baud_rate)
 {
     return mock().actualCall("serialOpen").withParameter("serial_port", port).
-        withParameter("baud_rate", baud_rate).returnIntValue();
+           withParameter("baud_rate", baud_rate).returnIntValue();
 }
 
 void serialPuts(int fd, char *command)

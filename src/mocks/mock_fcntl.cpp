@@ -8,5 +8,5 @@ extern "C"
 int open(char *file, int opts)
 {
     return mock().actualCall("open").withParameter("file", file).
-        withParameter("opts", opts).returnIntValue();
+           withParameter("opts", opts).returnIntValue();
 }

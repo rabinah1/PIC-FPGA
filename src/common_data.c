@@ -173,9 +173,11 @@ int get_expected_num_of_arguments(char *instruction)
 {
     int num_instructions = get_num_instructions_slave_0();
     int idx = 0;
+
     while (idx < num_instructions) {
         if (strcmp(slave_0_commands_to_args[idx].command, instruction) == 0)
             return slave_0_commands_to_args[idx].num_args;
+
         idx++;
     }
 
