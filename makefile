@@ -6,11 +6,11 @@ TEST_DIR = ./test
 TEST_DATA_DIR = ./test_data
 
 .DELETE_ON_ERROR:
-.PHONY: all clean sw hw build_sw check_sw sta_sw clean_sw build_hw check_hw sta_hw netlist load clean_hw help
+.PHONY: all clean sw hw build_sw check_sw sta_sw clean_sw build_arduino load_arduino build_hw check_hw sta_hw netlist load_hw clean_hw help
 
 all: sw hw
 
-sw: build_sw check_sw sta_sw
+sw: build_sw build_arduino check_sw sta_sw
 
 hw: build_hw check_hw sta_hw
 
@@ -47,9 +47,22 @@ clean_sw:
 	$(MAKE) -C $(TEST_DIR) clean
 	-rm -f $(SRC_DIR)/main
 	-rm -rf $(OBJ_DIR)
+	-rm -rf $(SRC_DIR)/arduino/build
 
 sta_hw:
 	$(MAKE) -C $(VHDL_DIR) sta
+
+build_arduino:
+	@echo "Building Arduino design..."
+	arduino-cli compile --build-path $(SRC_DIR)/arduino/build --fqbn \
+	arduino:avr:nano:cpu=atmega328 $(SRC_DIR)/arduino/arduino.ino
+	@echo "Done"
+
+load_arduino:
+	@echo "Loading design to Arduino..."
+	arduino-cli upload --input-dir $(SRC_DIR)/arduino/build -p $(PORT) --fqbn \
+	arduino:avr:nano:cpu=atmega328 $(SRC_DIR)/arduino/arduino.ino
+	@echo "Done"
 
 build_hw:
 	$(MAKE) -C $(VHDL_DIR) build
@@ -57,7 +70,7 @@ build_hw:
 check_hw:
 	$(MAKE) -C $(VHDL_DIR) check
 
-load:
+load_hw:
 	$(MAKE) -C $(VHDL_DIR) load
 
 netlist:
@@ -75,11 +88,14 @@ help:
 	@echo "'build_sw': Build SW design."
 	@echo "'check_sw': Run tests for SW design."
 	@echo "'sta_sw': Run style check for SW design."
+	@echo "'build_arduino': Build the arduino code."
+	@echo "'load_arduino': Load the arduino-design to Arduino Nano. You need to give 'PORT = <port>' as an argument."
 	@echo "'build_hw': Build HW design."
 	@echo "'check_hw' Run tests for HW design. You can set 'TEST_ARGS = -save_test_output' to save the test results."
 	@echo "'sta_hw': Run style check for HW design."
 	@echo "'netlist': Create and open the netlist for HW design."
-	@echo "'load': Load the bitfile to the FPGA. You can set 'LOAD_ARGS = -bitfile <path_to_bitfile>' to give a path to the bitfile. The default bitfile is vhdl_src/output_files/PIC16F84A.sof."
+	@echo "'load_hw': Load the bitfile to the FPGA. You can set 'LOAD_ARGS = -bitfile <path_to_bitfile>'" \
+	"to give a path to the bitfile. The default bitfile is vhdl_src/output_files/PIC16F84A.sof."
 	@echo "'clean': Remove all makefile-generated files."
 	@echo "'clean_sw': Remove all makefile-generated files for SW design."
 	@echo "'clean_hw': Remove all makefile-generated files for HW design."
