@@ -1,9 +1,5 @@
-SHELL = /bin/bash
-SRC_DIR = ./src
-VHDL_DIR = ./vhdl_src
-OBJ_DIR = $(SRC_DIR)/objs
-TEST_DIR = ./test
-TEST_DATA_DIR = ./test_data
+SHELL = /usr/bin/bash
+SUBDIRS = src
 
 .DELETE_ON_ERROR:
 .PHONY: all clean sw hw build_sw check_sw sta_sw clean_sw build_arduino load_arduino build_hw check_hw sta_hw netlist load_hw clean_hw help
@@ -18,14 +14,14 @@ clean: clean_hw clean_sw
 
 build_sw:
 	@echo "Compiling project..."
-	$(MAKE) -C $(SRC_DIR)
-	$(MAKE) -C $(SRC_DIR)/hps
+	$(MAKE) -C $(top_srcdir)/build/src
+	$(MAKE) -C $(top_srcdir)/src/hps
 	@echo "Done"
 	@echo ""
 
 check_sw:
 	@echo "Running tests..."
-	$(MAKE) -C $(TEST_DIR)
+	$(MAKE) -C $(top_srcdir)/test
 	@echo "Done"
 	@echo ""
 
@@ -33,54 +29,65 @@ sta_sw:
 	@echo "Runnig Astyle..."
 	@astyle --style=linux --max-code-length=100 --recursive --align-pointer=name --break-blocks \
 	--pad-oper --pad-header --delete-empty-lines --indent-col1-comments --squeeze-lines=1 \
-	--exclude="arduino\build" -i ".\src\*.c,*.cpp,*.h" ".\test\*.cpp"
+	--exclude="$(top_srcdir)\src\arduino\build" -i "$(top_srcdir)\src\*.c,*.cpp,*.h" "$(top_srcdir)\test\*.cpp"
 	@echo "Done"
 	@echo ""
 	@echo "Running pylint..."
-	@pylint $(TEST_DATA_DIR)/*.py
+	@pylint $(top_srcdir)/test_data/*.py
 	@echo "Done"
 	@echo ""
 	@echo "Running flake8..."
-	@flake8 $(TEST_DATA_DIR)/*.py --max-line-length=100
+	@flake8 $(top_srcdir)/test_data/*.py --max-line-length=100
 	@echo "Done"
 
 clean_sw:
-	$(MAKE) -C $(TEST_DIR) clean
-	-rm -f $(SRC_DIR)/main
-	-rm -rf $(OBJ_DIR)
-	-rm -rf $(SRC_DIR)/arduino/build
-	-rm $(SRC_DIR)/hps/main.o
-	-rm $(SRC_DIR)/hps/hps_main
+	$(MAKE) -C $(top_srcdir)/test clean
+	-rm -f $(top_srcdir)/test/main
+	-rm -rf $(top_srcdir)/src/objs
+	-rm -rf $(top_srcdir)/src/arduino/build
+	-rm -rf $(top_srcdir)/autom4te.cache
+	-rm -f $(top_srcdir)/src/hps/main.o
+	-rm -f $(top_srcdir)/src/hps/hps_main
+	-rm -f $(top_srcdir)/install-sh
+	-rm -f $(top_srcdir)/Makefile.in
+	-rm -f $(top_srcdir)/aclocal.m4
+	-rm -f $(top_srcdir)/compile
+	-rm -f $(top_srcdir)/config.h.in
+	-rm -f $(top_srcdir)/configure
+	-rm -f $(top_srcdir)/depcomp
+	-rm -f $(top_srcdir)/missing
+	-rm -f $(top_srcdir)/src/Makefile.in
+	-rm -f $(top_srcdir)/configure~
 
 sta_hw:
-	$(MAKE) -C $(VHDL_DIR) sta
+	$(MAKE) -C $(top_srcdir)/vhdl_src sta
 
 build_arduino:
 	@echo "Building Arduino design..."
-	arduino-cli compile --build-path $(SRC_DIR)/arduino/build --fqbn \
-	arduino:avr:nano:cpu=atmega328 $(SRC_DIR)/arduino/arduino.ino
+	arduino-cli compile --build-path $(top_srcdir)/src/arduino/build --fqbn \
+	arduino:avr:nano:cpu=atmega328 $(top_srcdir)/src/arduino/arduino.ino
 	@echo "Done"
 
 load_arduino:
 	@echo "Loading design to Arduino..."
-	arduino-cli upload --input-dir $(SRC_DIR)/arduino/build -p $(PORT) --fqbn \
-	arduino:avr:nano:cpu=atmega328 $(SRC_DIR)/arduino/arduino.ino
+	arduino-cli upload --input-dir $(top_srcdir)/src/arduino/build -p $(PORT) --fqbn \
+	arduino:avr:nano:cpu=atmega328 $(top_srcdir)/src/arduino/arduino.ino
 	@echo "Done"
 
 build_hw:
-	$(MAKE) -C $(VHDL_DIR) build
+	$(MAKE) -C $(top_srcdir)/vhdl_src build
 
 check_hw:
-	$(MAKE) -C $(VHDL_DIR) check
+	$(MAKE) -C $(top_srcdir)/vhdl_src check
 
 load_hw:
-	$(MAKE) -C $(VHDL_DIR) load
+	$(MAKE) -C $(top_srcdir)/vhdl_src load
 
 netlist:
-	$(MAKE) -C $(VHDL_DIR) netlist
+	$(MAKE) -C $(top_srcdir)/vhdl_src netlist
 
 clean_hw:
-	$(MAKE) -C $(VHDL_DIR) clean
+	$(MAKE) -C $(top_srcdir)/vhdl_src clean
 
 help:
 	@echo "Available targets for this makefile are:"
