@@ -33,3 +33,4 @@ clk_div.vhd.bak
 vsim.wlf
 i2c.vhd.bak
 pcf8582_simulator.vhd.bak
+src/arduino/build

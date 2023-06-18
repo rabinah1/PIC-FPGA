@@ -32,7 +32,7 @@ sta_sw:
 	@echo "Runnig Astyle..."
 	@astyle --style=linux --max-code-length=100 --recursive --align-pointer=name --break-blocks \
 	--pad-oper --pad-header --delete-empty-lines --indent-col1-comments --squeeze-lines=1 \
-	".\src\*.c,*.cpp,*.h" ".\test\*.cpp"
+	--exclude="arduino\build" -i ".\src\*.c,*.cpp,*.h" ".\test\*.cpp"
 	@echo "Done"
 	@echo ""
 	@echo "Running pylint..."
