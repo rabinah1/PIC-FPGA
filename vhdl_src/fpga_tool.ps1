@@ -31,7 +31,8 @@ if ($check_style) {
                    "constants_package.vhd", "i2c.vhd", "input_receive.vhd",
                    "parallel_to_serial_output.vhd", "pcf8582_simulator.vhd", "pic16f84a.vhd",
                    "pic16f84a_tb.vhd", "ram.vhd", "serial_to_parallel_instruction.vhd",
-                   "states_package.vhd", "state_machine.vhd", "timer.vhd", "w_register.vhd")
+                   "states_package.vhd", "state_machine.vhd", "timer.vhd", "w_register.vhd",
+                   "hps_adder.vhd")
     foreach ($file in $src_files) {
         vsg -f $PSScriptRoot/$file -c $PSScriptRoot/vsg_config.json
     }
@@ -40,6 +41,8 @@ if ($check_style) {
 
 if ($build) {
     Write-Host "Building..."
+    # qsys_generate $PSScriptRoot\hps_adder_qsys.qsys --block-symbol-file --output-directory=$PSScriptRoot\hps_adder_qsys --family="Cyclone V" --part=5CSEBA6U23I7
+    # qsys_generate $PSScriptRoot\hps_adder_qsys.qsys --synthesis=VHDL --output-directory=$PSScriptRoot\hps_adder_qsys\synthesis --family="Cyclone V" --part=5CSEBA6U23I7
     quartus_map --read_settings_files=on --write_settings_files=off $PSScriptRoot/PIC16F84A -c PIC16F84A
     quartus_fit --read_settings_files=off --write_settings_files=off $PSScriptRoot/PIC16F84A -c PIC16F84A
     quartus_asm --read_settings_files=off --write_settings_files=off $PSScriptRoot/PIC16F84A -c PIC16F84A
@@ -93,7 +96,8 @@ if ($show_netlist) {
 if ($clean) {
     Write-Host "Cleaning workspace..."
     $to_remove = @("db", "incremental_db", "output_files", "simulation", "c5_pin_model_dump.txt",
-                   "vsim.wlf", "transcript", "work")
+                   "vsim.wlf", "transcript", "work", "hps_adder_qsys.sopcinfo", "hps_sdram_p0_summary.csv",
+                   "hps_isw_handoff")
     foreach ($path in $to_remove) {
         if (test-path $PSScriptRoot/$path) {
             Remove-Item -Force -Recurse $PSScriptRoot/$path

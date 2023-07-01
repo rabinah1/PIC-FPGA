@@ -14,7 +14,25 @@ entity pic16f84a is
         miso                 : out   std_logic;
         scl                  : out   std_logic;
         alu_output_raspi     : out   std_logic;
-        sda                  : inout std_logic
+        sda                  : inout std_logic;
+        clk_clk              : in    std_logic;
+        memory_mem_a         : out   std_logic_vector(12 downto 0);
+        memory_mem_ba        : out   std_logic_vector(2 downto 0);
+        memory_mem_ck        : out   std_logic;
+        memory_mem_ck_n      : out   std_logic;
+        memory_mem_cke       : out   std_logic;
+        memory_mem_cs_n      : out   std_logic;
+        memory_mem_ras_n     : out   std_logic;
+        memory_mem_cas_n     : out   std_logic;
+        memory_mem_we_n      : out   std_logic;
+        memory_mem_reset_n   : out   std_logic;
+        memory_mem_dq        : inout std_logic_vector(7 downto 0);
+        memory_mem_dqs       : inout std_logic;
+        memory_mem_dqs_n     : inout std_logic;
+        memory_mem_odt       : out   std_logic;
+        memory_mem_dm        : out   std_logic;
+        memory_oct_rzqin     : in    std_logic;
+        reset_reset_n        : in    std_logic
     );
 end entity pic16f84a;
 
@@ -65,6 +83,29 @@ architecture struct of pic16f84a is
     signal ram_address_int                    : std_logic_vector(6 downto 0);
     signal from_alu_to_wreg                   : std_logic_vector(7 downto 0);
     signal from_alu_to_ram                    : std_logic_vector(7 downto 0);
+
+    component hps_adder_qsys is
+        port (
+            clk_clk            : in    std_logic;
+            memory_mem_a       : out   std_logic_vector(12 downto 0);
+            memory_mem_ba      : out   std_logic_vector(2 downto 0);
+            memory_mem_ck      : out   std_logic;
+            memory_mem_ck_n    : out   std_logic;
+            memory_mem_cke     : out   std_logic;
+            memory_mem_cs_n    : out   std_logic;
+            memory_mem_ras_n   : out   std_logic;
+            memory_mem_cas_n   : out   std_logic;
+            memory_mem_we_n    : out   std_logic;
+            memory_mem_reset_n : out   std_logic;
+            memory_mem_dq      : inout std_logic_vector(7 downto 0);
+            memory_mem_dqs     : inout std_logic;
+            memory_mem_dqs_n   : inout std_logic;
+            memory_mem_odt     : out   std_logic;
+            memory_mem_dm      : out   std_logic;
+            memory_oct_rzqin   : in    std_logic;
+            reset_reset_n      : in    std_logic
+        );
+    end component hps_adder_qsys;
 
     component alu_output_demux is
         port (
@@ -246,6 +287,28 @@ architecture struct of pic16f84a is
     end component i2c;
 
 begin
+
+    hps_adder_qsys_unit : component hps_adder_qsys
+        port map (
+            clk_clk            => clk_50mhz_in,
+            memory_mem_a       => memory_mem_a,
+            memory_mem_ba      => memory_mem_ba,
+            memory_mem_ck      => memory_mem_ck,
+            memory_mem_ck_n    => memory_mem_ck_n,
+            memory_mem_cke     => memory_mem_cke,
+            memory_mem_cs_n    => memory_mem_cs_n,
+            memory_mem_ras_n   => memory_mem_ras_n,
+            memory_mem_cas_n   => memory_mem_cas_n,
+            memory_mem_we_n    => memory_mem_we_n,
+            memory_mem_reset_n => memory_mem_reset_n,
+            memory_mem_dq      => memory_mem_dq,
+            memory_mem_dqs     => memory_mem_dqs,
+            memory_mem_dqs_n   => memory_mem_dqs_n,
+            memory_mem_odt     => memory_mem_odt,
+            memory_mem_dm      => memory_mem_dm,
+            memory_oct_rzqin   => memory_oct_rzqin,
+            reset_reset_n      => reset_reset_n
+        );
 
     alu_input_mux_unit : component alu_input_mux
         port map (

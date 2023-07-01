@@ -45,7 +45,25 @@ architecture behavior of pic16f84a_tb is
             miso                 : out   std_logic;
             scl                  : out   std_logic;
             alu_output_raspi     : out   std_logic;
-            sda                  : inout std_logic
+            sda                  : inout std_logic;
+            clk_clk              : in    std_logic;
+            memory_mem_a         : out   std_logic_vector(12 downto 0);
+            memory_mem_ba        : out   std_logic_vector(2 downto 0);
+            memory_mem_ck        : out   std_logic;
+            memory_mem_ck_n      : out   std_logic;
+            memory_mem_cke       : out   std_logic;
+            memory_mem_cs_n      : out   std_logic;
+            memory_mem_ras_n     : out   std_logic;
+            memory_mem_cas_n     : out   std_logic;
+            memory_mem_we_n      : out   std_logic;
+            memory_mem_reset_n   : out   std_logic;
+            memory_mem_dq        : inout std_logic_vector(7 downto 0);
+            memory_mem_dqs       : inout std_logic;
+            memory_mem_dqs_n     : inout std_logic;
+            memory_mem_odt       : out   std_logic;
+            memory_mem_dm        : out   std_logic;
+            memory_oct_rzqin     : in    std_logic;
+            reset_reset_n        : in    std_logic
         );
     end component;
 
@@ -81,7 +99,10 @@ begin
             sda                  => sda,
             scl                  => scl,
             timer_external_input => timer_external_input,
-            alu_output_raspi     => alu_output_raspi
+            alu_output_raspi     => alu_output_raspi,
+            clk_clk              => '0',
+            memory_oct_rzqin     => '0',
+            reset_reset_n        => '0'
         );
 
     dut_2 : component pcf8582_simulator

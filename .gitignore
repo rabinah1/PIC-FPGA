@@ -28,9 +28,15 @@ input_receive.vhd.bak
 tb_input_parsed.txt
 tb_result.txt
 tb_result_formatted.txt
+real_hw_result_diff.txt
+simulation_result_diff.txt
 timer.vhd.bak
 clk_div.vhd.bak
 vsim.wlf
 i2c.vhd.bak
 pcf8582_simulator.vhd.bak
 src/arduino/build
+hps_adder_qsys.sopcinfo
+hps_isw_handoff/
+hps_sdram_p0_summary.csv
+hps_isw_handoff

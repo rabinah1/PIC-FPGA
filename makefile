@@ -19,6 +19,7 @@ clean: clean_hw clean_sw
 build_sw:
 	@echo "Compiling project..."
 	$(MAKE) -C $(SRC_DIR)
+	$(MAKE) -C $(SRC_DIR)/hps
 	@echo "Done"
 	@echo ""
 
@@ -48,6 +49,8 @@ clean_sw:
 	-rm -f $(SRC_DIR)/main
 	-rm -rf $(OBJ_DIR)
 	-rm -rf $(SRC_DIR)/arduino/build
+	-rm $(SRC_DIR)/hps/main.o
+	-rm $(SRC_DIR)/hps/hps_main
 
 sta_hw:
 	$(MAKE) -C $(VHDL_DIR) sta

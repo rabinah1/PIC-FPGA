@@ -2,9 +2,10 @@
 # pylint: disable=consider-using-with
 import argparse
 import os
+import subprocess
 
 
-def parse_args():
+def _parse_args():
     descr = """
 This script compares the result file created by VHDL testbench
 with the reference file created by the user.
@@ -21,18 +22,7 @@ with the reference file created by the user.
     return args
 
 
-def binary_to_decimal(binary):
-    idx = 0
-    decimal = 0
-    while idx < 8:
-        decimal += int(binary[idx]) * pow(2, 7 - idx)
-        idx += 1
-
-    return decimal
-
-
-def main():
-    args = parse_args()
+def _format_results(args):
     in_file = open(os.path.join(args.input_dir, "tb_result.txt"), "r", encoding="utf-8")
     out_file = open(os.path.join(args.input_dir, "tb_result_formatted.txt"), "w", encoding="utf-8")
 
@@ -42,7 +32,7 @@ def main():
             out_file.write(line)
             line = in_file.readline()
             continue
-        decimal_value = binary_to_decimal(line.strip())
+        decimal_value = _binary_to_decimal(line.strip())
         out_file.write(str(decimal_value))
         out_file.write("\n")
         line = in_file.readline()
@@ -50,44 +40,35 @@ def main():
     in_file.close()
     out_file.close()
 
-    result_file = open(os.path.join(args.input_dir, "tb_result_formatted.txt"), "r",
-                       encoding="utf-8")
-    reference_file = open(os.path.join(args.input_dir, "tb_reference.txt"), "r", encoding="utf-8")
-    result_line = result_file.readline()
-    reference_line = reference_file.readline()
-    case_passed = True
-    suite_passed = True
-    test_num = None
 
-    while result_line:
-        if result_line.startswith("#"):
-            if test_num is not None:
-                if case_passed:
-                    print(f"Test {test_num} passed")
-                else:
-                    print(f"Test {test_num} failed")
-            test_num = result_line.split("_")[-1].strip()
-            case_passed = True
-        if not reference_line:
-            print("Test suite failed: result file contains more lines than reference file")
-            return
-        if result_line != reference_line:
-            suite_passed = False
-            case_passed = False
-        result_line = result_file.readline()
-        reference_line = reference_file.readline()
-    if suite_passed:
-        if reference_line:
-            print("Test suite failed: reference file contains more lines than result file")
-            return
-        print(f"Test {test_num} passed")
-        print("Test suite passed")
-    else:
-        print(f"Test {test_num} failed")
-        print("Test suite failed")
+def _binary_to_decimal(binary):
+    idx = 0
+    decimal = 0
+    while idx < 8:
+        decimal += int(binary[idx]) * pow(2, 7 - idx)
+        idx += 1
 
-    reference_file.close()
-    result_file.close()
+    return decimal
+
+
+def _check_diff(args):
+    result_file = os.path.join(os.getcwd(), "../test_data/tb_result_formatted.txt")
+    reference_file = os.path.join(os.getcwd(), "../test_data/tb_reference_test.txt")
+    ret = subprocess.run(["diff", result_file, reference_file, "-C", "10", "-w"], check=False,
+                         capture_output=True)
+    if ret.stdout:
+        with open(os.path.join(args.input_dir, "simulation_result_diff.txt"), "w",
+                  encoding="utf-8") as diff_file:
+            diff_file.write(ret.stdout.decode('ascii'))
+        print("Test suite failed, please check simulation_result_diff.txt")
+        return
+    print("Test suite passed")
+
+
+def main():
+    args = _parse_args()
+    _format_results(args)
+    _check_diff(args)
 
 
 if __name__ == "__main__":
