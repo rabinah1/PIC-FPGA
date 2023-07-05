@@ -59,7 +59,17 @@ begin
                     trig_state_machine <= '1';
                 else
                     opcode_var := binary_string(13 downto 8);
-                    if (opcode_var = DUMP_MEM) then
+                    if (opcode_var = DUMP_EEPROM) then
+                        opcode_out         <= binary_string(13 downto 8);
+                        bit_idx_out        <= (others => '0');
+                        address_out        <= (others => '0');
+                        literal_out        <= (others => '0');
+                        sel_alu_input_mux  <= '0';
+                        d                  <= '0';
+                        transfer_to_sw     <= '0';
+                        instruction_type   <= "110";
+                        trig_state_machine <= '1';
+                    elsif (opcode_var = DUMP_RAM) then
                         opcode_out         <= binary_string(13 downto 8);
                         bit_idx_out        <= (others => '0');
                         address_out        <= (others => '0');

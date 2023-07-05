@@ -19,7 +19,7 @@ void init_pins(void *gpio_void)
     (void) gpio;
     int out_pins[] = {CLK_PIN, TIMER_EXT_CLK_PIN, RESET_PIN, DATA_PIN, MOSI_PIN};
     size_t num_out_pins = sizeof(out_pins) / sizeof(out_pins[0]);
-    uint16_t idx = 0;
+    uint8_t idx = 0;
 
     while (idx < num_out_pins) {
         INP_GPIO(out_pins[idx]); // Pin cannot be set as output unless first set as input

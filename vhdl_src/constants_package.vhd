@@ -30,7 +30,8 @@ package constants_package is
     constant READ_STATUS         : std_logic_vector(5 downto 0) := "110010";
     constant READ_ADDRESS        : std_logic_vector(5 downto 0) := "110011";
     constant NOP                 : std_logic_vector(5 downto 0) := "000000";
-    constant DUMP_MEM            : std_logic_vector(5 downto 0) := "101000";
+    constant DUMP_RAM            : std_logic_vector(5 downto 0) := "101000";
+    constant DUMP_EEPROM         : std_logic_vector(5 downto 0) := "101100";
     constant INDF_ADDRESS        : std_logic_vector(6 downto 0) := "0000000";
     constant TMR0_ADDRESS        : std_logic_vector(6 downto 0) := "0000001";
     constant OPTION_ADDRESS      : std_logic_vector(6 downto 0) := "0000010";
@@ -40,6 +41,7 @@ package constants_package is
     constant EEDATA_ADDRESS      : std_logic_vector(6 downto 0) := "0001000";
     constant EEADR_ADDRESS       : std_logic_vector(6 downto 0) := "0001001";
     constant RAM_SIZE            : integer                      := 127;
+    constant EEPROM_SIZE         : integer                      := 256;
     constant SLAVE_ADDRESS_READ  : std_logic_vector(7 downto 0) := "10100001";
     constant SLAVE_ADDRESS_WRITE : std_logic_vector(7 downto 0) := "10100000";
 

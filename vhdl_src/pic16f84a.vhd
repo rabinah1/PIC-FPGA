@@ -33,8 +33,10 @@ architecture struct of pic16f84a is
     signal ram_write_enable_int               : std_logic;
     signal timer_write_enable_int             : std_logic;
     signal transfer_to_sw_int                 : std_logic;
-    signal mem_dump_enable_int                : std_logic;
-    signal result_enable_mem_dump_int         : std_logic;
+    signal ram_dump_enable_int                : std_logic;
+    signal eeprom_dump_enable_int             : std_logic;
+    signal result_enable_ram_dump_int         : std_logic;
+    signal result_enable_eeprom_dump_int      : std_logic;
     signal edge_trigger_int                   : std_logic;
     signal clk_100khz_int                     : std_logic;
     signal clk_200khz_int                     : std_logic;
@@ -54,7 +56,8 @@ architecture struct of pic16f84a is
     signal binary_string_int                  : std_logic_vector(13 downto 0);
     signal bit_idx_out_int                    : std_logic_vector(2 downto 0);
     signal data_to_sw_int                     : std_logic_vector(7 downto 0);
-    signal mem_dump_int                       : std_logic_vector(1015 downto 0);
+    signal ram_dump_int                       : std_logic_vector(1015 downto 0);
+    signal eeprom_dump_int                    : std_logic_vector(2047 downto 0);
     signal instruction_type_int               : std_logic_vector(2 downto 0);
     signal status_out_alu                     : std_logic_vector(7 downto 0);
     signal status_in_alu                      : std_logic_vector(7 downto 0);
@@ -95,6 +98,7 @@ architecture struct of pic16f84a is
             write_enable                   : in    std_logic;
             read_enable                    : in    std_logic;
             mem_dump_enable                : in    std_logic;
+            eeprom_dump_enable             : in    std_logic;
             status_write_enable            : in    std_logic;
             timer_write_enable             : in    std_logic;
             eeprom_read                    : in    std_logic;
@@ -107,6 +111,7 @@ architecture struct of pic16f84a is
             address                        : in    std_logic_vector(6 downto 0);
             edge_trigger                   : out   std_logic;
             mem_dump                       : out   std_logic_vector(1015 downto 0);
+            eeprom_dump                    : out   std_logic_vector(2047 downto 0);
             data_out                       : out   std_logic_vector(7 downto 0);
             status_out                     : out   std_logic_vector(7 downto 0);
             eedata_out                     : out   std_logic_vector(7 downto 0);
@@ -117,20 +122,22 @@ architecture struct of pic16f84a is
 
     component state_machine is
         port (
-            clk                    : in    std_logic;
-            reset                  : in    std_logic;
-            trig_state_machine     : in    std_logic;
-            instruction_type       : in    std_logic_vector(2 downto 0);
-            ram_read_enable        : out   std_logic;
-            alu_input_mux_enable   : out   std_logic;
-            alu_enable             : out   std_logic;
-            wreg_enable            : out   std_logic;
-            ram_write_enable       : out   std_logic;
-            mem_dump_enable        : out   std_logic;
-            status_write_enable    : out   std_logic;
-            result_enable          : out   std_logic;
-            timer_write_enable     : out   std_logic;
-            result_enable_mem_dump : out   std_logic
+            clk                       : in    std_logic;
+            reset                     : in    std_logic;
+            trig_state_machine        : in    std_logic;
+            instruction_type          : in    std_logic_vector(2 downto 0);
+            ram_read_enable           : out   std_logic;
+            alu_input_mux_enable      : out   std_logic;
+            alu_enable                : out   std_logic;
+            wreg_enable               : out   std_logic;
+            ram_write_enable          : out   std_logic;
+            ram_dump_enable           : out   std_logic;
+            eeprom_dump_enable        : out   std_logic;
+            status_write_enable       : out   std_logic;
+            result_enable             : out   std_logic;
+            timer_write_enable        : out   std_logic;
+            result_enable_ram_dump    : out   std_logic;
+            result_enable_eeprom_dump : out   std_logic
         );
     end component state_machine;
 
@@ -190,14 +197,16 @@ architecture struct of pic16f84a is
 
     component parallel_to_serial_output is
         port (
-            clk                    : in    std_logic;
-            reset                  : in    std_logic;
-            enable                 : in    std_logic;
-            result_enable_mem_dump : in    std_logic;
-            data_to_sw             : in    std_logic_vector(7 downto 0);
-            mem_dump_to_sw         : in    std_logic_vector(1015 downto 0);
-            miso                   : out   std_logic;
-            serial_out             : out   std_logic
+            clk                       : in    std_logic;
+            reset                     : in    std_logic;
+            enable                    : in    std_logic;
+            result_enable_ram_dump    : in    std_logic;
+            result_enable_eeprom_dump : in    std_logic;
+            data_to_sw                : in    std_logic_vector(7 downto 0);
+            ram_dump_to_sw            : in    std_logic_vector(1015 downto 0);
+            eeprom_dump_to_sw         : in    std_logic_vector(2047 downto 0);
+            miso                      : out   std_logic;
+            serial_out                : out   std_logic
         );
     end component parallel_to_serial_output;
 
@@ -267,7 +276,8 @@ begin
             reset                          => reset,
             write_enable                   => ram_write_enable_int,
             read_enable                    => ram_read_enable_int,
-            mem_dump_enable                => mem_dump_enable_int,
+            mem_dump_enable                => ram_dump_enable_int,
+            eeprom_dump_enable             => eeprom_dump_enable_int,
             status_write_enable            => status_write_enable_int,
             timer_write_enable             => timer_write_enable_int,
             eeprom_read                    => write_to_ram_trig,
@@ -279,7 +289,8 @@ begin
             status_in                      => status_out_alu,
             address                        => ram_address_int,
             edge_trigger                   => edge_trigger_int,
-            mem_dump                       => mem_dump_int,
+            mem_dump                       => ram_dump_int,
+            eeprom_dump                    => eeprom_dump_int,
             data_out                       => from_ram_to_alu,
             status_out                     => status_in_alu,
             eedata_out                     => eedata_int,
@@ -303,20 +314,22 @@ begin
 
     state_machine_unit : component state_machine
         port map (
-            clk                    => clk,
-            reset                  => reset,
-            trig_state_machine     => trig_state_machine_int,
-            instruction_type       => instruction_type_int,
-            ram_read_enable        => ram_read_enable_int,
-            alu_input_mux_enable   => alu_input_mux_enable_int,
-            alu_enable             => alu_enable_int,
-            wreg_enable            => wreg_enable_int,
-            ram_write_enable       => ram_write_enable_int,
-            mem_dump_enable        => mem_dump_enable_int,
-            status_write_enable    => status_write_enable_int,
-            result_enable          => result_enable_int,
-            timer_write_enable     => timer_write_enable_int,
-            result_enable_mem_dump => result_enable_mem_dump_int
+            clk                       => clk,
+            reset                     => reset,
+            trig_state_machine        => trig_state_machine_int,
+            instruction_type          => instruction_type_int,
+            ram_read_enable           => ram_read_enable_int,
+            alu_input_mux_enable      => alu_input_mux_enable_int,
+            alu_enable                => alu_enable_int,
+            wreg_enable               => wreg_enable_int,
+            ram_write_enable          => ram_write_enable_int,
+            ram_dump_enable           => ram_dump_enable_int,
+            eeprom_dump_enable        => eeprom_dump_enable_int,
+            status_write_enable       => status_write_enable_int,
+            result_enable             => result_enable_int,
+            timer_write_enable        => timer_write_enable_int,
+            result_enable_ram_dump    => result_enable_ram_dump_int,
+            result_enable_eeprom_dump => result_enable_eeprom_dump_int
         );
 
     serial_to_parallel_instruction_unit : component serial_to_parallel_instruction
@@ -348,14 +361,16 @@ begin
 
     parallel_to_serial_output_unit : component parallel_to_serial_output
         port map (
-            clk                    => clk,
-            reset                  => reset,
-            enable                 => result_enable_int,
-            result_enable_mem_dump => result_enable_mem_dump_int,
-            data_to_sw             => data_to_sw_int,
-            mem_dump_to_sw         => mem_dump_int,
-            miso                   => miso,
-            serial_out             => alu_output_raspi
+            clk                       => clk,
+            reset                     => reset,
+            enable                    => result_enable_int,
+            result_enable_ram_dump    => result_enable_ram_dump_int,
+            result_enable_eeprom_dump => result_enable_eeprom_dump_int,
+            data_to_sw                => data_to_sw_int,
+            ram_dump_to_sw            => ram_dump_int,
+            eeprom_dump_to_sw         => eeprom_dump_int,
+            miso                      => miso,
+            serial_out                => alu_output_raspi
         );
 
     w_register_unit : component w_register

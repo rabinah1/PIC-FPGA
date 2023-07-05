@@ -25,6 +25,32 @@ Arguments:\n\
     testing (optional)       This will trigger the test automation\n\
 ";
 
+bool is_comment(char *line)
+{
+    if (line[0] == '*' || (line[0] == '#' && strstr(line, "test ") == NULL))
+        return true;
+
+    return false;
+}
+
+bool add_result_header(char *line, FILE *result_file)
+{
+    int test_num = 0;
+    char header_start[MAX_STRING_SIZE];
+    char result_header[MAX_STRING_SIZE];
+    memset(header_start, '\0', sizeof(header_start));
+    memset(result_header, '\0', sizeof(result_header));
+
+    if (line[0] == '#' && strstr(line, "test ") != NULL) {
+        sscanf(line, "# %s %d", header_start, &test_num);
+        strcpy(result_header, "# result ");
+        fprintf(result_file, "%s%d\n", result_header, test_num);
+        return true;
+    }
+
+    return false;
+}
+
 void run_tests(char *serial_port, volatile unsigned *gpio)
 {
     printf("%s, Running tests on HW, please wait...\n", __func__);
@@ -34,16 +60,11 @@ void run_tests(char *serial_port, volatile unsigned *gpio)
     char tb_input_file[3 * MAX_STRING_SIZE];
     char tb_result_file[3 * MAX_STRING_SIZE];
     char line[MAX_STRING_SIZE];
-    char header_start[MAX_STRING_SIZE];
-    char result_header[MAX_STRING_SIZE];
-    int test_num = 0;
     int sw_ret = SW_SUCCESS;
     memset(pwd, '\0', sizeof(pwd));
     memset(tb_input_file, '\0', sizeof(tb_input_file));
     memset(tb_result_file, '\0', sizeof(tb_result_file));
     memset(line, '\0', sizeof(line));
-    memset(header_start, '\0', sizeof(header_start));
-    memset(result_header, '\0', sizeof(result_header));
     getcwd(pwd, sizeof(pwd));
     sprintf(tb_input_file, "%s/test_data/real_hw_tb_input.txt", pwd);
     sprintf(tb_result_file, "%s/test_data/real_hw_tb_result.txt", pwd);
@@ -51,15 +72,11 @@ void run_tests(char *serial_port, volatile unsigned *gpio)
     result_file = fopen(tb_result_file, "w");
 
     while (fgets(line, sizeof(line), tb_input)) {
-        if (line[0] == '*' || (line[0] == '#' && strstr(line, "test ") == NULL))
+        if (is_comment(line))
             continue;
 
-        if (line[0] == '#' && strstr(line, "test ") != NULL) {
-            sscanf(line, "# %s %d", header_start, &test_num);
-            strcpy(result_header, "# result ");
-            fprintf(result_file, "%s%d\n", result_header, test_num);
+        if (add_result_header(line, result_file))
             continue;
-        }
 
         line[strlen(line) - 1] = '\0';
 

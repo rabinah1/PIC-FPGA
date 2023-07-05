@@ -60,7 +60,7 @@ TEST(test_process_command_group, test_is_hw_command)
                               "INCF", "INCFSZ", "IORWF", "MOVF", "RLF", "RRF",
                               "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW",
                               "MOVLW", "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG",
-                              "READ_STATUS", "READ_ADDRESS", "DUMP_MEM", "NOP",
+                              "READ_STATUS", "READ_ADDRESS", "DUMP_RAM", "NOP",
                               "READ_FILE", "read_temperature", "echo", "ENABLE_CLOCK",
                               "DISABLE_CLOCK", "ENABLE_RESET", "DISABLE_RESET", "EXIT", "HELP",
                               "SELECT_SLAVE", "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"
@@ -86,7 +86,7 @@ TEST(test_process_command_group, test_is_sw_command)
                               "INCF", "INCFSZ", "IORWF", "MOVF", "RLF", "RRF",
                               "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW",
                               "MOVLW", "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG",
-                              "READ_STATUS", "READ_ADDRESS", "DUMP_MEM", "NOP",
+                              "READ_STATUS", "READ_ADDRESS", "DUMP_RAM", "DUMP_EEPROM", "NOP",
                               "READ_FILE", "read_temperature", "echo", "ENABLE_CLOCK",
                               "DISABLE_CLOCK", "ENABLE_RESET", "DISABLE_RESET", "EXIT", "HELP",
                               "SELECT_SLAVE", "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"
@@ -94,8 +94,8 @@ TEST(test_process_command_group, test_is_sw_command)
     const bool expected_return_values[] = {false, false, false, false, false, false, false, false,
                                            false, false, false, false, false, false, false, false,
                                            false, false, false, false, false, false, false, false,
-                                           false, false, false, false, false, false, false, true,
-                                           true, true, true, true, true, true, true, true, true
+                                           false, false, false, false, false, false, false, false,
+                                           true, true, true, true, true, true, true, true, true, true
                                           };
 
     for (int idx = 0; idx < NUM_HW_COMMANDS + NUM_SW_COMMANDS; idx++) {

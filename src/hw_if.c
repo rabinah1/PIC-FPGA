@@ -24,6 +24,12 @@ struct result_thread_args {
     bool write_to_file;
 };
 
+struct mem_dump_thread_args {
+    volatile unsigned *gpio;
+    int num_bits;
+    int num_bytes;
+};
+
 #ifndef UNIT_TEST
 void set_gpio_high(int pin, volatile unsigned *gpio)
 {
@@ -86,13 +92,86 @@ bool get_command_in_binary(char *instruction, char *opcode)
     return false;
 }
 
-bool create_binary_command(char *command, char *binary_command, char *instruction)
+bool create_bit_or_byte_oriented_instruction(char *command, char *instruction, char *binary_command)
 {
+    uint32_t bit_or_d = 0;
+    uint32_t literal_or_address = 0;
     char *binary_data_operand = malloc(MAX_OPERAND_SIZE);
     char *binary_data_opcode = malloc(MAX_OPCODE_SIZE);
     char *binary_data_bit_or_d = malloc(MAX_BIT_OR_D_SIZE);
+    memset(binary_data_bit_or_d, '\0', sizeof(char) * MAX_BIT_OR_D_SIZE);
+    memset(binary_data_operand, '\0', sizeof(char) * MAX_OPERAND_SIZE);
+    memset(binary_data_opcode, '\0', sizeof(char) * MAX_OPCODE_SIZE);
+    sscanf(command, "%s %d %d", instruction, &bit_or_d, &literal_or_address);
+
+    if (!get_command_in_binary(instruction, binary_data_opcode)) {
+        free(binary_data_opcode);
+        free(binary_data_operand);
+        free(binary_data_bit_or_d);
+        return false;
+    }
+
+    if (strcmp(instruction, "BCF") == 0 || strcmp(instruction, "BSF") == 0)
+        decimal_to_binary(bit_or_d, binary_data_bit_or_d, 3);
+    else
+        decimal_to_binary(bit_or_d, binary_data_bit_or_d, 1);
+
+    decimal_to_binary(literal_or_address, binary_data_operand, 7);
+    sprintf(binary_command, "%s%s%s", binary_data_opcode, binary_data_bit_or_d,
+            binary_data_operand);
+    free(binary_data_opcode);
+    free(binary_data_operand);
+    free(binary_data_bit_or_d);
+    return true;
+}
+
+bool create_literal_instruction(char *command, char *instruction, char *binary_command)
+{
     uint32_t literal_or_address = 0;
-    uint32_t bit_or_d = 0;
+    char *binary_data_operand = malloc(MAX_OPERAND_SIZE);
+    char *binary_data_opcode = malloc(MAX_OPCODE_SIZE);
+    memset(binary_data_operand, '\0', sizeof(char) * MAX_OPERAND_SIZE);
+    memset(binary_data_opcode, '\0', sizeof(char) * MAX_OPCODE_SIZE);
+    sscanf(command, "%s %d", instruction, &literal_or_address);
+
+    if (!get_command_in_binary(instruction, binary_data_opcode)) {
+        free(binary_data_opcode);
+        free(binary_data_operand);
+        return false;
+    }
+
+    decimal_to_binary(literal_or_address, binary_data_operand, 8);
+    sprintf(binary_command, "%s%s", binary_data_opcode, binary_data_operand);
+    free(binary_data_opcode);
+    free(binary_data_operand);
+    return true;
+}
+
+bool create_other_instruction(char *command, char *instruction, char *binary_command)
+{
+    uint32_t literal_or_address = 0;
+    char *binary_data_operand = malloc(MAX_OPERAND_SIZE);
+    char *binary_data_opcode = malloc(MAX_OPCODE_SIZE);
+    memset(binary_data_operand, '\0', sizeof(char) * MAX_OPERAND_SIZE);
+    memset(binary_data_opcode, '\0', sizeof(char) * MAX_OPCODE_SIZE);
+    sscanf(command, "%s", instruction);
+
+    if (!get_command_in_binary(instruction, binary_data_opcode)) {
+        free(binary_data_opcode);
+        free(binary_data_operand);
+        return false;
+    }
+
+    literal_or_address = 0;
+    decimal_to_binary(literal_or_address, binary_data_operand, 8);
+    sprintf(binary_command, "%s%s", binary_data_opcode, binary_data_operand);
+    free(binary_data_opcode);
+    free(binary_data_operand);
+    return true;
+}
+
+bool create_binary_command(char *command, char *binary_command, char *instruction)
+{
     int num_spaces = 0;
     int idx = 0;
 
@@ -103,89 +182,48 @@ bool create_binary_command(char *command, char *binary_command, char *instructio
         idx++;
     }
 
-    memset(binary_data_bit_or_d, '\0', sizeof(char) * MAX_BIT_OR_D_SIZE);
-    memset(binary_data_operand, '\0', sizeof(char) * MAX_OPERAND_SIZE);
-    memset(binary_data_opcode, '\0', sizeof(char) * MAX_OPCODE_SIZE);
-
     if (num_spaces == 2) { // bit-oriented or byte-oriented instruction
-        sscanf(command, "%s %d %d", instruction, &bit_or_d, &literal_or_address);
-
-        if (!get_command_in_binary(instruction, binary_data_opcode)) {
-            free(binary_data_opcode);
-            free(binary_data_operand);
-            free(binary_data_bit_or_d);
-            return false;
-        }
-
-        if (strcmp(instruction, "BCF") == 0 || strcmp(instruction, "BSF") == 0)
-            decimal_to_binary(bit_or_d, binary_data_bit_or_d, 3);
-        else
-            decimal_to_binary(bit_or_d, binary_data_bit_or_d, 1);
-
-        decimal_to_binary(literal_or_address, binary_data_operand, 7);
-        sprintf(binary_command, "%s%s%s", binary_data_opcode, binary_data_bit_or_d,
-                binary_data_operand);
+        return create_bit_or_byte_oriented_instruction(command, instruction, binary_command);
     } else if (num_spaces == 1) { // literal instruction
-        sscanf(command, "%s %d", instruction, &literal_or_address);
-
-        if (!get_command_in_binary(instruction, binary_data_opcode)) {
-            free(binary_data_opcode);
-            free(binary_data_operand);
-            free(binary_data_bit_or_d);
-            return false;
-        }
-
-        decimal_to_binary(literal_or_address, binary_data_operand, 8);
-        sprintf(binary_command, "%s%s", binary_data_opcode, binary_data_operand);
+        return create_literal_instruction(command, instruction, binary_command);
     } else if (num_spaces == 0) { // Other instruction
-        sscanf(command, "%s", instruction);
-
-        if (!get_command_in_binary(instruction, binary_data_opcode)) {
-            free(binary_data_opcode);
-            free(binary_data_operand);
-            free(binary_data_bit_or_d);
-            return false;
-        }
-
-        literal_or_address = 0;
-        decimal_to_binary(literal_or_address, binary_data_operand, 8);
-        sprintf(binary_command, "%s%s", binary_data_opcode, binary_data_operand);
+        return create_other_instruction(command, instruction, binary_command);
     } else {
         printf("%s, Invalid number of spaces %d in command %s\n", __func__, num_spaces, command);
-        free(binary_data_opcode);
-        free(binary_data_operand);
-        free(binary_data_bit_or_d);
         return false;
     }
+}
 
-    free(binary_data_opcode);
-    free(binary_data_operand);
-    free(binary_data_bit_or_d);
-    return true;
+void print_result(volatile int *data, bool write_to_file, FILE *result_file)
+{
+    int result_decimal = binary_to_decimal(data);
+
+    if (write_to_file)
+        fprintf(result_file, "%d\n", result_decimal);
+    else
+        printf("%d\n", result_decimal);
 }
 
 void *result_thread(void *arguments)
 {
     struct result_thread_args *args;
     args = (struct result_thread_args *)arguments;
-    volatile unsigned *gpio;
+    volatile unsigned *gpio = args->gpio;
     volatile int data[DATA_BIT_WIDTH] = {0};
-    FILE *result_file;
-    bool write_to_file;
+    FILE *result_file = args->result_file;
+    bool write_to_file = args->write_to_file;
     bool miso_trigger = false;
     int data_count = 0;
-    int result_decimal = 0;
     int timeout = 0;
+    int poll_ret = 0;
     int poll_timeout = (int)round((float)1000 / (float)get_clk_freq() * 10);
-    gpio = args->gpio;
-    result_file = args->result_file;
-    write_to_file = args->write_to_file;
     struct pollfd pfds[1];
-    char clk_in_pin_file[MAX_STRING_SIZE] = "/sys/class/gpio/gpio21/value";
+    char clk_in_pin_file[MAX_STRING_SIZE];
+    sprintf(clk_in_pin_file, "/sys/class/gpio/gpio%d/value", CLK_IN_PIN);
     int clk_in_pin_fd = open(clk_in_pin_file, O_RDONLY);
 
     if (clk_in_pin_fd < 0) {
-        printf("%s, Error with opening file for gpio 21\n", __func__);
+        printf("%s, Error with opening file for gpio %d\n", __func__, CLK_IN_PIN);
         return NULL;
     }
 
@@ -196,7 +234,7 @@ void *result_thread(void *arguments)
         char buff[32] = {0};
         lseek(clk_in_pin_fd, 0, SEEK_SET);
         read(clk_in_pin_fd, buff, 32);
-        int poll_ret = poll(pfds, 1, poll_timeout);
+        poll_ret = poll(pfds, 1, poll_timeout);
 
         if (poll_ret == 0) {
             printf("%s, Waiting for clock edge timed out\n", __func__);
@@ -230,15 +268,7 @@ void *result_thread(void *arguments)
             timeout++;
 
             if (data_count == DATA_BIT_WIDTH) {
-                result_decimal = binary_to_decimal(data);
-                data_count = 0;
-
-                if (write_to_file)
-                    fprintf(result_file, "%d\n", result_decimal);
-                else
-                    printf("%d\n", result_decimal);
-
-                result_decimal = 0;
+                print_result(data, write_to_file, result_file);
                 close(clk_in_pin_fd);
                 return NULL;
             }
@@ -254,22 +284,27 @@ void *result_thread(void *arguments)
 
 void *mem_dump_thread(void *arguments)
 {
-    volatile unsigned *gpio;
-    volatile int data[NUM_BITS_RAM] = {0};
+    struct mem_dump_thread_args *args;
+    args = (struct mem_dump_thread_args *)arguments;
+    volatile unsigned *gpio = args->gpio;
+    int num_bits = args->num_bits;
+    int num_bytes = args->num_bytes;
+    volatile int data[NUM_BITS_EEPROM] = {0};
     bool miso_trigger = false;
     int byte_data[DATA_BIT_WIDTH] = {0};
     int data_count = 0;
     int result = 0;
     int counter = 0;
     int timeout = 0;
+    // int poll_ret = 0;
     int poll_timeout = (int)round((float)1000 / (float)get_clk_freq() * 10);
-    gpio = (volatile unsigned *)arguments;
     struct pollfd pfds[1];
-    char clk_in_pin_file[MAX_STRING_SIZE] = "/sys/class/gpio/gpio21/value";
+    char clk_in_pin_file[MAX_STRING_SIZE];
+    sprintf(clk_in_pin_file, "/sys/class/gpio/gpio%d/value", CLK_IN_PIN);
     int clk_in_pin_fd = open(clk_in_pin_file, O_RDONLY);
 
     if (clk_in_pin_fd < 0) {
-        printf("%s, Error with opening file for gpio 21\n", __func__);
+        printf("%s, Error with opening file for gpio %d\n", __func__, CLK_IN_PIN);
         return NULL;
     }
 
@@ -300,7 +335,7 @@ void *mem_dump_thread(void *arguments)
                 else
                     miso_trigger = false;
             } else {
-                if (data_count < NUM_BITS_RAM) {
+                if (data_count < num_bits) {
                     if (GET_GPIO(RESULT_PIN))
                         data[data_count] = 1;
                     else
@@ -313,8 +348,8 @@ void *mem_dump_thread(void *arguments)
             // rising edge
             timeout++;
 
-            if (data_count == NUM_BITS_RAM) {
-                for (int idx = NUM_BYTES_RAM - 1; idx >= 0; idx--) {
+            if (data_count == num_bits) {
+                for (int idx = num_bytes - 1; idx >= 0; idx--) {
                     if (counter == MEM_DUMP_VALUES_PER_LINE) {
                         counter = 0;
                         printf("\n");
@@ -428,18 +463,20 @@ bool send_command_to_arduino(char *command, FILE *result_file, char *serial_port
 
 bool send_command_to_fpga(void *arguments, char *command, FILE *result_file, bool write_to_file)
 {
-    char clk_in_pin_file[MAX_STRING_SIZE] = "/sys/class/gpio/gpio21/value";
+    char clk_in_pin_file[MAX_STRING_SIZE];
+    sprintf(clk_in_pin_file, "/sys/class/gpio/gpio%d/value", CLK_IN_PIN);
     int clk_in_pin_fd = open(clk_in_pin_file, O_RDONLY);
 
     if (clk_in_pin_fd < 0) {
-        printf("%s, Error with opening file for gpio 21\n", __func__);
+        printf("%s, Error with opening file for gpio %d\n", __func__, CLK_IN_PIN);
         return false;
     }
 
     struct pollfd pfds[1];
 
     volatile unsigned *gpio;
-    struct result_thread_args args;
+    struct result_thread_args result_args;
+    struct mem_dump_thread_args mem_dump_args;
     char binary_command[BINARY_COMMAND_SIZE];
     char instruction[MAX_INSTRUCTION_SIZE];
     pthread_t read_result_thread_id;
@@ -448,9 +485,10 @@ bool send_command_to_fpga(void *arguments, char *command, FILE *result_file, boo
     memset(binary_command, '\0', sizeof(binary_command));
     memset(instruction, '\0', sizeof(instruction));
     gpio = (volatile unsigned *)arguments;
-    args.gpio = gpio;
-    args.result_file = result_file;
-    args.write_to_file = write_to_file;
+    result_args.gpio = gpio;
+    result_args.result_file = result_file;
+    result_args.write_to_file = write_to_file;
+    mem_dump_args.gpio = gpio;
     pfds[0].fd = clk_in_pin_fd;
     pfds[0].events = POLL_GPIO;
 
@@ -469,10 +507,20 @@ bool send_command_to_fpga(void *arguments, char *command, FILE *result_file, boo
     if (strcmp(instruction, "READ_WREG") == 0 ||
         strcmp(instruction, "READ_ADDRESS") == 0 ||
         strcmp(instruction, "READ_STATUS") == 0) {
-        pthread_create(&read_result_thread_id, NULL, result_thread, (void *)&args);
+        pthread_create(&read_result_thread_id, NULL, result_thread, (void *)&result_args);
         usleep(1000);
-    } else if (strcmp(instruction, "DUMP_MEM") == 0) {
-        pthread_create(&mem_dump_thread_id, NULL, mem_dump_thread, (void *)gpio);
+    } else if (strcmp(instruction, "DUMP_RAM") == 0 ||
+               strcmp(instruction, "DUMP_EEPROM") == 0) {
+        if (strcmp(instruction, "DUMP_RAM") == 0) {
+            mem_dump_args.num_bits = NUM_BITS_RAM;
+            mem_dump_args.num_bytes = NUM_BYTES_RAM;
+        } else {
+            mem_dump_args.num_bits = NUM_BITS_EEPROM;
+            mem_dump_args.num_bytes = NUM_BYTES_EEPROM;
+        }
+
+        // pthread_create(&read_result_thread_id, NULL, result_thread, (void *)&result_args);
+        pthread_create(&mem_dump_thread_id, NULL, mem_dump_thread, (void *)&mem_dump_args);
         usleep(1000);
     }
 
@@ -480,20 +528,20 @@ bool send_command_to_fpga(void *arguments, char *command, FILE *result_file, boo
     // This data is sent to FPGA one bit at a time, starting from the first (idx = 0) bit.
     size_t length = strlen(binary_command);
     size_t idx = 0;
+    int poll_ret = 0;
 
     while (idx <= length) {
         char buff[32] = {0};
         lseek(clk_in_pin_fd, 0, SEEK_SET);
         read(clk_in_pin_fd, buff, 32);
-        int poll_ret = poll(pfds, 1, poll_timeout);
+        poll_ret = poll(pfds, 1, poll_timeout);
 
         if (poll_ret == 0) {
             printf("%s, Waiting for clock edge timed out\n", __func__);
             close(clk_in_pin_fd);
             return false;
         } else if (poll_ret < 0) {
-            printf("%s, Error %d happened for poll\n", __func__,
-                   errno);
+            printf("%s, Error %d happened for poll\n", __func__, errno);
             close(clk_in_pin_fd);
             return false;
         } else if (poll_ret > 0 && !(GET_GPIO(CLK_PIN)) && (pfds[0].revents & POLL_GPIO)) {
@@ -517,7 +565,8 @@ bool send_command_to_fpga(void *arguments, char *command, FILE *result_file, boo
     if (strcmp(instruction, "READ_WREG") == 0 || strcmp(instruction, "READ_ADDRESS") == 0 ||
         strcmp(instruction, "READ_STATUS") == 0)
         pthread_join(read_result_thread_id, NULL);
-    else if (strcmp(instruction, "DUMP_MEM") == 0)
+    else if (strcmp(instruction, "DUMP_RAM") == 0 ||
+             strcmp(instruction, "DUMP_EEPROM") == 0)
         pthread_join(mem_dump_thread_id, NULL);
 
     close(clk_in_pin_fd);

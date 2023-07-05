@@ -66,18 +66,18 @@ TEST(test_hw_if_group, test_that_all_fpga_instructions_in_binary_are_found)
     const char *expected_commands[] = {
         "ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ", "INCF", "INCFSZ", "IORWF",
         "MOVF", "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW", "MOVLW",
-        "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG", "READ_STATUS", "READ_ADDRESS", "DUMP_MEM",
-        "NOP"
+        "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG", "READ_STATUS", "READ_ADDRESS", "DUMP_RAM",
+        "DUMP_EEPROM", "NOP"
     };
     const char *expected_binary[] = {
         "000111", "000101", "000001", "001001", "000011", "001011", "001010", "001111",
         "000100", "001000", "001101", "001100", "000010", "001110", "000110", "111110",
         "111001", "111000", "110000", "111101", "111010", "0100", "0101", "110001", "110010",
-        "110011", "101000", "000000"
+        "110011", "101000", "101100", "000000"
     };
     int idx = 0;
 
-    while (idx < 28) {
+    while (idx < 29) {
         char *command = (char *)expected_commands[idx];
         bool ret = get_command_in_binary(command, binary_data);
         CHECK(ret);

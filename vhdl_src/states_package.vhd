@@ -3,7 +3,8 @@ library ieee;
 package states_package is
 
     type pic_state is (
-        do_nop, do_wait, do_ram_read, do_ram_dump, do_alu_input_sel, do_alu, do_wreg, do_ram_write, do_result
+        do_nop, do_wait, do_ram_read, do_ram_dump, do_eeprom_dump, do_alu_input_sel, do_alu, do_wreg, do_ram_write,
+        do_result
     );
 
     type i2c_state_master is (

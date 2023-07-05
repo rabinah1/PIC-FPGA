@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
@@ -13,8 +14,8 @@ static char hw_commands[NUM_HW_COMMANDS][MAX_STRING_SIZE] = {
     "INCF", "INCFSZ", "IORWF", "MOVF", "RLF", "RRF",
     "SUBWF", "SWAPF", "XORWF", "ADDLW", "ANDLW", "IORLW",
     "MOVLW", "SUBLW", "XORLW", "BCF", "BSF", "READ_WREG",
-    "READ_STATUS", "READ_ADDRESS", "DUMP_MEM", "NOP",
-    "READ_FILE", "read_temperature", "echo"
+    "READ_STATUS", "READ_ADDRESS", "DUMP_RAM", "DUMP_EEPROM",
+    "NOP", "READ_FILE", "read_temperature", "echo"
 };
 
 static char sw_commands[NUM_SW_COMMANDS][MAX_STRING_SIZE] = {
@@ -72,7 +73,8 @@ void print_help(void)
            "READ_STATUS\n"
            "READ_ADDRESS\n"
            "READ_FILE <file_name>\n"
-           "DUMP_MEM\n"
+           "DUMP_RAM\n"
+           "DUMP_EEPROM\n"
            "ENABLE_CLOCK\n"
            "DISABLE_CLOCK\n"
            "ENABLE_RESET\n"
@@ -86,86 +88,104 @@ void print_help(void)
     return;
 }
 
+bool is_fpga_command_valid(char *command)
+{
+    int idx = 0;
+    int num_spaces = 0;
+    int arg_1 = 0;
+    int arg_2 = 0;
+    char instruction[MAX_INSTRUCTION_SIZE];
+
+    while (command[idx] != '\0') {
+        if (command[idx] == ' ')
+            num_spaces++;
+
+        idx++;
+    }
+
+    memset(instruction, '\0', sizeof(instruction));
+
+    if (num_spaces == 2) { // bit- or byte-oriented instruction
+        if (sscanf(command, "%s %d %d", instruction, &arg_1, &arg_2) != 3) {
+            printf("%s, Failed to parse command %s\n", __func__, command);
+            return false;
+        }
+    } else if (num_spaces == 1) { // literal instruction
+        if (sscanf(command, "%s %d", instruction, &arg_1) != 2) {
+            printf("%s, Failed to parse command %s\n", __func__, command);
+            return false;
+        }
+    } else if (num_spaces == 0) {
+        if (sscanf(command, "%s", instruction) != 1) {
+            printf("%s, Failed to parse command %s\n", __func__, command);
+            return false;
+        }
+    } else {
+        printf("%s, Invalid number of spaces %d in command %s", __func__, num_spaces, command);
+        return false;
+    }
+
+    int expected_num_args = get_expected_num_of_arguments(instruction);
+
+    if (expected_num_args != num_spaces) {
+        if (expected_num_args != INVALID_NUM_ARGS)
+            printf("%s, Invalid number of arguments %d for instruction %s\n", __func__,
+                   num_spaces, instruction);
+
+        return false;
+    }
+
+    return true;
+}
+
+bool is_arduino_command_valid(char *command)
+{
+    char cmd[MAX_STRING_SIZE];
+    unsigned int idx = 0;
+    int num_instructions = get_num_instructions_slave_1();
+    memset(cmd, '\0', sizeof(cmd));
+
+    while (command[idx] != '\0') {
+        if (command[idx] == ' ')
+            break;
+
+        if (command[idx] == '\n') {
+            command[idx] = '\0';
+            break;
+        }
+
+        idx++;
+    }
+
+    strncpy(cmd, command, idx);
+
+    for (int i = 0; i < num_instructions; i++) {
+        if (strcmp(cmd, get_slave_1_command(i)) == 0)
+            return true;
+    }
+
+    printf("%s, Command \"%s\" is not valid for slave 1\n", __func__, cmd);
+    return false;
+}
+
 bool is_command_valid(char *command)
 {
     if (get_slave_id() == SLAVE_ID_FPGA) {
-        int idx = 0;
-        int num_spaces = 0;
-        int arg_1 = 0;
-        int arg_2 = 0;
-        char instruction[MAX_INSTRUCTION_SIZE];
-
-        while (command[idx] != '\0') {
-            if (command[idx] == ' ')
-                num_spaces++;
-
-            idx++;
-        }
-
-        memset(instruction, '\0', sizeof(instruction));
-
-        if (num_spaces == 2) { // bit- or byte-oriented instruction
-            if (sscanf(command, "%s %d %d", instruction, &arg_1, &arg_2) != 3) {
-                printf("%s, Failed to parse command %s\n", __func__, command);
-                return false;
-            }
-        } else if (num_spaces == 1) { // literal instruction
-            if (sscanf(command, "%s %d", instruction, &arg_1) != 2) {
-                printf("%s, Failed to parse command %s\n", __func__, command);
-                return false;
-            }
-        } else if (num_spaces == 0) {
-            if (sscanf(command, "%s", instruction) != 1) {
-                printf("%s, Failed to parse command %s\n", __func__, command);
-                return false;
-            }
-        } else {
-            printf("%s, Invalid number of spaces %d in command %s", __func__, num_spaces, command);
-            return false;
-        }
-
-        int expected_num_args = get_expected_num_of_arguments(instruction);
-
-        if (expected_num_args != num_spaces) {
-            if (expected_num_args != INVALID_NUM_ARGS)
-                printf("%s, Invalid number of arguments %d for instruction %s\n", __func__,
-                       num_spaces, instruction);
-
-            return false;
-        }
-
-        return true;
+        return is_fpga_command_valid(command);
     } else if (get_slave_id() == SLAVE_ID_ARDUINO) {
-        char cmd[MAX_STRING_SIZE];
-        unsigned int idx = 0;
-        int num_instructions = get_num_instructions_slave_1();
-        memset(cmd, '\0', sizeof(cmd));
-
-        while (command[idx] != '\0') {
-            if (command[idx] == ' ')
-                break;
-
-            if (command[idx] == '\n') {
-                command[idx] = '\0';
-                break;
-            }
-
-            idx++;
-        }
-
-        strncpy(cmd, command, idx);
-
-        for (int i = 0; i < num_instructions; i++) {
-            if (strcmp(cmd, get_slave_1_command(i)) == 0)
-                return true;
-        }
-
-        printf("%s, Command \"%s\" is not valid for slave 1\n", __func__, cmd);
-        return false;
+        return is_arduino_command_valid(command);
     } else {
         printf("%s, Invalid slave_id %d\n", __func__, get_slave_id());
         return false;
     }
+}
+
+void free_expected_commands(unsigned int num_expected_commands, char **expected_commands)
+{
+    for (unsigned int i = 0; i < num_expected_commands; i++)
+        free(expected_commands[i]);
+
+    free(expected_commands);
 }
 
 bool is_expected_command_type(char *command, char *type)
@@ -173,20 +193,29 @@ bool is_expected_command_type(char *command, char *type)
     char cmd[MAX_STRING_SIZE];
     unsigned int idx = 0;
     unsigned int num_expected_commands = 0;
-    char expected_commands[NUM_HW_COMMANDS + NUM_SW_COMMANDS][MAX_STRING_SIZE] = {'\0'};
+    char **expected_commands;
 
     if (strcmp(type, "sw") == 0) {
-        for (int i = 0; i < NUM_SW_COMMANDS; i++)
+        expected_commands = malloc(NUM_SW_COMMANDS * sizeof(char *));
+        num_expected_commands = NUM_SW_COMMANDS;
+
+        for (unsigned int i = 0; i < num_expected_commands; i++) {
+            expected_commands[i] = malloc(MAX_STRING_SIZE);
             strcpy(expected_commands[i], sw_commands[i]);
+        }
     } else if (strcmp(type, "hw") == 0) {
-        for (int i = 0; i < NUM_HW_COMMANDS; i++)
+        expected_commands = malloc(NUM_HW_COMMANDS * sizeof(char *));
+        num_expected_commands = NUM_HW_COMMANDS;
+
+        for (unsigned int i = 0; i < num_expected_commands; i++) {
+            expected_commands[i] = malloc(MAX_STRING_SIZE);
             strcpy(expected_commands[i], hw_commands[i]);
+        }
     } else {
         printf("%s, Invalid command type %s\n", __func__, type);
         return false;
     }
 
-    num_expected_commands = sizeof(expected_commands) / sizeof(expected_commands[0]);
     memset(cmd, '\0', sizeof(cmd));
 
     while (command[idx] != '\0') {
@@ -200,10 +229,13 @@ bool is_expected_command_type(char *command, char *type)
     cmd[idx] = '\0';
 
     for (idx = 0; idx < num_expected_commands; idx++) {
-        if (strcmp(cmd, expected_commands[idx]) == 0)
+        if (strcmp(cmd, expected_commands[idx]) == 0) {
+            free_expected_commands(num_expected_commands, expected_commands);
             return true;
+        }
     }
 
+    free_expected_commands(num_expected_commands, expected_commands);
     return false;
 }
 
@@ -281,15 +313,66 @@ int process_sw_command(char *command, volatile unsigned *gpio)
     return SW_FAILED;
 }
 
-bool process_hw_command(char *command, volatile unsigned *gpio, char *serial_port,
-                        FILE *result_file, bool write_to_file)
+bool process_one_command(char *command, volatile unsigned *gpio, FILE *result_file,
+                         bool write_to_file, char *serial_port)
 {
-    char cmd[MAX_STRING_SIZE];
+    if (is_command_valid(command)) {
+        if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
+                                serial_port)) {
+            printf("%s, Sending command %s to HW failed\n", __func__, command);
+            return false;
+        }
+
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool process_commands_from_file(char *command, volatile unsigned *gpio, FILE *result_file,
+                                bool write_to_file, char *serial_port)
+{
     char instruction[MAX_INSTRUCTION_SIZE];
     char filename[MAX_STRING_SIZE];
-    unsigned int idx = 0;
     memset(instruction, '\0', sizeof(instruction));
     memset(filename, '\0', sizeof(filename));
+    sscanf(command, "%s %s", instruction, filename);
+    FILE *input_file = fopen(filename, "r");
+    char line[MAX_STRING_SIZE];
+    memset(line, '\0', sizeof(line));
+
+    while (fgets(line, sizeof(line), input_file)) {
+        line[strlen(line) - 1] = '\0'; // Remove trailing newline
+
+        if (!is_command_valid(line)) {
+            printf("%s, Command %s in file %s was not valid\n", __func__, line, filename);
+            return false;
+        }
+    }
+
+    rewind(input_file);
+
+    while (fgets(line, sizeof(line), input_file)) {
+        line[strlen(line) - 1] = '\0';
+
+        if (!send_command_to_hw(line, (void *)gpio, result_file, write_to_file,
+                                serial_port)) {
+            printf("%s, Sending command %s to HW failed\n", __func__, command);
+            return false;
+        }
+
+        usleep(200000);
+    }
+
+    return true;
+    fclose(input_file);
+}
+
+bool process_fpga_command(char *command, volatile unsigned *gpio, FILE *result_file,
+                          bool write_to_file, char *serial_port)
+{
+    char cmd[MAX_STRING_SIZE];
+    unsigned int idx = 0;
     memset(cmd, '\0', sizeof(cmd));
 
     while (command[idx] != '\0') {
@@ -302,64 +385,36 @@ bool process_hw_command(char *command, volatile unsigned *gpio, char *serial_por
     strncpy(cmd, command, idx);
     cmd[idx] = '\0';
 
+    if (strcmp(cmd, "READ_FILE") != 0)
+        return process_one_command(command, gpio, result_file, write_to_file, serial_port);
+    else
+        return process_commands_from_file(command, gpio, result_file, write_to_file, serial_port);
+}
+
+bool process_arduino_command(char *command, volatile unsigned *gpio, FILE *result_file,
+                             bool write_to_file, char *serial_port)
+{
+    if (is_command_valid(command)) {
+        if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
+                                serial_port)) {
+            printf("%s, Sending command %s to HW failed\n", __func__, command);
+            return false;
+        }
+
+        return true;
+    }
+
+    printf("%s, Command %s is not valid\n", __func__, command);
+    return false;
+}
+
+bool process_hw_command(char *command, volatile unsigned *gpio, char *serial_port,
+                        FILE *result_file, bool write_to_file)
+{
     if (get_slave_id() == SLAVE_ID_FPGA) {
-        if (strcmp(cmd, "READ_FILE") != 0) {
-            if (is_command_valid(command)) {
-                if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
-                                        serial_port)) {
-                    printf("%s, Sending command %s to HW failed\n", __func__, command);
-                    return false;
-                }
-
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            sscanf(command, "%s %s", instruction, filename);
-            FILE *input_file = fopen(filename, "r");
-            char line[MAX_STRING_SIZE];
-            memset(line, '\0', sizeof(line));
-
-            while (fgets(line, sizeof(line), input_file)) {
-                line[strlen(line) - 1] = '\0'; // Remove trailing newline
-
-                if (!is_command_valid(line)) {
-                    printf("%s, Command %s in file %s was not valid\n", __func__, line, filename);
-                    return false;
-                }
-            }
-
-            rewind(input_file);
-
-            while (fgets(line, sizeof(line), input_file)) {
-                line[strlen(line) - 1] = '\0';
-
-                if (!send_command_to_hw(line, (void *)gpio, result_file, write_to_file,
-                                        serial_port)) {
-                    printf("%s, Sending command %s to HW failed\n", __func__, command);
-                    return false;
-                }
-
-                usleep(200000);
-            }
-
-            return true;
-            fclose(input_file);
-        }
+        return process_fpga_command(command, gpio, result_file, write_to_file, serial_port);
     } else if (get_slave_id() == SLAVE_ID_ARDUINO) {
-        if (is_command_valid(command)) {
-            if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
-                                    serial_port)) {
-                printf("%s, Sending command %s to HW failed\n", __func__, command);
-                return false;
-            }
-
-            return true;
-        }
-
-        printf("%s, Command %s is not valid\n", __func__, command);
-        return false;
+        return process_arduino_command(command, gpio, result_file, write_to_file, serial_port);
     } else {
         printf("%s, Slave %d is not valid, cannot process command\n", __func__, get_slave_id());
         return false;
