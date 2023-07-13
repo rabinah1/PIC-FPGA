@@ -23,3 +23,5 @@ This project is an implementation of a simple microcontroller on the Intel Cyclo
 - run_tests.sh: Script for running test on real HW.
 - setup_env.sh: Environment setup script for GPIO usage.
 - test_file.txt: File that can be read by the Raspberry Pi, all commands in it are executed.
+
+/cygdrive/c/Program\ Files/CMake/bin/cmake -G "Unix Makefiles" -D CMAKE_TOOLCHAIN_FILE=../toolchain.cmake ..
