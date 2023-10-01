@@ -11,7 +11,7 @@ OBJECTS = $(addprefix $(OBJ_DIR)/, process_command.o common_data.o gpio_setup.o 
 $(OBJ_DIR)/%.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-main: $(OBJECTS)
+${TARGET_BINARY}: $(OBJECTS)
 	$(CC) $(CFLAGS) $(LDLIBS) $(LDFLAGS) $(OBJECTS) -o $(TARGET_BINARY)
 
 $(OBJECTS): | $(OBJ_DIR)

@@ -40,3 +40,4 @@ hps_adder_qsys.sopcinfo
 hps_isw_handoff/
 hps_sdram_p0_summary.csv
 hps_isw_handoff
+.qsys_edit/
