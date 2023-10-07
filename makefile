@@ -6,11 +6,11 @@ TEST_DIR = ./test
 TEST_DATA_DIR = ./test_data
 
 .DELETE_ON_ERROR:
-.PHONY: all clean sw hw build_sw check_sw sta_sw clean_sw build_arduino load_arduino build_hw check_hw sta_hw netlist load_hw clean_hw help
+.PHONY: all clean sw hw build_sw check_sw sta_sw clean_sw load_arduino build_hw check_hw sta_hw netlist load_hw clean_hw help
 
 all: sw hw
 
-sw: build_sw build_arduino check_sw sta_sw
+sw: build_sw check_sw sta_sw
 
 hw: build_hw check_hw sta_hw
 
@@ -20,6 +20,8 @@ build_sw:
 	@echo "Compiling project..."
 	$(MAKE) -C $(SRC_DIR)
 	$(MAKE) -C $(SRC_DIR)/hps
+	arduino-cli compile --build-path $(SRC_DIR)/arduino/build --fqbn \
+	arduino:avr:nano:cpu=atmega328 $(SRC_DIR)/arduino/arduino.ino
 	@echo "Done"
 	@echo ""
 
@@ -55,12 +57,6 @@ clean_sw:
 sta_hw:
 	$(MAKE) -C $(VHDL_DIR) sta
 
-build_arduino:
-	@echo "Building Arduino design..."
-	arduino-cli compile --build-path $(SRC_DIR)/arduino/build --fqbn \
-	arduino:avr:nano:cpu=atmega328 $(SRC_DIR)/arduino/arduino.ino
-	@echo "Done"
-
 load_arduino:
 	@echo "Loading design to Arduino..."
 	arduino-cli upload --input-dir $(SRC_DIR)/arduino/build -p $(PORT) --fqbn \
@@ -91,7 +87,6 @@ help:
 	@echo "'build_sw': Build SW design."
 	@echo "'check_sw': Run tests for SW design."
 	@echo "'sta_sw': Run style check for SW design."
-	@echo "'build_arduino': Build the arduino code."
 	@echo "'load_arduino': Load the arduino-design to Arduino Nano. You need to give 'PORT = <port>' as an argument."
 	@echo "'build_hw': Build HW design."
 	@echo "'check_hw' Run tests for HW design. You can set 'TEST_ARGS = -save_test_output' to save the test results."

@@ -23,11 +23,6 @@ architecture rtl of alu is
 
     signal skip_next : std_logic;
 
-    procedure nop is
-    begin
-
-    end procedure nop;
-
     function update_status_z (
         result : in std_logic_vector(7 downto 0)
     )
@@ -254,7 +249,6 @@ begin
 
                     when "000000" =>
 
-                        nop;
                         status_out <= (others => '0');
 
                     when others =>

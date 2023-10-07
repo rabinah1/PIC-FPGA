@@ -41,8 +41,6 @@ if ($check_style) {
 
 if ($build) {
     Write-Host "Building..."
-    # qsys_generate $PSScriptRoot\hps_adder_qsys.qsys --block-symbol-file --output-directory=$PSScriptRoot\hps_adder_qsys --family="Cyclone V" --part=5CSEBA6U23I7
-    # qsys_generate $PSScriptRoot\hps_adder_qsys.qsys --synthesis=VHDL --output-directory=$PSScriptRoot\hps_adder_qsys\synthesis --family="Cyclone V" --part=5CSEBA6U23I7
     quartus_map --read_settings_files=on --write_settings_files=off $PSScriptRoot/PIC16F84A -c PIC16F84A
     quartus_fit --read_settings_files=off --write_settings_files=off $PSScriptRoot/PIC16F84A -c PIC16F84A
     quartus_asm --read_settings_files=off --write_settings_files=off $PSScriptRoot/PIC16F84A -c PIC16F84A

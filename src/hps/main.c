@@ -26,7 +26,7 @@ int setup_memory_access(void **virtual_base)
     }
 
     *virtual_base = mmap(NULL, MMAP_LENGTH, (PROT_READ | PROT_WRITE), MAP_SHARED, mem_fd,
-                        LWH2F_BRIDGE_BASE);
+                         LWH2F_BRIDGE_BASE);
 
     if (*virtual_base == MAP_FAILED) {
         perror("mmap");

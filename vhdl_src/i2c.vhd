@@ -521,6 +521,62 @@ begin
 
     write_data_proc : process (all) is
 
+        procedure write_slave_addr_wr_mode (variable index : in natural) is
+        begin
+
+            sda_output_enable <= '1';
+            sda_output        <= SLAVE_ADDRESS_WRITE(index);
+
+            if (write_bits_used < bit_count) then
+                write_bits_used <= write_bits_used + 1;
+            else
+                write_bits_used <= to_unsigned(0, write_bits_used'length);
+            end if;
+
+        end write_slave_addr_wr_mode;
+
+        procedure write_slave_addr_rd_mode (variable index : in natural) is
+        begin
+
+            sda_output_enable <= '1';
+            sda_output        <= SLAVE_ADDRESS_READ(index);
+
+            if (write_bits_used < bit_count) then
+                write_bits_used <= write_bits_used + 1;
+            else
+                write_bits_used <= to_unsigned(0, write_bits_used'length);
+            end if;
+
+        end write_slave_addr_rd_mode;
+
+        procedure write_word_addr_procedure (variable index : in natural) is
+        begin
+
+            sda_output_enable <= '1';
+            sda_output        <= address_in(index);
+
+            if (write_bits_used < bit_count) then
+                write_bits_used <= write_bits_used + 1;
+            else
+                write_bits_used <= to_unsigned(0, write_bits_used'length);
+            end if;
+
+        end write_word_addr_procedure;
+
+        procedure write_data_procedure (variable index : in natural) is
+        begin
+
+            sda_output_enable <= '1';
+            sda_output        <= data_in(index);
+
+            if (write_bits_used < bit_count) then
+                write_bits_used <= write_bits_used + 1;
+            else
+                write_bits_used <= to_unsigned(0, write_bits_used'length);
+            end if;
+
+        end write_data_procedure;
+
         variable index : natural;
 
     begin
@@ -536,37 +592,13 @@ begin
                 sda_output_enable <= '1';
                 sda_output        <= '0';
             elsif (enable_write_slave_addr_write_mode = '1' and clk_100khz = '0') then
-                sda_output_enable <= '1';
-                sda_output        <= SLAVE_ADDRESS_WRITE(index);
-                if (write_bits_used < bit_count) then
-                    write_bits_used <= write_bits_used + 1;
-                else
-                    write_bits_used <= to_unsigned(0, write_bits_used'length);
-                end if;
+                write_slave_addr_wr_mode(index);
             elsif (enable_write_slave_addr_read_mode = '1' and clk_100khz = '0') then
-                sda_output_enable <= '1';
-                sda_output        <= SLAVE_ADDRESS_READ(index);
-                if (write_bits_used < bit_count) then
-                    write_bits_used <= write_bits_used + 1;
-                else
-                    write_bits_used <= to_unsigned(0, write_bits_used'length);
-                end if;
+                write_slave_addr_rd_mode(index);
             elsif (enable_write_word_addr = '1' and clk_100khz = '0') then
-                sda_output_enable <= '1';
-                sda_output        <= address_in(index);
-                if (write_bits_used < bit_count) then
-                    write_bits_used <= write_bits_used + 1;
-                else
-                    write_bits_used <= to_unsigned(0, write_bits_used'length);
-                end if;
+                write_word_addr_procedure(index);
             elsif (enable_write_data = '1' and clk_100khz = '0') then
-                sda_output_enable <= '1';
-                sda_output        <= data_in(index);
-                if (write_bits_used < bit_count) then
-                    write_bits_used <= write_bits_used + 1;
-                else
-                    write_bits_used <= to_unsigned(0, write_bits_used'length);
-                end if;
+                write_data_procedure(index);
             elsif (enable_check_ack = '1' and clk_100khz = '0') then
                 sda_output_enable <= '0';
             elsif (enable_repeated_start = '1' and clk_100khz = '0') then

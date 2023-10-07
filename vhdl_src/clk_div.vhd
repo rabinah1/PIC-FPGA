@@ -2,6 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
+use work.constants_package.all;
 
 entity clk_div is
     port (
@@ -32,9 +33,9 @@ begin
             if (counter_200khz = 50) then
                 clk_int_200khz <= not clk_int_200khz;
                 counter_200khz <= counter_200khz + 1;
-            elsif (counter_200khz < 124) then
+            elsif (counter_200khz < CLK_200_DIV_FACTOR - 1) then
                 counter_200khz <= counter_200khz + 1;
-            elsif (counter_200khz = 124) then
+            elsif (counter_200khz = CLK_200_DIV_FACTOR - 1) then
                 clk_200khz     <= clk_int_200khz;
                 counter_200khz <= to_unsigned(0, counter_200khz'length);
             end if;
@@ -53,9 +54,9 @@ begin
             if (counter_100khz = 100) then
                 clk_int_100khz <= not clk_int_100khz;
                 counter_100khz <= counter_100khz + 1;
-            elsif (counter_100khz < 249) then
+            elsif (counter_100khz < CLK_100_DIV_FACTOR - 1) then
                 counter_100khz <= counter_100khz + 1;
-            elsif (counter_100khz = 249) then
+            elsif (counter_100khz = CLK_100_DIV_FACTOR - 1) then
                 clk_100khz     <= clk_int_100khz;
                 counter_100khz <= to_unsigned(0, counter_100khz'length);
             end if;

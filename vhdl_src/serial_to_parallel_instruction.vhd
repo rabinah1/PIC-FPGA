@@ -12,7 +12,7 @@ entity serial_to_parallel_instruction is
         enable             : in    std_logic;
         binary_string      : in    std_logic_vector(13 downto 0);
         sel_alu_input_mux  : out   std_logic;
-        d                  : out   std_logic;
+        sel_alu_demux      : out   std_logic;
         trig_state_machine : out   std_logic;
         transfer_to_sw     : out   std_logic;
         instruction_type   : out   std_logic_vector(2 downto 0);
@@ -40,7 +40,7 @@ begin
             opcode_out         <= (others => '0');
             bit_idx_out        <= (others => '0');
             sel_alu_input_mux  <= '0';
-            d                  <= '0';
+            sel_alu_demux      <= '0';
             trig_state_machine <= '0';
             transfer_to_sw     <= '0';
             instruction_type   <= (others => '0');
@@ -53,7 +53,7 @@ begin
                     address_out        <= binary_string(6 downto 0);
                     literal_out        <= (others => '0');
                     sel_alu_input_mux  <= '1';
-                    d                  <= '1';
+                    sel_alu_demux      <= '1';
                     transfer_to_sw     <= '0';
                     instruction_type   <= "010";
                     trig_state_machine <= '1';
@@ -65,7 +65,7 @@ begin
                         address_out        <= (others => '0');
                         literal_out        <= (others => '0');
                         sel_alu_input_mux  <= '0';
-                        d                  <= '0';
+                        sel_alu_demux      <= '0';
                         transfer_to_sw     <= '0';
                         instruction_type   <= "110";
                         trig_state_machine <= '1';
@@ -75,7 +75,7 @@ begin
                         address_out        <= (others => '0');
                         literal_out        <= (others => '0');
                         sel_alu_input_mux  <= '0';
-                        d                  <= '0';
+                        sel_alu_demux      <= '0';
                         transfer_to_sw     <= '0';
                         instruction_type   <= "101";
                         trig_state_machine <= '1';
@@ -85,7 +85,7 @@ begin
                         address_out        <= binary_string(6 downto 0);
                         literal_out        <= (others => '0');
                         sel_alu_input_mux  <= '1';
-                        d                  <= '0';
+                        sel_alu_demux      <= '0';
                         transfer_to_sw     <= '1';
                         instruction_type   <= "100";
                         trig_state_machine <= '1';
@@ -95,7 +95,7 @@ begin
                         address_out        <= (others => '0');
                         literal_out        <= (others => '0');
                         sel_alu_input_mux  <= '0';
-                        d                  <= '0';
+                        sel_alu_demux      <= '0';
                         transfer_to_sw     <= '1';
                         instruction_type   <= "011";
                         trig_state_machine <= '1';
@@ -109,7 +109,7 @@ begin
                         address_out       <= binary_string(6 downto 0);
                         literal_out       <= (others => '0');
                         sel_alu_input_mux <= '1'; -- input to ALU will be from memory
-                        d                 <= binary_string(7);
+                        sel_alu_demux     <= binary_string(7);
                         transfer_to_sw    <= '0';
                         if (binary_string(7) = '0') then
                             instruction_type <= "001";
@@ -123,7 +123,7 @@ begin
                         address_out        <= (others => '0');
                         literal_out        <= binary_string(7 downto 0);
                         sel_alu_input_mux  <= '0'; -- input to ALU will be from literal
-                        d                  <= '0';
+                        sel_alu_demux      <= '0';
                         transfer_to_sw     <= '0';
                         instruction_type   <= "000";
                         trig_state_machine <= '1';

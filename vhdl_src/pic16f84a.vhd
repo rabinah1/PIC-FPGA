@@ -15,7 +15,6 @@ entity pic16f84a is
         scl                  : out   std_logic;
         alu_output_raspi     : out   std_logic;
         sda                  : inout std_logic;
-        clk_clk              : in    std_logic;
         memory_mem_a         : out   std_logic_vector(12 downto 0);
         memory_mem_ba        : out   std_logic_vector(2 downto 0);
         memory_mem_ck        : out   std_logic;
@@ -46,7 +45,7 @@ architecture struct of pic16f84a is
     signal wreg_enable_int                    : std_logic;
     signal result_enable_int                  : std_logic;
     signal sel_alu_input_mux_int              : std_logic;
-    signal d_int                              : std_logic;
+    signal sel_alu_demux_int                  : std_logic;
     signal trig_instruction_process_int       : std_logic;
     signal ram_write_enable_int               : std_logic;
     signal timer_write_enable_int             : std_logic;
@@ -111,7 +110,7 @@ architecture struct of pic16f84a is
         port (
             clk            : in    std_logic;
             reset          : in    std_logic;
-            d              : in    std_logic;
+            sel            : in    std_logic;
             transfer_to_sw : in    std_logic;
             input_data     : in    std_logic_vector(7 downto 0);
             data_to_ram    : out   std_logic_vector(7 downto 0);
@@ -189,7 +188,7 @@ architecture struct of pic16f84a is
             enable             : in    std_logic;
             binary_string      : in    std_logic_vector(13 downto 0);
             sel_alu_input_mux  : out   std_logic;
-            d                  : out   std_logic;
+            sel_alu_demux      : out   std_logic;
             trig_state_machine : out   std_logic;
             transfer_to_sw     : out   std_logic;
             instruction_type   : out   std_logic_vector(2 downto 0);
@@ -325,7 +324,7 @@ begin
         port map (
             clk            => clk,
             reset          => reset,
-            d              => d_int,
+            sel            => sel_alu_demux_int,
             transfer_to_sw => transfer_to_sw_int,
             input_data     => alu_output_int,
             data_to_ram    => from_alu_to_ram,
@@ -402,7 +401,7 @@ begin
             enable             => trig_instruction_process_int,
             binary_string      => binary_string_int,
             sel_alu_input_mux  => sel_alu_input_mux_int,
-            d                  => d_int,
+            sel_alu_demux      => sel_alu_demux_int,
             trig_state_machine => trig_state_machine_int,
             transfer_to_sw     => transfer_to_sw_int,
             instruction_type   => instruction_type_int,

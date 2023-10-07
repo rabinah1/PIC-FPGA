@@ -39,11 +39,10 @@ architecture rtl of ram is
 
     type eeprom is array(EEPROM_SIZE - 1 downto 0) of std_logic_vector(7 downto 0);
 
-    signal ram_block     : memory;
-    signal reset_eecon   : std_logic;
-    signal update_eeprom : std_logic;
-    signal counter       : unsigned(2 downto 0);
-    signal addr          : integer := 0;
+    signal ram_block   : memory;
+    signal reset_eecon : std_logic;
+    signal counter     : unsigned(2 downto 0);
+    signal addr        : integer := 0;
 
     function get_addr (address : in std_logic_vector(6 downto 0))
 
@@ -75,22 +74,9 @@ architecture rtl of ram is
 
 begin
 
-    update_eeprom_dump : process (all) is
-    begin
-
-        if (reset = '1') then
-            eeprom_dump <= (others => '0');
-        elsif (rising_edge(update_eeprom)) then
-            eeprom_dump(addr * 8 + 7 downto addr * 8) <= eeprom_data_in;
-        end if;
-
-    end process update_eeprom_dump;
-
     ram : process (all) is
 
-        procedure write_ram (
-            signal address : in std_logic_vector(6 downto 0);
-            signal data    : in std_logic_vector(7 downto 0)) is
+        procedure write_ram is
 
             variable fsr_value : std_logic_vector(6 downto 0);
 
@@ -116,9 +102,7 @@ begin
 
         end write_ram;
 
-        procedure read_ram (
-            signal address  : in std_logic_vector(6 downto 0);
-            signal data_out : out std_logic_vector(7 downto 0)) is
+        procedure read_ram is
 
             variable fsr_value : std_logic_vector(6 downto 0);
 
@@ -135,21 +119,61 @@ begin
 
         end read_ram;
 
+        procedure write_eeprom_dump is
+        begin
+
+            if (counter = to_unsigned(0, counter'length)) then
+                ram_block(get_addr(EECON_ADDRESS)) <= (others => '0');
+                ram_block(get_addr(EEADR_ADDRESS)) <= std_logic_vector(to_unsigned(addr, 8));
+                counter                            <= to_unsigned(1, counter'length);
+            elsif (counter = to_unsigned(1, counter'length)) then
+                ram_block(get_addr(EECON_ADDRESS)) <= "00000001";
+                ram_block(get_addr(EEADR_ADDRESS)) <= std_logic_vector(to_unsigned(addr, 8));
+                counter                            <= to_unsigned(2, counter'length);
+            elsif (counter = to_unsigned(2, counter'length)) then
+                ram_block(get_addr(EECON_ADDRESS)) <= "00000001";
+                ram_block(get_addr(EEADR_ADDRESS)) <= std_logic_vector(to_unsigned(addr, 8));
+                counter                            <= to_unsigned(3, counter'length);
+            elsif (counter = to_unsigned(3, counter'length)) then
+                ram_block(get_addr(EECON_ADDRESS)) <= (others => '0');
+                ram_block(get_addr(EEADR_ADDRESS)) <= std_logic_vector(to_unsigned(addr, 8));
+                counter                            <= to_unsigned(4, counter'length);
+            elsif (counter = to_unsigned(4, counter'length)) then
+                ram_block(get_addr(EECON_ADDRESS)) <= (others => '0');
+                ram_block(get_addr(EEADR_ADDRESS)) <= std_logic_vector(to_unsigned(addr, 8));
+                counter                            <= to_unsigned(5, counter'length);
+            elsif (counter = to_unsigned(5, counter'length)) then
+                ram_block(get_addr(EECON_ADDRESS))        <= (others => '0');
+                ram_block(get_addr(EEADR_ADDRESS))        <= std_logic_vector(to_unsigned(addr, 8));
+                eeprom_dump(addr * 8 + 7 downto addr * 8) <= eeprom_data_in;
+                counter                                   <= to_unsigned(6, counter'length);
+            else
+                counter                            <= to_unsigned(0, counter'length);
+                ram_block(get_addr(EECON_ADDRESS)) <= (others => '0');
+                ram_block(get_addr(EEADR_ADDRESS)) <= (others => '0');
+                if (addr >= 255) then
+                    addr <= 0;
+                else
+                    addr <= addr + 1;
+                end if;
+            end if;
+
+        end write_eeprom_dump;
+
     begin
 
         if (reset = '1') then
-            counter       <= to_unsigned(0, counter'length);
-            addr          <= 0;
-            edge_trigger  <= '0';
-            reset_eecon   <= '0';
-            update_eeprom <= '0';
-            data_out      <= (others => '0');
-            status_out    <= (others => '0');
-            mem_dump      <= (others => '0');
-            eedata_out    <= (others => '0');
-            eeadr_out     <= (others => '0');
-            eecon_out     <= (others => '0');
-            ram_block     <= (others => (others => '0'));
+            counter      <= to_unsigned(0, counter'length);
+            addr         <= 0;
+            edge_trigger <= '0';
+            reset_eecon  <= '0';
+            data_out     <= (others => '0');
+            status_out   <= (others => '0');
+            mem_dump     <= (others => '0');
+            eedata_out   <= (others => '0');
+            eeadr_out    <= (others => '0');
+            eecon_out    <= (others => '0');
+            ram_block    <= (others => (others => '0'));
         elsif (rising_edge(clk)) then
             status_out   <= ram_block(get_addr(STATUS_ADDRESS));
             edge_trigger <= ram_block(get_addr(OPTION_ADDRESS))(4);
@@ -158,83 +182,34 @@ begin
             eecon_out    <= ram_block(get_addr(EECON_ADDRESS));
             if (eeprom_read = '1') then
                 ram_block(get_addr(EEDATA_ADDRESS)) <= eeprom_data_in;
-                update_eeprom                       <= '0';
             end if;
             if (reset_eecon = '1') then
                 ram_block(get_addr(EECON_ADDRESS))(1 downto 0) <= (others => '0');
                 reset_eecon                                    <= '0';
-                update_eeprom                                  <= '0';
             end if;
             if (mem_dump_enable = '1') then
-                mem_dump      <= ram_to_linear(ram_block);
-                update_eeprom <= '0';
+                mem_dump <= ram_to_linear(ram_block);
             elsif (eeprom_dump_enable = '1') then
-                if (counter = to_unsigned(0, counter'length)) then
-                    ram_block(get_addr(EECON_ADDRESS)) <= (others => '0');
-                    ram_block(get_addr(EEADR_ADDRESS)) <= std_logic_vector(to_unsigned(addr, 8));
-                    counter                            <= to_unsigned(1, counter'length);
-                    update_eeprom                      <= '0';
-                elsif (counter = to_unsigned(1, counter'length)) then
-                    ram_block(get_addr(EECON_ADDRESS)) <= "00000001";
-                    ram_block(get_addr(EEADR_ADDRESS)) <= std_logic_vector(to_unsigned(addr, 8));
-                    counter                            <= to_unsigned(2, counter'length);
-                    update_eeprom                      <= '0';
-                elsif (counter = to_unsigned(2, counter'length)) then
-                    ram_block(get_addr(EECON_ADDRESS)) <= "00000001";
-                    ram_block(get_addr(EEADR_ADDRESS)) <= std_logic_vector(to_unsigned(addr, 8));
-                    counter                            <= to_unsigned(3, counter'length);
-                    update_eeprom                      <= '0';
-                elsif (counter = to_unsigned(3, counter'length)) then
-                    ram_block(get_addr(EECON_ADDRESS)) <= (others => '0');
-                    ram_block(get_addr(EEADR_ADDRESS)) <= std_logic_vector(to_unsigned(addr, 8));
-                    counter                            <= to_unsigned(4, counter'length);
-                    update_eeprom                      <= '0';
-                elsif (counter = to_unsigned(4, counter'length)) then
-                    ram_block(get_addr(EECON_ADDRESS)) <= (others => '0');
-                    ram_block(get_addr(EEADR_ADDRESS)) <= std_logic_vector(to_unsigned(addr, 8));
-                    counter                            <= to_unsigned(5, counter'length);
-                    update_eeprom                      <= '0';
-                elsif (counter = to_unsigned(5, counter'length)) then
-                    ram_block(get_addr(EECON_ADDRESS)) <= (others => '0');
-                    ram_block(get_addr(EEADR_ADDRESS)) <= std_logic_vector(to_unsigned(addr, 8));
-                    update_eeprom                      <= '1';
-                    counter                            <= to_unsigned(6, counter'length);
-                else
-                    counter                            <= to_unsigned(0, counter'length);
-                    ram_block(get_addr(EECON_ADDRESS)) <= (others => '0');
-                    ram_block(get_addr(EEADR_ADDRESS)) <= (others => '0');
-                    update_eeprom                      <= '0';
-                    if (addr >= 255) then
-                        addr <= 0;
-                    else
-                        addr <= addr + 1;
-                    end if;
-                end if;
+                write_eeprom_dump;
             elsif (read_enable = '1') then
-                read_ram(address, data_out);
-                update_eeprom <= '0';
+                read_ram;
             elsif (write_enable = '1') then
-                write_ram(address, data);
-                update_eeprom <= '0';
+                write_ram;
             end if;
             if (status_write_enable = '1') then
                 ram_block(get_addr(STATUS_ADDRESS))(2 downto 0) <= status_in(2 downto 0);
-                update_eeprom                                   <= '0';
             end if;
             if (timer_write_enable = '1' and ram_block(get_addr(OPTION_ADDRESS))(5) = '0') then
                 ram_block(get_addr(TMR0_ADDRESS)) <=
                     std_logic_vector(unsigned(ram_block(get_addr(TMR0_ADDRESS))) + 1);
-                update_eeprom                     <= '0';
             end if;
             if (ram_block(get_addr(OPTION_ADDRESS))(5) = '1') then
                 ram_block(get_addr(TMR0_ADDRESS)) <=
                     std_logic_vector(unsigned(timer_external_counter_falling) +
                                      unsigned(timer_external_counter_rising));
-                update_eeprom                     <= '0';
             end if;
             if (eeprom_write_completed = '1') then
                 ram_block(get_addr(EECON_ADDRESS))(4) <= '1';
-                update_eeprom                         <= '0';
             end if;
         end if;
 

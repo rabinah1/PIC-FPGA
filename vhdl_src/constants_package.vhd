@@ -40,9 +40,11 @@ package constants_package is
     constant EECON_ADDRESS       : std_logic_vector(6 downto 0) := "0000111";
     constant EEDATA_ADDRESS      : std_logic_vector(6 downto 0) := "0001000";
     constant EEADR_ADDRESS       : std_logic_vector(6 downto 0) := "0001001";
-    constant RAM_SIZE            : integer                      := 127;
-    constant EEPROM_SIZE         : integer                      := 256;
     constant SLAVE_ADDRESS_READ  : std_logic_vector(7 downto 0) := "10100001";
     constant SLAVE_ADDRESS_WRITE : std_logic_vector(7 downto 0) := "10100000";
+    constant RAM_SIZE            : integer                      := 127;
+    constant EEPROM_SIZE         : integer                      := 256;
+    constant CLK_100_DIV_FACTOR  : integer                      := 250;
+    constant CLK_200_DIV_FACTOR  : integer                      := 125;
 
 end package constants_package;

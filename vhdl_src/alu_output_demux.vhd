@@ -5,7 +5,7 @@ entity alu_output_demux is
     port (
         clk            : in    std_logic;
         reset          : in    std_logic;
-        d              : in    std_logic;
+        sel            : in    std_logic;
         transfer_to_sw : in    std_logic;
         input_data     : in    std_logic_vector(7 downto 0);
         data_to_ram    : out   std_logic_vector(7 downto 0);
@@ -30,7 +30,7 @@ begin
                 data_to_wreg <= (others => '0');
                 data_to_ram  <= (others => '0');
                 data_to_sw   <= input_data;
-            elsif (d = '0') then
+            elsif (sel = '0') then
                 data_to_wreg <= input_data;
                 data_to_ram  <= (others => '0');
                 data_to_sw   <= (others => '0');
