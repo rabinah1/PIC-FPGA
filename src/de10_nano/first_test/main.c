@@ -49,8 +49,6 @@ int main(int argc, char *argv[])
     op_1 = (uint16_t *)virtual_base;
     op_2 = (uint16_t *)(virtual_base + 0x2);
     ret = (uint16_t *)(virtual_base + 0x4);
-    printf("Operand 1 is %d\n", *op_1 & 0x7FFF);
-    printf("Operand 2 is %d\n", *op_2 & 0x7FFF);
     *op_1 = (uint16_t)atoi(argv[1]);
     *op_2 = (uint16_t)atoi(argv[2]);
 

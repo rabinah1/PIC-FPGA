@@ -1,4 +1,4 @@
-#include "../cpputest/include/CppUTestExt/MockSupport.h"
+#include "../../cpputest/include/CppUTestExt/MockSupport.h"
 
 extern "C"
 {

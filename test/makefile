@@ -1,5 +1,5 @@
 PROJECT_DIR=/home/henry/projects/PIC-FPGA
-SRC_DIR=$(PROJECT_DIR)/src
+SRC_DIR=$(PROJECT_DIR)/src/raspberry_pi
 TEST_DIR=$(PROJECT_DIR)/test
 # specify where the source code and includes are located
 INCLUDE_DIRS=$(SRC_DIR)

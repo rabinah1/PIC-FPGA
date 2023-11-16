@@ -1,5 +1,5 @@
 SHELL = /bin/bash
-TARGET_BINARY = hps_main
+TARGET_BINARY = main
 CFLAGS = -Wall
 CC = /opt/linaro/gcc-linaro-4.8-2015.06-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc
 

@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 SRC_DIR = ./src
 VHDL_DIR = ./vhdl_src
-OBJ_DIR = $(SRC_DIR)/objs
+OBJ_DIR = $(SRC_DIR)/raspberry_pi/objs
 TEST_DIR = ./test
 TEST_DATA_DIR = ./test_data
 
@@ -18,8 +18,10 @@ clean: clean_hw clean_sw
 
 build_sw:
 	@echo "Compiling project..."
-	@$(MAKE) -C $(SRC_DIR)
-	@$(MAKE) -C $(SRC_DIR)/hps
+	@$(MAKE) -C $(SRC_DIR)/raspberry_pi
+	@$(MAKE) -C $(SRC_DIR)/de10_nano/first_test
+	@$(MAKE) -C $(SRC_DIR)/de10_nano/adder
+	@$(MAKE) -C $(SRC_DIR)/de10_nano/adder/module
 	@arduino-cli compile --build-path $(SRC_DIR)/arduino/build --fqbn \
 	arduino:avr:nano:cpu=atmega328 $(SRC_DIR)/arduino/arduino.ino
 	@echo "Done"
@@ -35,7 +37,8 @@ sta_sw:
 	@echo "Runnig Astyle..."
 	@astyle --style=linux --max-code-length=100 --recursive --align-pointer=name --break-blocks \
 	--pad-oper --pad-header --delete-empty-lines --indent-col1-comments --squeeze-lines=1 \
-	--exclude="arduino\build" -i ".\src\*.c,*.cpp,*.h" ".\test\*.cpp"
+	--exclude="arduino\build" --exclude="de10_nano/adder/module/adder_driver.mod.c" \
+	-i ".\src\*.c,*.cpp,*.h" ".\test\*.cpp"
 	@echo "Done"
 	@echo ""
 	@echo "Running pylint..."
@@ -48,11 +51,14 @@ sta_sw:
 
 clean_sw:
 	@$(MAKE) -C $(TEST_DIR) clean
-	@-rm -f $(SRC_DIR)/main
+	@-rm -f $(SRC_DIR)/raspberry_pi/main
 	@-rm -rf $(OBJ_DIR)
 	@-rm -rf $(SRC_DIR)/arduino/build
-	@-rm $(SRC_DIR)/hps/main.o
-	@-rm $(SRC_DIR)/hps/hps_main
+	@-rm $(SRC_DIR)/de10_nano/first_test/main.o
+	@-rm $(SRC_DIR)/de10_nano/first_test/main
+	@-rm $(SRC_DIR)/de10_nano/adder/main.o
+	@-rm $(SRC_DIR)/de10_nano/adder/main
+	@$(MAKE) -C $(SRC_DIR)/de10_nano/adder/module clean
 
 sta_hw:
 	@$(MAKE) -C $(VHDL_DIR) sta
