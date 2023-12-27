@@ -1,4 +1,4 @@
-PROJECT_DIR=C:/Users/henry/PIC-FPGA
+PROJECT_DIR=/home/henry/projects/PIC-FPGA
 SRC_DIR=$(PROJECT_DIR)/src
 TEST_DIR=$(PROJECT_DIR)/test
 # specify where the source code and includes are located

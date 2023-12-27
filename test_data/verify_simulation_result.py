@@ -53,7 +53,7 @@ def _binary_to_decimal(binary):
 
 def _check_diff(args):
     result_file = os.path.join(os.getcwd(), "../test_data/tb_result_formatted.txt")
-    reference_file = os.path.join(os.getcwd(), "../test_data/tb_reference_test.txt")
+    reference_file = os.path.join(os.getcwd(), "../test_data/tb_reference.txt")
     ret = subprocess.run(["diff", result_file, reference_file, "-C", "10", "-w"], check=False,
                          capture_output=True)
     if ret.stdout:

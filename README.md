@@ -25,7 +25,7 @@ The project mainly consists of a simple microcontroller implemented on the Teras
     - Reference and input data for test automation, and Python-scripts for processing the data.
 - vhdl_src/
     - VHDL source code.
-- install_cpputest.ps1: Script to install cpputest.
+- install_cpputest.sh: Script to install cpputest.
 - makefile: Top-level makefile that is used for both SW and HW.
 - run_tests.sh: Script for running test on real HW.
 - setup_env.sh: Environment setup script for GPIO usage.
