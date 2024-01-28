@@ -195,6 +195,7 @@ bool is_expected_command_type(char *command, char *type)
     unsigned int num_expected_commands = 0;
     char **expected_commands;
 
+    memset(cmd, '\0', sizeof(cmd));
     if (strcmp(type, "sw") == 0) {
         expected_commands = malloc(NUM_SW_COMMANDS * sizeof(char *));
         num_expected_commands = NUM_SW_COMMANDS;
@@ -215,8 +216,6 @@ bool is_expected_command_type(char *command, char *type)
         printf("%s, Invalid command type %s\n", __func__, type);
         return false;
     }
-
-    memset(cmd, '\0', sizeof(cmd));
 
     while (command[idx] != '\0') {
         if (command[idx] == ' ' || command[idx] == '\n')

@@ -116,6 +116,7 @@ void run_app(char *serial_port, volatile unsigned *gpio)
 
     while (true) {
         char command[MAX_STRING_SIZE];
+        memset(command, '\0', sizeof(command));
         fgets(command, MAX_STRING_SIZE, stdin);
 
         if (is_expected_command_type(command, "sw")) {
@@ -177,6 +178,7 @@ int main(int argc, char *argv[])
     pthread_t timer_ext_clk_thread_id;
     volatile unsigned *gpio = init_gpio_map();
 
+    memset(serial_port, '\0', sizeof(serial_port));
     if (gpio == NULL) {
         printf("%s, Failed to initialize GPIO, exiting...\n", __func__);
         return 1;
