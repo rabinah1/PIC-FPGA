@@ -88,9 +88,15 @@ TEST(test_hw_if_group, test_that_all_fpga_instructions_in_binary_are_found)
 
 TEST(test_hw_if_group, test_binary_command_creation)
 {
-    const char *commands[] = {"ADDWF 1 5", "COMF 0 50", "ADDLW 123",
-                              "IORLW 27", "BCF 0 12", "BSF 3 99", "READ_WREG"
-                             };
+    struct command_and_args test_commands[] = {
+        {"ADDWF 1 5", "ADDWF", {"1", "5"}},
+        {"COMF 0 50", "COMF", {"0", "50"}},
+        {"ADDLW 123", "ADDLW", {"123"}},
+        {"IORLW 27", "IORLW", {"27"}},
+        {"BCF 0 12", "BCF", {"0", "12"}},
+        {"BSF 3 99", "BSF", {"3", "99"}},
+        {"READ_WREG", "READ_WREG", {}}
+    };
     const char *expected_binary_strings[] = {"00011110000101", "00100100110010", "11111001111011",
                                              "11100000011011", "01000000001100", "01010111100011",
                                              "11000100000000"
@@ -99,9 +105,8 @@ TEST(test_hw_if_group, test_binary_command_creation)
     char instruction[MAX_INSTRUCTION_SIZE];
 
     for (int idx = 0; idx < 7; idx++) {
-        char *command = (char *)commands[idx];
         char *expected_binary = (char *)expected_binary_strings[idx];
-        bool ret = create_binary_command(command, binary_command, instruction);
+        bool ret = create_binary_command(&test_commands[idx], binary_command, instruction);
         CHECK_TRUE(ret);
         STRCMP_EQUAL(expected_binary, binary_command);
     }
@@ -111,9 +116,10 @@ TEST(test_hw_if_group, test_send_command_to_arduino_serial_connection_failed)
 {
     char serial_port[] = "/dev/ttyUSB0";
     int baud_rate = 9600;
+    struct command_and_args command = {"read_temperature", "read_temperature", {}};
     mock().expectOneCall("serialOpen").withParameter("serial_port", serial_port).
     withParameter("baud_rate", baud_rate).andReturnValue(-1);
-    int ret = send_command_to_arduino("read_temperature", NULL, "/dev/ttyUSB0");
+    int ret = send_command_to_arduino(&command, NULL, "/dev/ttyUSB0");
     mock().checkExpectations();
     CHECK_FALSE(ret);
 }
@@ -122,6 +128,7 @@ TEST(test_hw_if_group, test_send_command_to_arduino_one_character)
 {
     char serial_port[] = "/dev/ttyUSB0";
     int baud_rate = 9600;
+    struct command_and_args command = {"read_temperature", "read_temperature", {}};
     mock().expectOneCall("serialOpen").withParameter("serial_port", serial_port).
     withParameter("baud_rate", baud_rate).andReturnValue(0);
     mock().expectOneCall("serialPuts").withParameter("fd", 0).
@@ -129,7 +136,7 @@ TEST(test_hw_if_group, test_send_command_to_arduino_one_character)
     mock().expectOneCall("serialDataAvail").withParameter("fd", 0).andReturnValue(1);
     mock().expectOneCall("serialGetchar").withParameter("fd", 0).andReturnValue('\n');
     mock().expectOneCall("serialClose").withParameter("fd", 0);
-    int ret = send_command_to_arduino("read_temperature", NULL, "/dev/ttyUSB0");
+    int ret = send_command_to_arduino(&command, NULL, "/dev/ttyUSB0");
     mock().checkExpectations();
     CHECK_TRUE(ret);
 }
@@ -138,6 +145,7 @@ TEST(test_hw_if_group, test_send_command_to_arduino_multiple_characters)
 {
     char serial_port[] = "/dev/ttyUSB0";
     int baud_rate = 9600;
+    struct command_and_args command = {"some_command", "some_command", {}};
     mock().expectOneCall("serialOpen").withParameter("serial_port", serial_port).
     withParameter("baud_rate", baud_rate).andReturnValue(0);
     mock().expectOneCall("serialPuts").withParameter("fd", 0).withParameter("command", "some_command");
@@ -148,7 +156,7 @@ TEST(test_hw_if_group, test_send_command_to_arduino_multiple_characters)
     mock().expectOneCall("serialDataAvail").withParameter("fd", 0).andReturnValue(1);
     mock().expectOneCall("serialGetchar").withParameter("fd", 0).andReturnValue('\n');
     mock().expectOneCall("serialClose").withParameter("fd", 0);
-    int ret = send_command_to_arduino("some_command", NULL, "/dev/ttyUSB0");
+    int ret = send_command_to_arduino(&command, NULL, "/dev/ttyUSB0");
     mock().checkExpectations();
     CHECK_TRUE(ret);
 }

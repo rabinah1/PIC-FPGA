@@ -20,6 +20,49 @@ static int slave_id = SLAVE_ID_FPGA;
 static bool clk_enable = false;
 static bool clk_exit = false;
 static int clk_freq = CLK_FREQ_DEFAULT;
+static char slave_1_commands_regex[][MAX_STRING_SIZE] = {"^(read_temperature)$", "^(echo)\\s+(.*)$"};
+static char slave_0_commands_regex[][MAX_STRING_SIZE] = {
+    "^(ADDWF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(ANDWF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(CLR)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(COMF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(DECF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(DECFSZ)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(INCF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(INCFSZ)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(IORWF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(MOVF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(RLF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(RRF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(SUBWF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(SWAPF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(XORWF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(ADDLW)\\s+([0-9]+)$",
+    "^(ANDLW)\\s+([0-9]+)$",
+    "^(IORLW)\\s+([0-9]+)$",
+    "^(MOVLW)\\s+([0-9]+)$",
+    "^(SUBLW)\\s+([0-9]+)$",
+    "^(XORLW)\\s+([0-9]+)$",
+    "^(BCF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(BSF)\\s+([0-9]+)\\s+([0-9]+)$",
+    "^(READ_WREG)$",
+    "^(READ_STATUS)$",
+    "^(READ_ADDRESS)\\s+([0-9]+)$",
+    "^(DUMP_RAM)$",
+    "^(DUMP_EEPROM)$",
+    "^(NOP)$",
+    "^(READ_FILE)\\s+(\\S+)$",
+    "^(ENABLE_CLOCK)$",
+    "^(DISABLE_CLOCK)$",
+    "^(ENABLE_RESET)$",
+    "^(DISABLE_RESET)$",
+    "^(EXIT)$",
+    "^(HELP)$",
+    "^(SELECT_SLAVE)\\s+([0-9])$",
+    "^(SHOW_SLAVE)$",
+    "^(SET_CLK_FREQ)\\s+([0-9]+)$",
+    "^(SHOW_CLK_FREQ)$"
+};
 static char slave_1_commands[][MAX_STRING_SIZE] = {"read_temperature", "echo"};
 static struct command_to_binary slave_0_commands[] = {
     {"ADDWF",         "000111"},
@@ -166,9 +209,19 @@ char *get_slave_0_command(int idx)
     return slave_0_commands[idx].command;
 }
 
+char *get_slave_0_regex_command(int idx)
+{
+    return slave_0_commands_regex[idx];
+}
+
 char *get_slave_1_command(int idx)
 {
     return slave_1_commands[idx];
+}
+
+char *get_slave_1_regex_command(int idx)
+{
+    return slave_1_commands_regex[idx];
 }
 
 int get_expected_num_of_arguments(char *instruction)

@@ -1,3 +1,5 @@
+#pragma once
+
 #define BCM2835_PERI_BASE 0xFE000000  // peripheral base address
 #define GPIO_BASE (BCM2835_PERI_BASE + 0x200000) // GPIO controller base address
 #define BLOCK_SIZE (4*20) // only using gpio registers region
@@ -44,3 +46,13 @@
 #define SW_FAILED 1
 #define SW_EXIT -1
 #define INVALID_NUM_ARGS -1
+#define NUM_BIT_OR_BYTE_INSTRUCTIONS 17
+#define NUM_LITERAL_INSTRUCTIONS 7
+#define NUM_OTHER_INSTRUCTIONS 5
+#define MAX_NUM_OF_ARGS 2
+
+struct command_and_args {
+    char full_command[MAX_STRING_SIZE];
+    char command_name[MAX_STRING_SIZE];
+    char command_args[MAX_NUM_OF_ARGS][MAX_STRING_SIZE];
+};

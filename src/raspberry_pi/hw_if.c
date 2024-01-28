@@ -30,6 +30,19 @@ struct mem_dump_thread_args {
     int num_bytes;
 };
 
+static char bit_or_byte_instructions[NUM_BIT_OR_BYTE_INSTRUCTIONS][MAX_STRING_SIZE] = {
+    "ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ", "INCF", "INCFSZ", "IORWF", "MOVF",
+    "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "BCF", "BSF"
+};
+
+static char literal_instructions[NUM_LITERAL_INSTRUCTIONS][MAX_STRING_SIZE] = {
+    "ADDLW", "ANDLW", "IORLW", "MOVLW", "SUBLW", "XORLW", "READ_ADDRESS"
+};
+
+static char other_instructions[NUM_OTHER_INSTRUCTIONS][MAX_STRING_SIZE] = {
+    "READ_WREG", "READ_STATUS", "DUMP_RAM", "DUMP_EEPROM", "NOP"
+};
+
 #ifndef UNIT_TEST
 void set_gpio_high(int pin, volatile unsigned *gpio)
 {
@@ -92,7 +105,8 @@ bool get_command_in_binary(char *instruction, char *opcode)
     return false;
 }
 
-bool create_bit_or_byte_oriented_instruction(char *command, char *instruction, char *binary_command)
+bool create_bit_or_byte_oriented_instruction(struct command_and_args *command, char *instruction,
+        char *binary_command)
 {
     uint32_t bit_or_d = 0;
     uint32_t literal_or_address = 0;
@@ -102,7 +116,9 @@ bool create_bit_or_byte_oriented_instruction(char *command, char *instruction, c
     memset(binary_data_bit_or_d, '\0', sizeof(char) * MAX_BIT_OR_D_SIZE);
     memset(binary_data_operand, '\0', sizeof(char) * MAX_OPERAND_SIZE);
     memset(binary_data_opcode, '\0', sizeof(char) * MAX_OPCODE_SIZE);
-    sscanf(command, "%s %d %d", instruction, &bit_or_d, &literal_or_address);
+    strcpy(instruction, command->command_name);
+    bit_or_d = atoi(command->command_args[0]);
+    literal_or_address = atoi(command->command_args[1]);
 
     if (!get_command_in_binary(instruction, binary_data_opcode)) {
         free(binary_data_opcode);
@@ -125,14 +141,16 @@ bool create_bit_or_byte_oriented_instruction(char *command, char *instruction, c
     return true;
 }
 
-bool create_literal_instruction(char *command, char *instruction, char *binary_command)
+bool create_literal_instruction(struct command_and_args *command, char *instruction,
+                                char *binary_command)
 {
     uint32_t literal_or_address = 0;
     char *binary_data_operand = malloc(MAX_OPERAND_SIZE);
     char *binary_data_opcode = malloc(MAX_OPCODE_SIZE);
     memset(binary_data_operand, '\0', sizeof(char) * MAX_OPERAND_SIZE);
     memset(binary_data_opcode, '\0', sizeof(char) * MAX_OPCODE_SIZE);
-    sscanf(command, "%s %d", instruction, &literal_or_address);
+    strcpy(instruction, command->command_name);
+    literal_or_address = atoi(command->command_args[0]);
 
     if (!get_command_in_binary(instruction, binary_data_opcode)) {
         free(binary_data_opcode);
@@ -147,14 +165,15 @@ bool create_literal_instruction(char *command, char *instruction, char *binary_c
     return true;
 }
 
-bool create_other_instruction(char *command, char *instruction, char *binary_command)
+bool create_other_instruction(struct command_and_args *command, char *instruction,
+                              char *binary_command)
 {
     uint32_t literal_or_address = 0;
     char *binary_data_operand = malloc(MAX_OPERAND_SIZE);
     char *binary_data_opcode = malloc(MAX_OPCODE_SIZE);
     memset(binary_data_operand, '\0', sizeof(char) * MAX_OPERAND_SIZE);
     memset(binary_data_opcode, '\0', sizeof(char) * MAX_OPCODE_SIZE);
-    sscanf(command, "%s", instruction);
+    strcpy(instruction, command->command_name);
 
     if (!get_command_in_binary(instruction, binary_data_opcode)) {
         free(binary_data_opcode);
@@ -170,26 +189,47 @@ bool create_other_instruction(char *command, char *instruction, char *binary_com
     return true;
 }
 
-bool create_binary_command(char *command, char *binary_command, char *instruction)
+bool is_bit_or_byte_instruction(struct command_and_args *command)
 {
-    int num_spaces = 0;
-    int idx = 0;
-
-    while (command[idx] != '\0') {
-        if (command[idx] == ' ')
-            num_spaces++;
-
-        idx++;
+    for (unsigned int i = 0; i < NUM_BIT_OR_BYTE_INSTRUCTIONS; i++) {
+        if (strcmp(command->command_name, bit_or_byte_instructions[i]) == 0)
+            return true;
     }
 
-    if (num_spaces == 2) { // bit-oriented or byte-oriented instruction
+    return false;
+}
+
+bool is_literal_instruction(struct command_and_args *command)
+{
+    for (unsigned int i = 0; i < NUM_LITERAL_INSTRUCTIONS; i++) {
+        if (strcmp(command->command_name, literal_instructions[i]) == 0)
+            return true;
+    }
+
+    return false;
+}
+
+bool is_other_instruction(struct command_and_args *command)
+{
+    for (unsigned int i = 0; i < NUM_OTHER_INSTRUCTIONS; i++) {
+        if (strcmp(command->command_name, other_instructions[i]) == 0)
+            return true;
+    }
+
+    return false;
+}
+
+bool create_binary_command(struct command_and_args *command, char *binary_command,
+                           char *instruction)
+{
+    if (is_bit_or_byte_instruction(command)) { // Bit-oriented or byte-oriented instruction
         return create_bit_or_byte_oriented_instruction(command, instruction, binary_command);
-    } else if (num_spaces == 1) { // literal instruction
+    } else if (is_literal_instruction(command)) { // Literal instruction
         return create_literal_instruction(command, instruction, binary_command);
-    } else if (num_spaces == 0) { // Other instruction
+    } else if (is_other_instruction(command)) { // Other instruction
         return create_other_instruction(command, instruction, binary_command);
     } else {
-        printf("%s, Invalid number of spaces %d in command %s\n", __func__, num_spaces, command);
+        printf("%s, Invalid command %s\n", __func__, command->command_name);
         return false;
     }
 }
@@ -422,7 +462,7 @@ void *timer_ext_clk_thread(void *arguments)
     return NULL;
 }
 
-bool send_command_to_arduino(char *command, FILE *result_file, char *serial_port)
+bool send_command_to_arduino(struct command_and_args *command, FILE *result_file, char *serial_port)
 {
     int fd;
     char input = '\0';
@@ -434,7 +474,7 @@ bool send_command_to_arduino(char *command, FILE *result_file, char *serial_port
     }
 
     sleep(2); // Wait for serial connection to stabilize
-    serialPuts(fd, command);
+    serialPuts(fd, command->full_command);
 
     while (true) {
         if (serialDataAvail(fd) > 0) {
@@ -461,7 +501,8 @@ bool send_command_to_arduino(char *command, FILE *result_file, char *serial_port
     return true;
 }
 
-bool send_command_to_fpga(void *arguments, char *command, FILE *result_file, bool write_to_file)
+bool send_command_to_fpga(void *arguments, struct command_and_args *command, FILE *result_file,
+                          bool write_to_file)
 {
     char clk_in_pin_file[MAX_STRING_SIZE];
     sprintf(clk_in_pin_file, "/sys/class/gpio/gpio%d/value", CLK_IN_PIN);
@@ -493,7 +534,7 @@ bool send_command_to_fpga(void *arguments, char *command, FILE *result_file, boo
     pfds[0].events = POLL_GPIO;
 
     if (!create_binary_command(command, binary_command, instruction)) {
-        printf("%s, Could not create binary command from command %s\n", __func__, command);
+        printf("%s, Could not create binary command from command %s\n", __func__, command->command_name);
         close(clk_in_pin_fd);
         return false;
     }
@@ -573,7 +614,7 @@ bool send_command_to_fpga(void *arguments, char *command, FILE *result_file, boo
     return true;
 }
 
-bool send_command_to_hw(char *command, void *arguments, FILE *result_file,
+bool send_command_to_hw(struct command_and_args *command, void *arguments, FILE *result_file,
                         bool write_to_file, char *serial_port)
 {
     if (get_slave_id() == SLAVE_ID_FPGA) {
@@ -582,7 +623,7 @@ bool send_command_to_hw(char *command, void *arguments, FILE *result_file,
         return send_command_to_arduino(command, result_file, serial_port);
     } else {
         printf("%s, Invalid slave_id %d, cannot process command \"%s\"\n", __func__,
-               get_slave_id(), command);
+               get_slave_id(), command->command_name);
         return false;
     }
 }

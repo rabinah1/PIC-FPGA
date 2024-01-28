@@ -37,7 +37,6 @@ volatile unsigned *init_gpio_map(void)
     // open file for mapping
     int mem_fd;
     void *gpio_map;
-    volatile unsigned *gpio;
 
     if ((mem_fd = open("/dev/mem", O_RDWR | O_SYNC)) < 0) {
         printf("%s, Can't open /dev/mem \n", __func__);
@@ -57,6 +56,5 @@ volatile unsigned *init_gpio_map(void)
         return NULL;
     }
 
-    gpio = (volatile unsigned *)gpio_map;
-    return gpio;
+    return (volatile unsigned *)gpio_map;
 }

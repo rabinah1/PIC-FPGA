@@ -61,6 +61,7 @@ void run_tests(char *serial_port, volatile unsigned *gpio)
     char tb_result_file[3 * MAX_STRING_SIZE];
     char line[MAX_STRING_SIZE];
     int sw_ret = SW_SUCCESS;
+    struct command_and_args cmd;
     memset(pwd, '\0', sizeof(pwd));
     memset(tb_input_file, '\0', sizeof(tb_input_file));
     memset(tb_result_file, '\0', sizeof(tb_result_file));
@@ -71,7 +72,19 @@ void run_tests(char *serial_port, volatile unsigned *gpio)
     tb_input = fopen(tb_input_file, "r");
     result_file = fopen(tb_result_file, "w");
 
+    if (!tb_input) {
+        printf("%s, Failed to open file %s\n", __func__, tb_input_file);
+        return;
+    }
+
+    if (!result_file) {
+        printf("%s, Failed to open file %s\n", __func__, tb_result_file);
+        return;
+    }
+
     while (fgets(line, sizeof(line), tb_input)) {
+        memset(&cmd, 0, sizeof(struct command_and_args));
+
         if (is_comment(line))
             continue;
 
@@ -80,8 +93,13 @@ void run_tests(char *serial_port, volatile unsigned *gpio)
 
         line[strlen(line) - 1] = '\0';
 
-        if (is_expected_command_type(line, "sw")) {
-            sw_ret = process_sw_command(line, gpio);
+        if (!verify_command_syntax(line, &cmd)) {
+            printf("%s, Invalid command %s\n", __func__, line);
+            break;
+        }
+
+        if (is_expected_command_type(&cmd, "sw")) {
+            sw_ret = process_sw_command(&cmd, gpio);
 
             if (sw_ret == SW_EXIT) {
                 printf("%s, Exiting...\n", __func__);
@@ -90,8 +108,8 @@ void run_tests(char *serial_port, volatile unsigned *gpio)
                 printf("%s, Failed to process command %s\n", __func__, line);
                 break;
             }
-        } else if (is_expected_command_type(line, "hw")) {
-            if (!process_hw_command(line, gpio, serial_port, result_file, true)) {
+        } else if (is_expected_command_type(&cmd, "hw")) {
+            if (!process_hw_command(&cmd, gpio, serial_port, result_file, true)) {
                 printf("%s, Failed to process command %s\n", __func__, line);
                 break;
             }
@@ -113,22 +131,31 @@ void run_app(char *serial_port, volatile unsigned *gpio)
 {
     printf("%s, Please enter command, or \"HELP\" for instructions\n", __func__);
     int sw_ret = SW_SUCCESS;
+    char command[MAX_STRING_SIZE];
+    struct command_and_args cmd;
 
     while (true) {
-        char command[MAX_STRING_SIZE];
+        memset(&cmd, 0, sizeof(struct command_and_args));
+        memset(command, '\0', sizeof(command));
         fgets(command, MAX_STRING_SIZE, stdin);
+        command[strcspn(command, "\n")] = '\0';
 
-        if (is_expected_command_type(command, "sw")) {
-            sw_ret = process_sw_command(command, gpio);
+        if (!verify_command_syntax(command, &cmd)) {
+            printf("%s, Invalid command %s\n", __func__, command);
+            continue;
+        }
+
+        if (is_expected_command_type(&cmd, "sw")) {
+            sw_ret = process_sw_command(&cmd, gpio);
 
             if (sw_ret == SW_EXIT) {
                 printf("%s, Exiting...\n", __func__);
                 break;
             } else if (sw_ret == SW_FAILED) {
-                printf("%s, Failed to process command %s\n", __func__, command);
+                printf("%s, Failed to process command %s\n", __func__, cmd.command_name);
             }
-        } else if (is_expected_command_type(command, "hw")) {
-            if (!process_hw_command(command, gpio, serial_port, NULL, false))
+        } else if (is_expected_command_type(&cmd, "hw")) {
+            if (!process_hw_command(&cmd, gpio, serial_port, NULL, false))
                 printf("%s, Failed to process command %s\n", __func__, command);
         } else {
             command[strlen(command) - 1] = '\0';
@@ -140,6 +167,7 @@ void run_app(char *serial_port, volatile unsigned *gpio)
 int parse_args(int argc, char *serial_port, char *argv[])
 {
     int mode = INVALID_MODE;
+    memset(serial_port, '\0', MAX_STRING_SIZE);
 
     if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
         puts(usage);
@@ -167,17 +195,17 @@ int parse_args(int argc, char *serial_port, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    if (wiringPiSetup() < 0) {
-        printf("%s, Setting up wiringPi failed, exiting...\n", __func__);
-        return 1;
-    }
-
     char serial_port[MAX_STRING_SIZE];
     pthread_t clk_thread_id;
     pthread_t timer_ext_clk_thread_id;
     volatile unsigned *gpio = init_gpio_map();
 
-    if (gpio == NULL) {
+    if (wiringPiSetup() < 0) {
+        printf("%s, Setting up wiringPi failed, exiting...\n", __func__);
+        return 1;
+    }
+
+    if (!gpio) {
         printf("%s, Failed to initialize GPIO, exiting...\n", __func__);
         return 1;
     }
@@ -192,7 +220,7 @@ int main(int argc, char *argv[])
     else if (mode == APPLICATION_MODE)
         run_app(serial_port, gpio);
     else
-        printf("%s, Invalid mode %d was detected, exiting\n", __func__, mode);
+        printf("%s, Invalid mode %d was detected, exiting...\n", __func__, mode);
 
     set_clk_exit(true);
     pthread_join(clk_thread_id, NULL);
