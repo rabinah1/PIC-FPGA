@@ -2,7 +2,7 @@
 
 extern "C"
 {
-#include "mock_wiringSerial.h"
+#include "wiringSerial.h"
 }
 
 int serialOpen(char *port, int baud_rate)

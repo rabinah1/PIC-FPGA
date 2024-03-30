@@ -2,7 +2,7 @@
 
 extern "C"
 {
-#include "mock_wiringPi.h"
+#include "wiringPi.h"
 }
 
 int wiringPiSetup(void)

@@ -5,11 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
-#ifndef UNIT_TEST
 #include <wiringPi.h>
-#else
-#include "mock_wiringPi.h"
-#endif
 #include "gpio_setup.h"
 #include "common_data.h"
 #include "defines.h"

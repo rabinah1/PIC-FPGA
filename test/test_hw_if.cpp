@@ -4,6 +4,7 @@ extern "C"
 {
 #include "hw_if.h"
 #include "defines.h"
+#include "wiringSerial.h"
 }
 #include "../cpputest/include/CppUTest/TestHarness.h"
 #include "../cpputest/include/CppUTestExt/MockSupport.h"

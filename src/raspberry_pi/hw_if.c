@@ -9,11 +9,7 @@
 #include <sys/poll.h>
 #include <errno.h>
 #include <math.h>
-#ifndef UNIT_TEST
 #include <wiringSerial.h>
-#else
-#include "mock_wiringSerial.h"
-#endif
 #include "hw_if.h"
 #include "defines.h"
 #include "common_data.h"
