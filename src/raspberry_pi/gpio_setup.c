@@ -2,11 +2,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
-#ifndef UNIT_TEST
 #include <fcntl.h>
+#ifndef UNIT_TEST
+//#include <fcntl.h>
 #include <sys/mman.h>
 #else
-#include "mock_fcntl.h"
+//#include "mock_fcntl.h"
 #include "mock_mman.h"
 #include "mock_gpio.h"
 #endif
@@ -34,9 +35,11 @@ void init_pins(void *gpio_void)
 
 volatile unsigned *init_gpio_map(void)
 {
+    printf("FFFFFFFFFFFFFFFFFFFFFF\n");
     // open file for mapping
     int mem_fd;
     void *gpio_map;
+    printf("ABC\n");
 
     if ((mem_fd = open("/dev/mem", O_RDWR | O_SYNC)) < 0) {
         printf("%s, Can't open /dev/mem \n", __func__);

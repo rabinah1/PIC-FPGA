@@ -15,6 +15,10 @@ CPPUTEST_HOME=$(PROJECT_DIR)/cpputest
 CPPUTEST_USE_VPATH=Y
 CPPUTEST_USE_MEM_LEAK_DETECTION=N
 CPPUTEST_USE_EXTENSIONS=Y
+CPPUTEST_CPPFLAGS=-fPIE
+CPPUTEST_CFLAGS=-fPIE
+CPPUTEST_CXXFLAGS=-fPIE
+CPPUTEST_LDFLAGS=-fPIE
 CPPUTEST_WARNINGFLAGS=-Wall -Wextra -Wshadow -Wswitch-default -Wswitch-enum -Wconversion -Wno-long-long -Wno-write-strings
 # run MakefileWorker.mk with the variables defined here
 include MakefileWorker.mk
