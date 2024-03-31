@@ -30,6 +30,7 @@ build_sw:
 check_sw:
 	@echo "Running tests..."
 	@$(MAKE) -C $(TEST_DIR)
+	@$(TEST_DIR)/PIC_FPGA
 	@echo "Done"
 	@echo ""
 

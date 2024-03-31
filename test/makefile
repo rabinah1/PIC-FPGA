@@ -1,20 +1,60 @@
-PROJECT_DIR=/home/henry/projects/PIC-FPGA
-SRC_DIR=$(PROJECT_DIR)/src/raspberry_pi
-TEST_DIR=$(PROJECT_DIR)/test
-# specify where the source code and includes are located
-INCLUDE_DIRS=$(SRC_DIR)
-SRC_DIRS=$(SRC_DIR)
-MOCKS_SRC_DIRS=$(SRC_DIR)/mocks
-# specify where the test code is located
-TEST_SRC_DIRS=$(TEST_DIR)
-# what to call the test binary
-TEST_TARGET=PIC16F84A_tests
-COMPONENT_NAME=PIC16F84A
-# where the cpputest library is located
-CPPUTEST_HOME=$(PROJECT_DIR)/cpputest
-CPPUTEST_USE_VPATH=Y
-CPPUTEST_USE_MEM_LEAK_DETECTION=N
-CPPUTEST_USE_EXTENSIONS=Y
-CPPUTEST_WARNINGFLAGS=-Wall -Wextra -Wshadow -Wswitch-default -Wswitch-enum -Wconversion -Wno-long-long -Wno-write-strings
-# run MakefileWorker.mk with the variables defined here
-include MakefileWorker.mk
+SHELL = /bin/bash
+CC = gcc
+CPPUTEST_HOME = ../cpputest
+CPPFLAGS += -I$(CPPUTEST_HOME)/include
+OBJ_DIR = ./objs
+SRC_DIR = ../src/raspberry_pi
+MOCK_DIR = $(SRC_DIR)/mocks
+LDFLAGS += -L$(CPPUTEST_HOME)/lib -I$(SRC_DIR) -I$(MOCK_DIR)
+OBJECTS = $(addprefix $(OBJ_DIR)/, mock_fcntl.o mock_gpio.o mock_hw_if.o mock_mman.o mock_wiringPi.o \
+	mock_wiringSerial.o process_command.o common_data.o gpio_setup.o hw_if.o test_common_data.o \
+	test_gpio_setup.o test_hw_if.o test_process_command.o main.o)
+CPPUTEST_LIBS = ../cpputest/src/CppUTest/libCppUTest.a ../cpputest/src/CppUTest/libCppUTestExt.a
+
+all: PIC_FPGA
+
+PIC_FPGA: $(OBJECTS)
+	$(CXX) $(OBJECTS) $(CPPUTEST_LIBS) -o PIC_FPGA $(CPPFLAGS) $(CFLAGS) $(LDLIBS) $(LDFLAGS)
+
+$(OBJ_DIR)/main.o:
+
+$(OBJ_DIR)/test_common_data.o: $(SRC_DIR)/defines.h $(SRC_DIR)/common_data.h
+
+$(OBJ_DIR)/test_gpio_setup.o: $(SRC_DIR)/defines.h $(SRC_DIR)/gpio_setup.h
+
+$(OBJ_DIR)/test_hw_if.o: $(SRC_DIR)/defines.h $(SRC_DIR)/hw_if.h
+
+$(OBJ_DIR)/test_process_command.o: $(SRC_DIR)/defines.h $(SRC_DIR)/process_command.h $(SRC_DIR)/common_data.h
+
+mock_fcntl.o: $(MOCK_DIR)/mock_fcntl.h
+
+mock_gpio.o: $(MOCK_DIR)/mock_gpio.h
+
+mock_hw_if.o: $(SRC_DIR)/hw_if.h
+
+mock_mman.o: $(MOCK_DIR)/mock_mman.h
+
+mock_wiringPi.o: $(MOCK_DIR)/mock_wiringPi.h
+
+mock_wiringSerial.o: $(MOCK_DIR)/mock_wiringSerial.h
+
+common_data.o: $(SRC_DIR)/common_data.h $(SRC_DIR)/defines.h
+
+gpio_setup.o: $(SRC_DIR)/gpio_setup.h $(SRC_DIR)/defines.h
+
+hw_if.o: $(SRC_DIR)/hw_if.h $(SRC_DIR)/defines.h $(SRC_DIR)/common_data.h
+
+process_command.o: $(SRC_DIR)/defines.h $(SRC_DIR)/common_data.h $(SRC_DIR)/hw_if.h
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) -DUNIT_TEST=1 $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LDLIBS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(MOCK_DIR)/%.cpp
+	$(CXX) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LDLIBS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: %.cpp
+	$(CXX) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LDLIBS) -c $< -o $@
+
+clean:
+	-rm -rf $(OBJ_DIR)/*
+	-rm -f PIC_FPGA

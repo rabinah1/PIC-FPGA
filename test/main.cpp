@@ -1,4 +1,4 @@
-#include "/home/henry/projects/PIC-FPGA/cpputest/include/CppUTest/CommandLineTestRunner.h"
+#include "../cpputest/include/CppUTest/CommandLineTestRunner.h"
 
 int main(int ac, char **av)
 {

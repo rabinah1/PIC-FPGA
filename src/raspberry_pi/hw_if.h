@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include "defines.h"
 
 void set_gpio_high(int pin, volatile unsigned *gpio);
