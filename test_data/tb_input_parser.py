@@ -70,9 +70,9 @@ def parse(line_parts):
     instruction = line_parts[0].strip()
     if instruction == "RESET" or instruction.startswith("#"):
         return instruction
-    opcode_binary = opcode_dict[instruction]
-    binary_input = opcode_binary
-    if instruction in ["ADDLW", "SUBLW", "MOVLW", "ANDLW", "IORLW", "SUBLW", "XORLW"]:
+    binary_input = opcode_dict[instruction]
+    if instruction in ["ADDLW", "SUBLW", "MOVLW", "ANDLW", "IORLW", "SUBLW", "XORLW",
+                       "READ_ADDRESS"]:
         binary_input += decimal_to_binary(int(line_parts[1].strip()), 8)
     elif instruction in ["ADDWF", "MOVF", "COMF", "INCF", "ANDWF", "CLR", "DECF", "IORWF",
                          "RLF", "RRF", "SUBWF", "SWAPF", "XORWF", "DECFSZ", "INCFSZ"]:
@@ -81,8 +81,6 @@ def parse(line_parts):
     elif instruction in ["BCF", "BSF"]:
         binary_input += decimal_to_binary(int(line_parts[1].strip()), 3)
         binary_input += decimal_to_binary(int(line_parts[2].strip()), 7)
-    elif instruction in ["READ_ADDRESS"]:
-        binary_input += decimal_to_binary(int(line_parts[1].strip()), 8)
     else:
         binary_input += decimal_to_binary(0, 8)
     return binary_input

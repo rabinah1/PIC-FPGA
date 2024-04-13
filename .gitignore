@@ -42,3 +42,4 @@ hps_sdram_p0_summary.csv
 hps_isw_handoff
 .qsys_edit/
 socfpga-4.5/
+test_data/__pycache__

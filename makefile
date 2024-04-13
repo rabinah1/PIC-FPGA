@@ -31,6 +31,7 @@ check_sw:
 	@echo "Running tests..."
 	@$(MAKE) -C $(TEST_DIR)
 	@$(TEST_DIR)/PIC_FPGA
+	pytest $(TEST_DATA_DIR)
 	@echo "Done"
 	@echo ""
 
