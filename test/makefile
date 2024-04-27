@@ -16,6 +16,11 @@ all: PIC_FPGA
 PIC_FPGA: $(OBJECTS)
 	$(CXX) $(OBJECTS) $(CPPUTEST_LIBS) -o PIC_FPGA $(CPPFLAGS) $(CFLAGS) $(LDLIBS) $(LDFLAGS)
 
+$(OBJECTS): | $(OBJ_DIR)
+
+$(OBJ_DIR):
+	mkdir $(OBJ_DIR)
+
 $(OBJ_DIR)/main.o:
 
 $(OBJ_DIR)/test_common_data.o: $(SRC_DIR)/defines.h $(SRC_DIR)/common_data.h
@@ -56,5 +61,5 @@ $(OBJ_DIR)/%.o: %.cpp
 	$(CXX) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LDLIBS) -c $< -o $@
 
 clean:
-	-rm -rf $(OBJ_DIR)/*
+	-rm -rf $(OBJ_DIR)
 	-rm -f PIC_FPGA
