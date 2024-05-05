@@ -1,10 +1,12 @@
 library ieee;
 library std;
+library vunit_lib;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.std_logic_unsigned.all;
 use std.textio.all;
 use ieee.std_logic_textio.all;
+context vunit_lib.vunit_context;
 
 entity pic16f84a_tb is
     generic (
