@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 TARGET_BINARY = main
 CFLAGS = -Wall
-CC = /opt/linaro/gcc-linaro-4.8-2015.06-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc
+CC = /opt/linaro/gcc_12_2/arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf-gcc
 
 .PHONY: clean
 

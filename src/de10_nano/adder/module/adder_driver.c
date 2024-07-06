@@ -25,7 +25,7 @@ static struct device_driver adder_driver = {
     .bus = &platform_bus_type // https://www.kernel.org/doc/Documentation/driver-model/platform.txt
 };
 
-ssize_t adder_read(struct device_driver *drv, char __user *buf, size_t count, loff_t *offp)
+ssize_t adder_read(struct device_driver *drv, char __user *buf)
 {
     u16 sum;
     char sum_str[10];
@@ -94,7 +94,12 @@ ssize_t adder_write(struct device_driver *drv, const char *buf, size_t count)
 
 // DRIVER_ATTR is a helper to create a driver_attr struct. Arguments are name, permission mode, show function and store function.
 // When name is "adder", this will declare a struct called "driver_attr_adder".
-static DRIVER_ATTR(adder, (S_IWUSR | S_IRUGO), adder_read, adder_write);
+// static DRIVER_ATTR(adder, (S_IWUSR | S_IRUGO), adder_read, adder_write);
+struct driver_attribute driver_attr_adder = {
+    .attr   = { .name = "adder", .mode = (S_IWUSR | S_IRUGO) },
+    .show   = adder_read,
+    .store  = adder_write
+};
 
 MODULE_LICENSE("Dual BSD/GPL");
 

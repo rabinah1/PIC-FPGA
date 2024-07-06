@@ -2,9 +2,9 @@
 obj-m:=adder_driver.o
 
 all:
-	make ARCH=arm CROSS_COMPILE=/opt/linaro/gcc-linaro-4.8-2015.06-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- \
-	-C ../../../../socfpga-4.5/linux-socfpga/lib/modules/4.5.0+/build M=/home/henry/projects/PIC-FPGA/src/de10_nano/adder/module modules
+	make ARCH=arm CROSS_COMPILE=/opt/linaro/gcc_12_2/arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf- \
+	-C /home/henry/kernels/linux-socfpga M=/home/henry/projects/PIC-FPGA/src/de10_nano/adder/module modules
 
 clean:
-	make ARCH=arm CROSS_COMPILE=/opt/linaro/gcc-linaro-4.8-2015.06-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- \
-	-C ../../../../socfpga-4.5/linux-socfpga/lib/modules/4.5.0+/build M=/home/henry/projects/PIC-FPGA/src/de10_nano/adder/module clean
+	make ARCH=arm CROSS_COMPILE=/opt/linaro/gcc_12_2/arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf- \
+	-C /home/henry/kernels/linux-socfpga M=/home/henry/projects/PIC-FPGA/src/de10_nano/adder/module clean

@@ -1,0 +1,7 @@
+Kernel socfpga-6.1
+uboot v2021.07
+gcc 12.2 (https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)
+debian bookworm
+export CROSS_COMPILE=/opt/linaro/gcc_12_2/arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf-
+Modify vermagic in include/generated/utsrelease.h
+When compiling kernel, do "make ARCH=arm zImage modules dtbs -j$(nproc)"
