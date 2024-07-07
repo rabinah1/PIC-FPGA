@@ -23,8 +23,8 @@ with the reference file created by the user.
 
 
 def _check_diff(args):
-    result_file = os.path.join(os.getcwd(), "test_data/real_hw_tb_result.txt")
-    reference_file = os.path.join(os.getcwd(), "test_data/real_hw_tb_reference.txt")
+    result_file = os.path.join(os.getcwd(), "test_data/data/real_hw_tb_result.txt")
+    reference_file = os.path.join(os.getcwd(), "test_data/data/real_hw_tb_reference.txt")
     ret = subprocess.run(["diff", result_file, reference_file, "-C", "10", "-w"], check=False,
                          capture_output=True)
     if ret.stdout:

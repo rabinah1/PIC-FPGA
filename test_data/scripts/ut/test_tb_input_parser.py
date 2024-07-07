@@ -1,5 +1,10 @@
 # pylint: disable=missing-docstring
-from tb_input_parser import decimal_to_binary, parse
+import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+# pylint: disable=import-error
+# pylint: disable=wrong-import-position
+from tb_input_parser import decimal_to_binary, parse  # noqa: E402
 
 
 def test_decimal_to_binary():
@@ -18,3 +23,6 @@ def test_parse():
     assert parse(["ADDLW", "2"]) == "11111000000010"
     assert parse(["INCF", "1", "15"]) == "00101010001111"
     assert parse(["BCF", "3", "100"]) == "01000111100100"
+
+
+sys.path.pop(0)

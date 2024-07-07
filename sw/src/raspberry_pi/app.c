@@ -67,8 +67,8 @@ void run_tests(char *serial_port, volatile unsigned *gpio)
     memset(tb_result_file, '\0', sizeof(tb_result_file));
     memset(line, '\0', sizeof(line));
     getcwd(pwd, sizeof(pwd));
-    sprintf(tb_input_file, "%s/test_data/real_hw_tb_input.txt", pwd);
-    sprintf(tb_result_file, "%s/test_data/real_hw_tb_result.txt", pwd);
+    sprintf(tb_input_file, "%s/test_data/data/real_hw_tb_input.txt", pwd);
+    sprintf(tb_result_file, "%s/test_data/data/real_hw_tb_result.txt", pwd);
     tb_input = fopen(tb_input_file, "r");
     result_file = fopen(tb_result_file, "w");
 

@@ -47,8 +47,8 @@ if [[ ! -e "${TARGET}" ]]; then
 fi
 
 sudo ${TARGET} ${SERIAL_PORT} testing
-python3 ${SCRIPT_DIR}/test_data/verify_real_hw_result.py ${SCRIPT_DIR}/test_data
+python3 ${SCRIPT_DIR}/test_data/scripts/verify_real_hw_result.py ${SCRIPT_DIR}/test_data/data
 
 if [[ "${SAVE_TEST_OUTPUT}" == "false" ]]; then
-    rm -f ${SCRIPT_DIR}/test_data/real_hw_tb_result.txt
+    rm -f ${SCRIPT_DIR}/test_data/data/real_hw_tb_result.txt
 fi

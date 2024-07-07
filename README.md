@@ -14,23 +14,17 @@ Raspberry Pi and Terasic DE10-nano are connected to each other via the GPIO pins
 
 Below is a short description of the repository structure.
 
-- cpputest/
-    - Cpputest submodule.
 - doc/
     - Technical documents.
-- src/
-    - Software source code.
-- test/
-    - Software unit tests.
+- hw/
+    - Hardware source code, testbench and style check configuration.
+- sw/
+    - Software source code and unit tests.
 - test_data/
-    - Reference and input data for HW test automation, and Python-scripts for processing the data.
-- vhdl_src/
-    - VHDL source code.
-- install_cpputest.sh: Script to install cpputest.
+    - Input data files for testing, and helper scripts for test automation.
 - makefile: Top-level makefile.
 - run_tests.sh: Script for running test on real HW.
 - setup_env.sh: Environment setup script for GPIO usage. This must be executed on the Raspberry Pi before running the SW.
-- test_file.txt: File that can be read by the SW on the Raspberry Pi, all commands in it are executed.
 
 ## Hardware setup
 

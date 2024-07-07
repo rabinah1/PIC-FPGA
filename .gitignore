@@ -1,13 +1,13 @@
 ALU.pdf
 ALU.vhd.bak
 Input.txt.bak
-PIC16F84A.out.sdc
-PIC16F84A.qsf.bak
-PIC16F84A.qws
-PIC16F84A.sdc.bak
-PIC16F84A.vhd.bak
-PIC16F84A_nativelink_simulation.rpt
-PIC16F84A_tb.vhd.bak
+pic16f84a.out.sdc
+pic16f84a.qsf.bak
+pic16f84a.qws
+pic16f84a.sdc.bak
+pic16f84a.vhd.bak
+pic16f84a_nativelink_simulation.rpt
+pic16f84a_tb.vhd.bak
 PIC_package.vhd.bak
 W_register.vhd.bak
 c5_pin_model_dump.txt
@@ -42,4 +42,5 @@ hps_sdram_p0_summary.csv
 hps_isw_handoff
 .qsys_edit/
 socfpga-4.5/
-test_data/__pycache__
+test_data/scripts/__pycache__
+test_data/scripts/ut/__pycache__

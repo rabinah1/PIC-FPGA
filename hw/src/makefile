@@ -13,7 +13,7 @@ STYLE_CHECK_FILES = \
 	parallel_to_serial_output.vhd \
 	pcf8582_simulator.vhd \
 	pic16f84a.vhd	\
-	pic16f84a_tb.vhd \
+	../testbench/pic16f84a_tb.vhd \
 	ram.vhd \
 	serial_to_parallel_instruction.vhd \
 	states_package.vhd \
@@ -31,7 +31,7 @@ SIMULATION_FILES = \
 	input_receive.vhd \
 	parallel_to_serial_output.vhd \
 	pic16f84a.vhd \
-	pic16f84a_tb.vhd \
+	../testbench/pic16f84a_tb.vhd \
 	ram.vhd \
 	serial_to_parallel_instruction.vhd \
 	state_machine.vhd \
@@ -61,26 +61,26 @@ STORE_RESULT = no
 sta:
 	@echo "Checking code style..."
 	@for file in $(STYLE_CHECK_FILES); do \
-		vsg -f $${file} -c vsg_config.json; \
+		vsg -f $${file} -c ../style_check/vsg_config.json; \
 	done
 	@echo "Style check done"
 
 check:
 	@echo "Running VHDL testbench..."
-	@python3 ../test_data/tb_input_parser.py ../test_data
+	@python3 ../../test_data/scripts/tb_input_parser.py ../../test_data/data
 	@vlib ./work
 	@for file in $(SIMULATION_FILES); do \
 		vcom -2008 -reportprogress 300 -work ./work ./$${file}; \
 	done
-	@vsim -c -lib ./work -l ./transcript -wlf ./vsim.wlf -ginput_file="../test_data/tb_result.txt" \
-	-goutput_file="../test_data/tb_input_parsed.txt" -do "./vsim_commands.txt" pic16f84a_tb
-	@python3 ../test_data/verify_simulation_result.py ../test_data
+	@vsim -c -lib ./work -l ./transcript -wlf ./vsim.wlf -ginput_file="../../test_data/data/tb_result.txt" \
+	-goutput_file="../../test_data/data/tb_input_parsed.txt" -do "../testbench/vsim_commands.txt" pic16f84a_tb
+	@python3 ../../test_data/scripts/verify_simulation_result.py ../../test_data/data
 	@if [[ $(STORE_RESULT) != "yes" ]]; then \
 		rm ./transcript; \
 		rm -rf ./work; \
-		rm ../test_data/tb_input_parsed.txt; \
-		rm ../test_data/tb_result.txt; \
-		rm ../test_data/tb_result_formatted.txt; \
+		rm ../../test_data/data/tb_input_parsed.txt; \
+		rm ../../test_data/data/tb_result.txt; \
+		rm ../../test_data/data/tb_result_formatted.txt; \
 	fi
 	@echo "VHDL tests done"
 

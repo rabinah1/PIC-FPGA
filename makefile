@@ -1,9 +1,9 @@
 SHELL = /bin/bash
-SRC_DIR = ./src
-VHDL_DIR = ./vhdl_src
-OBJ_DIR = $(SRC_DIR)/raspberry_pi/objs
-TEST_DIR = ./test
-TEST_DATA_DIR = ./test_data
+SW_SRC_DIR = ./sw/src
+SW_HW_DIR = ./hw/src
+OBJ_DIR = $(SW_SRC_DIR)/raspberry_pi/objs
+SW_TEST_DIR = ./sw/ut
+TEST_DATA_DIR = ./test_data/scripts/ut
 
 include .env
 export
@@ -21,19 +21,19 @@ clean: clean_hw clean_sw
 
 build_sw:
 	@echo "Compiling project..."
-	@$(MAKE) -C $(SRC_DIR)/raspberry_pi
-	@$(MAKE) -C $(SRC_DIR)/de10_nano/first_test
-	@$(MAKE) -C $(SRC_DIR)/de10_nano/adder
-	@$(MAKE) -C $(SRC_DIR)/de10_nano/adder/module
-	@arduino-cli compile --build-path $(SRC_DIR)/arduino/build --fqbn \
-	arduino:avr:nano:cpu=atmega328 $(SRC_DIR)/arduino/arduino.ino
+	@$(MAKE) -C $(SW_SRC_DIR)/raspberry_pi
+	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/first_test
+	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/adder
+	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/adder/module
+	@arduino-cli compile --build-path $(SW_SRC_DIR)/arduino/build --fqbn \
+	arduino:avr:nano:cpu=atmega328 $(SW_SRC_DIR)/arduino/arduino.ino
 	@echo "Done"
 	@echo ""
 
 check_sw:
 	@echo "Running tests..."
-	@$(MAKE) -C $(TEST_DIR)
-	@$(TEST_DIR)/PIC_FPGA
+	@$(MAKE) -C $(SW_TEST_DIR)
+	@$(SW_TEST_DIR)/PIC_FPGA
 	pytest $(TEST_DATA_DIR)
 	@echo "Done"
 	@echo ""
@@ -43,7 +43,7 @@ sta_sw:
 	@astyle --style=linux --max-code-length=100 --recursive --align-pointer=name --break-blocks \
 	--pad-oper --pad-header --delete-empty-lines --indent-col1-comments --squeeze-lines=1 \
 	--exclude="arduino\build" --exclude="de10_nano/adder/module/adder_driver.mod.c" \
-	-i ".\src\*.c,*.cpp,*.h" ".\test\*.cpp"
+	-i "${SW_SRC_DIR}\*.c,*.cpp,*.h" "${SW_TEST_DIR}\*.cpp"
 	@echo "Done"
 	@echo ""
 	@echo "Running pylint..."
@@ -55,39 +55,39 @@ sta_sw:
 	@echo "Done"
 
 clean_sw:
-	@$(MAKE) -C $(TEST_DIR) clean
-	@-rm -f $(SRC_DIR)/raspberry_pi/main
+	@$(MAKE) -C $(SW_TEST_DIR) clean
+	@-rm -f $(SW_SRC_DIR)/raspberry_pi/main
 	@-rm -rf $(OBJ_DIR)
-	@-rm -rf $(SRC_DIR)/arduino/build
-	@-rm $(SRC_DIR)/de10_nano/first_test/main.o
-	@-rm $(SRC_DIR)/de10_nano/first_test/main
-	@-rm $(SRC_DIR)/de10_nano/adder/main.o
-	@-rm $(SRC_DIR)/de10_nano/adder/main
-	@$(MAKE) -C $(SRC_DIR)/de10_nano/adder/module clean
+	@-rm -rf $(SW_SRC_DIR)/arduino/build
+	@-rm $(SW_SRC_DIR)/de10_nano/first_test/main.o
+	@-rm $(SW_SRC_DIR)/de10_nano/first_test/main
+	@-rm $(SW_SRC_DIR)/de10_nano/adder/main.o
+	@-rm $(SW_SRC_DIR)/de10_nano/adder/main
+	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/adder/module clean
 
 sta_hw:
-	@$(MAKE) -C $(VHDL_DIR) sta
+	@$(MAKE) -C $(SW_HW_DIR) sta
 
 load_arduino:
 	@echo "Loading design to Arduino..."
-	@arduino-cli upload --input-dir $(SRC_DIR)/arduino/build -p $(PORT) --fqbn \
-	arduino:avr:nano:cpu=atmega328 $(SRC_DIR)/arduino/arduino.ino
+	@arduino-cli upload --input-dir $(SW_SRC_DIR)/arduino/build -p $(PORT) --fqbn \
+	arduino:avr:nano:cpu=atmega328 $(SW_SRC_DIR)/arduino/arduino.ino
 	@echo "Done"
 
 build_hw:
-	@$(MAKE) -C $(VHDL_DIR) build
+	@$(MAKE) -C $(SW_HW_DIR) build
 
 check_hw:
-	@$(MAKE) -C $(VHDL_DIR) check
+	@$(MAKE) -C $(SW_HW_DIR) check
 
 load_hw:
-	@$(MAKE) -C $(VHDL_DIR) load
+	@$(MAKE) -C $(SW_HW_DIR) load
 
 netlist:
-	@$(MAKE) -C $(VHDL_DIR) netlist
+	@$(MAKE) -C $(SW_HW_DIR) netlist
 
 clean_hw:
-	@$(MAKE) -C $(VHDL_DIR) clean
+	@$(MAKE) -C $(SW_HW_DIR) clean
 
 help:
 	@echo "Available targets for this makefile are:"

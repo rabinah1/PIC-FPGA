@@ -1,5 +1,10 @@
 # pylint: disable=missing-docstring
-from verify_simulation_result import _binary_to_decimal
+import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+# pylint: disable=import-error
+# pylint: disable=wrong-import-position
+from verify_simulation_result import _binary_to_decimal  # noqa: E402
 
 
 def test_binary_to_decimal():
@@ -10,3 +15,6 @@ def test_binary_to_decimal():
     decimals = [1, 2, 4, 8, 16, 32, 64, 128, 3, 5, 9, 17, 33, 65, 129, 6, 10, 18, 34, 66, 130, 0]
     for binary, decimal in zip(binaries, decimals):
         assert _binary_to_decimal(binary) == decimal
+
+
+sys.path.pop(0)
