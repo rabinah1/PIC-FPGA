@@ -5,6 +5,9 @@ OBJ_DIR = $(SRC_DIR)/raspberry_pi/objs
 TEST_DIR = ./test
 TEST_DATA_DIR = ./test_data
 
+include .env
+export
+
 .DELETE_ON_ERROR:
 .PHONY: all clean sw hw build_sw check_sw sta_sw clean_sw load_arduino build_hw check_hw sta_hw netlist load_hw clean_hw help
 

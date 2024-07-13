@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 TARGET_BINARY = main
 LDLIBS = -lm -pthread -lwiringPi
-CC = /opt/rpi/rpi-gcc-8.3.0/bin/arm-linux-gnueabihf-gcc
+CC = $(RPI_GCC)
 CFLAGS = -Wall -O3
 OBJ_DIR = ./objs
 OBJECTS = $(addprefix $(OBJ_DIR)/, process_command.o common_data.o gpio_setup.o hw_if.o app.o)
