@@ -13,7 +13,7 @@ entity pic16f84a_tb is
     );
 end entity pic16f84a_tb;
 
-architecture behavior of pic16f84a_tb is
+architecture tb of pic16f84a_tb is
 
     signal   serial_in            : std_logic := '0';
     signal   clk                  : std_logic := '0';
@@ -260,4 +260,4 @@ begin
 
     end process stimulus;
 
-end architecture behavior;
+end architecture tb;

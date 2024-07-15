@@ -20,26 +20,41 @@ hw: build_hw check_hw sta_hw
 clean: clean_hw clean_sw
 
 build_sw:
-	@echo "Compiling project..."
+	@echo "===================================="
+	@echo "SW build starting"
+	@echo "===================================="
+	@echo ""
 	@$(MAKE) -C $(SW_SRC_DIR)/raspberry_pi
 	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/first_test
 	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/adder
 	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/adder/module
 	@arduino-cli compile --build-path $(SW_SRC_DIR)/arduino/build --fqbn \
 	arduino:avr:nano:cpu=atmega328 $(SW_SRC_DIR)/arduino/arduino.ino
-	@echo "Done"
+	@echo ""
+	@echo "===================================="
+	@echo "SW build completed"
+	@echo "===================================="
 	@echo ""
 
 check_sw:
-	@echo "Running tests..."
+	@echo "===================================="
+	@echo "SW tests starting"
+	@echo "===================================="
+	@echo ""
 	@$(MAKE) -C $(SW_TEST_DIR)
 	@$(SW_TEST_DIR)/PIC_FPGA
 	pytest $(TEST_DATA_DIR)
-	@echo "Done"
+	@echo ""
+	@echo "===================================="
+	@echo "SW tests completed"
+	@echo "===================================="
 	@echo ""
 
 sta_sw:
-	@echo "Runnig Astyle..."
+	@echo "===================================="
+	@echo "SW static analysis starting"
+	@echo "===================================="
+	@echo ""
 	@astyle --style=linux --max-code-length=100 --recursive --align-pointer=name --break-blocks \
 	--pad-oper --pad-header --delete-empty-lines --indent-col1-comments --squeeze-lines=1 \
 	--exclude="arduino\build" --exclude="de10_nano/adder/module/adder_driver.mod.c" \
@@ -47,14 +62,22 @@ sta_sw:
 	@echo "Done"
 	@echo ""
 	@echo "Running pylint..."
-	@pylint $(TEST_DATA_DIR)/*.py
+	@pylint $(TEST_DATA_DIR)/*.py ./hw/run.py
 	@echo "Done"
 	@echo ""
 	@echo "Running flake8..."
-	@flake8 $(TEST_DATA_DIR)/*.py --max-line-length=100
-	@echo "Done"
+	@flake8 $(TEST_DATA_DIR)/*.py ./hw/run.py --max-line-length=100
+	@echo ""
+	@echo "===================================="
+	@echo "SW static analysis completed"
+	@echo "===================================="
+	@echo ""
 
 clean_sw:
+	@echo "===================================="
+	@echo "SW cleanup starting"
+	@echo "===================================="
+	@echo ""
 	@$(MAKE) -C $(SW_TEST_DIR) clean
 	@-rm -f $(SW_SRC_DIR)/raspberry_pi/main
 	@-rm -rf $(OBJ_DIR)
@@ -64,30 +87,96 @@ clean_sw:
 	@-rm $(SW_SRC_DIR)/de10_nano/adder/main.o
 	@-rm $(SW_SRC_DIR)/de10_nano/adder/main
 	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/adder/module clean
+	@echo ""
+	@echo "===================================="
+	@echo "SW cleanup completed"
+	@echo "===================================="
+	@echo ""
 
 sta_hw:
+	@echo "===================================="
+	@echo "HW static analysis starting"
+	@echo "===================================="
+	@echo ""
 	@$(MAKE) -C $(SW_HW_DIR) sta
+	@echo ""
+	@echo "===================================="
+	@echo "HW static analysis completed"
+	@echo "===================================="
+	@echo ""
 
 load_arduino:
-	@echo "Loading design to Arduino..."
+	@echo "===================================="
+	@echo "Loading design to Arduino starting"
+	@echo "===================================="
+	@echo ""
 	@arduino-cli upload --input-dir $(SW_SRC_DIR)/arduino/build -p $(PORT) --fqbn \
 	arduino:avr:nano:cpu=atmega328 $(SW_SRC_DIR)/arduino/arduino.ino
-	@echo "Done"
+	@echo ""
+	@echo "===================================="
+	@echo "Loading design to Arduino completed"
+	@echo "===================================="
+	@echo ""
 
 build_hw:
+	@echo "===================================="
+	@echo "HW build starting"
+	@echo "===================================="
+	@echo ""
 	@$(MAKE) -C $(SW_HW_DIR) build
+	@echo ""
+	@echo "===================================="
+	@echo "HW build completed"
+	@echo "===================================="
+	@echo ""
 
 check_hw:
+	@echo "===================================="
+	@echo "HW tests starting"
+	@echo "===================================="
+	@echo ""
 	@$(MAKE) -C $(SW_HW_DIR) check
+	@echo ""
+	@echo "===================================="
+	@echo "HW tests completed"
+	@echo "===================================="
+	@echo ""
 
 load_hw:
+	@echo "===================================="
+	@echo "Loading HW to FPGA starting"
+	@echo "===================================="
+	@echo ""
 	@$(MAKE) -C $(SW_HW_DIR) load
+	@echo ""
+	@echo "===================================="
+	@echo "Loading HW to FPGA completed"
+	@echo "===================================="
+	@echo ""
 
 netlist:
+	@echo "===================================="
+	@echo "Create netlist starting"
+	@echo "===================================="
+	@echo ""
 	@$(MAKE) -C $(SW_HW_DIR) netlist
+	@echo ""
+	@echo "===================================="
+	@echo "Create netlist completed"
+	@echo "===================================="
+	@echo ""
 
 clean_hw:
+	@echo "===================================="
+	@echo "HW cleanup starting"
+	@echo "===================================="
+	@echo ""
 	@$(MAKE) -C $(SW_HW_DIR) clean
+	@echo ""
+	@echo "===================================="
+	@echo "HW cleanup completed"
+	@echo "===================================="
+	@echo ""
 
 help:
 	@echo "Available targets for this makefile are:"
