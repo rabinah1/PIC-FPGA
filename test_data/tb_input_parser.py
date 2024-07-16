@@ -68,7 +68,8 @@ def decimal_to_binary(decimal_in, num_bits):
 
 def parse(line_parts):
     instruction = line_parts[0].strip()
-    if instruction == "RESET" or instruction.startswith("#"):
+    if instruction == "RESET" or instruction.startswith("#") or instruction == "ENABLE_50MHZ" or \
+       instruction == "DISABLE_50MHZ":
         return instruction
     binary_input = opcode_dict[instruction]
     if instruction in ["ADDLW", "SUBLW", "MOVLW", "ANDLW", "IORLW", "SUBLW", "XORLW",

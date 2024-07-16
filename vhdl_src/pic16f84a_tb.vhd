@@ -30,6 +30,8 @@ architecture behavior of pic16f84a_tb is
     signal   check                : natural   := 0;
     signal   write_comment        : std_logic := '0';
     signal   result_num           : integer   := 1;
+    signal   enable_50mhz         : std_logic := '0';
+    signal   enable               : std_logic := '0';
     constant CLK_PERIOD           : time      := 250 us;
     constant EXT_CLK_PERIOD       : time      := 1000 ms;
     constant CLK_50MHZ_PERIOD     : time      := 20 ns;
@@ -151,6 +153,10 @@ begin
     clk_50mhz_process : process is
     begin
 
+        if (enable = '0') then
+            wait until rising_edge(enable_50mhz);
+        end if;
+
         clk_50mhz_in <= '0';
         wait for CLK_50MHZ_PERIOD / 2;
         clk_50mhz_in <= '1';
@@ -205,7 +211,7 @@ begin
     begin
 
         reset <= '1';
-        wait for 1 ms;
+        wait for 500 us;
         reset <= '0';
 
         while (not endfile(stimulus_file)) loop
@@ -214,19 +220,28 @@ begin
             if (linein.all = "RESET") then
                 result_num <= result_num + 1;
                 reset      <= '1';
-                wait for 1 ms;
+                wait for 500 us;
                 reset      <= '0';
                 next;
             elsif (linein.all(1) = '#') then
                 write_comment <= '1';
+                wait until falling_edge(clk);
+                write_comment <= '0';
+                next;
+            elsif (linein.all = "ENABLE_50MHZ") then
+                enable_50mhz <= '1';
+                enable       <= '1';
+                next;
+            elsif (linein.all = "DISABLE_50MHZ") then
+                enable_50mhz <= '0';
+                enable       <= '0';
                 next;
             end if;
 
             read(linein, binary_command);
             wait until falling_edge(clk);
-            write_comment <= '0';
-            mosi          <= '1';
-            count         := 13;
+            mosi  <= '1';
+            count := 13;
 
             while (count >= 0) loop
                 serial_in <= binary_command(count);
@@ -238,7 +253,7 @@ begin
             wait for 5 ms;
         end loop;
 
-        wait for 100 ms;
+        wait for 10 ms;
         check <= 1;
         file_close(stimulus_file);
         wait;
