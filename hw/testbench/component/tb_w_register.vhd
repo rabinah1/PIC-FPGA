@@ -1,10 +1,8 @@
 library ieee;
-library std;
 library vunit_lib;
     context vunit_lib.vunit_context;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use ieee.std_logic_unsigned.all;
 
 entity tb_w_register is
     generic (
