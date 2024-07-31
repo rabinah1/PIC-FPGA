@@ -46,7 +46,7 @@ if [[ ! -e "${TARGET}" ]]; then
     exit 1
 fi
 
-sudo ${TARGET} ${SERIAL_PORT} testing
+sudo ${TARGET} --serial_port ${SERIAL_PORT} --run_tests
 python3 ${SCRIPT_DIR}/test_data/scripts/verify_real_hw_result.py ${SCRIPT_DIR}/test_data/data
 
 if [[ "${SAVE_TEST_OUTPUT}" == "false" ]]; then

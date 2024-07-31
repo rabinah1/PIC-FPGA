@@ -6,7 +6,7 @@ root = Path(__file__).resolve().parent
 dut_path = root / "src"
 test_path = root / "testbench" / "component"
 
-VU = VUnit.from_argv(compile_builtins=False)
+VU = VUnit.from_argv()
 VU.add_vhdl_builtins()
 VU.enable_location_preprocessing()
 

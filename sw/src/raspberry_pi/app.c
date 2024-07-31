@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#include <argp.h>
 #ifndef UNIT_TEST
 #include <wiringPi.h>
 #else
@@ -16,14 +17,10 @@
 #include "hw_if.h"
 #include "process_command.h"
 
-static const char *usage = "\
-Usage: This is the control software to be run on the Raspberry Pi 4 \n\n\
-\
-Arguments:\n\
-    -h/--help                Print this message and exit\n\
-    serial_port (mandatory)  Serial port to which Arduino Nano is connected to\n\
-    testing (optional)       This will trigger the test automation\n\
-";
+struct arguments {
+    int run_tests;
+    char serial_port[MAX_STRING_SIZE];
+};
 
 bool is_comment(char *line)
 {
@@ -164,31 +161,48 @@ void run_app(char *serial_port, volatile unsigned *gpio)
     }
 }
 
+static int parse_opt(int key, char *arg, struct argp_state *state)
+{
+    struct arguments *arguments = (struct arguments *)state->input;
+
+    switch (key) {
+    case 777: {
+        arguments->run_tests = 1;
+        break;
+    }
+
+    case 888: {
+        strcpy(arguments->serial_port, arg);
+        break;
+    }
+    }
+
+    return 0;
+}
+
 int parse_args(int argc, char *serial_port, char *argv[])
 {
+    struct arguments arguments;
     int mode = INVALID_MODE;
+    arguments.run_tests = 0;
+    strcpy(arguments.serial_port, "/dev/ttyUSB0");
     memset(serial_port, '\0', MAX_STRING_SIZE);
+    struct argp_option options[] = {
+        {"run_tests", 777, 0, 0, "Run tests"},
+        {
+            "serial_port", 888, "PORT", 0, "Set serial port towards Arduino, "
+            "default value is /dev/ttyUSB0"
+        },
+        {0}
+    };
+    struct argp argp = {options, parse_opt};
+    argp_parse(&argp, argc, argv, 0, 0, &arguments);
+    strcpy(serial_port, arguments.serial_port);
 
-    if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
-        puts(usage);
-    } else if (argc == 3) {
-        strcpy(serial_port, argv[1]);
-
-        if (strcmp(argv[2], "testing") != 0) {
-            printf("%s, Invalid argument %s, only 'testing' is supported\n", argv[2], __func__);
-        } else {
-            printf("%s, Running in testing mode, using %s as a serial port to Arduino\n",
-                   __func__, serial_port);
-            mode = TESTING_MODE;
-        }
-    } else if (argc == 2) {
-        strcpy(serial_port, argv[1]);
-        printf("%s, Running in application mode, using %s as a serial port to Arduino\n",
-               __func__, serial_port);
+    if (arguments.run_tests)
+        mode = TESTING_MODE;
+    else
         mode = APPLICATION_MODE;
-    } else {
-        puts(usage);
-    }
 
     return mode;
 }
