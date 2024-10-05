@@ -77,11 +77,14 @@ begin
                 info("TEST CASE: test_all_outputs_are_zero_when_reset_is_enabled");
                 info("--------------------------------------------------------------------------------");
                 reset      <= '1';
-                input_data <= std_logic_vector(to_unsigned(1, 8));
-                wait for 1 ms;
-                check(data_to_wreg = std_logic_vector(to_unsigned(0, 8)), "Expect data_to_wreg to be 0.");
-                check(data_to_ram = std_logic_vector(to_unsigned(0, 8)), "Expect data_to_ram to be 0.");
-                check(data_to_sw = std_logic_vector(to_unsigned(0, 8)), "Expect data_to_sw to be 0.");
+                input_data <= std_logic_vector(to_unsigned(35, 8));
+                wait for CLK_PERIOD * 2;
+                check_equal(data_to_wreg, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing data_to_wreg against reference failed.");
+                check_equal(data_to_ram, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing data_to_ram against reference failed.");
+                check_equal(data_to_sw, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing data_to_sw against reference failed.");
                 check_sig  <= 1;
                 info("===== TEST CASE FINISHED =====");
             elsif run("test_input_is_sent_to_sw") then
@@ -89,15 +92,17 @@ begin
                 info("TEST CASE: test_input_is_sent_to_sw");
                 info("--------------------------------------------------------------------------------");
                 reset          <= '1';
-                wait for 500 us;
+                wait until rising_edge(clk);
                 reset          <= '0';
                 transfer_to_sw <= '1';
                 sel            <= '1';
-                input_data     <= std_logic_vector(to_unsigned(2, 8));
-                wait for 1 ms;
-                check(data_to_wreg = std_logic_vector(to_unsigned(0, 8)), "Expect data_to_wreg to be 0.");
-                check(data_to_ram = std_logic_vector(to_unsigned(0, 8)), "Expect data_to_ram to be 0.");
-                check(data_to_sw = std_logic_vector(to_unsigned(2, 8)), "Expect data_to_sw to be 2.");
+                input_data     <= std_logic_vector(to_unsigned(21, 8));
+                wait for CLK_PERIOD * 2;
+                check_equal(data_to_wreg, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing data_to_wreg against reference failed.");
+                check_equal(data_to_ram, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing data_to_ram against reference failed.");
+                check_equal(data_to_sw, input_data, "Comparing data_to_sw against reference failed.");
                 check_sig      <= 1;
                 info("===== TEST CASE FINISHED =====");
             elsif run("test_input_is_sent_to_w_register") then
@@ -105,15 +110,17 @@ begin
                 info("TEST CASE: test_input_is_sent_to_w_register");
                 info("--------------------------------------------------------------------------------");
                 reset          <= '1';
-                wait for 500 us;
+                wait until rising_edge(clk);
                 reset          <= '0';
                 transfer_to_sw <= '0';
                 sel            <= '0';
                 input_data     <= std_logic_vector(to_unsigned(3, 8));
-                wait for 1 ms;
-                check(data_to_wreg = std_logic_vector(to_unsigned(3, 8)), "Expect data_to_wreg to be 3.");
-                check(data_to_ram = std_logic_vector(to_unsigned(0, 8)), "Expect data_to_ram to be 0.");
-                check(data_to_sw = std_logic_vector(to_unsigned(0, 8)), "Expect data_to_sw to be 0.");
+                wait for CLK_PERIOD * 2;
+                check_equal(data_to_wreg, input_data, "Comparing data_to_wreg against reference failed.");
+                check_equal(data_to_ram, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing data_to_ram against reference failed.");
+                check_equal(data_to_sw, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing data_to_sw against reference failed.");
                 check_sig      <= 1;
                 info("===== TEST CASE FINISHED =====");
             elsif run("test_input_is_sent_to_ram") then
@@ -121,15 +128,17 @@ begin
                 info("TEST CASE: test_input_is_sent_to_ram");
                 info("--------------------------------------------------------------------------------");
                 reset          <= '1';
-                wait for 500 us;
+                wait until rising_edge(clk);
                 reset          <= '0';
                 transfer_to_sw <= '0';
                 sel            <= '1';
                 input_data     <= std_logic_vector(to_unsigned(4, 8));
-                wait for 1 ms;
-                check(data_to_wreg = std_logic_vector(to_unsigned(0, 8)), "Expect data_to_wreg to be 0.");
-                check(data_to_ram = std_logic_vector(to_unsigned(4, 8)), "Expect data_to_ram to be 4.");
-                check(data_to_sw = std_logic_vector(to_unsigned(0, 8)), "Expect data_to_sw to be 0.");
+                wait for CLK_PERIOD * 2;
+                check_equal(data_to_wreg, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing data_to_wreg against reference failed.");
+                check_equal(data_to_ram, input_data, "Comparing data_to_ram against reference failed.");
+                check_equal(data_to_sw, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing data_to_sw against reference failed.");
                 check_sig      <= 1;
                 info("===== TEST CASE FINISHED =====");
             end if;
