@@ -44,3 +44,5 @@ hps_isw_handoff
 socfpga-4.5/
 test_data/scripts/__pycache__
 test_data/scripts/ut/__pycache__
+hw/vunit_out
+venv/

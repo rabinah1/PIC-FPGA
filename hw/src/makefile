@@ -18,6 +18,10 @@ STYLE_CHECK_FILES = \
 	../testbench/component/tb_alu_input_mux.vhd \
 	../testbench/component/tb_alu_output_demux.vhd \
 	../testbench/component/tb_alu.vhd \
+	../testbench/component/tb_serial_to_parallel_instruction.vhd \
+	../testbench/component/tb_parallel_to_serial_output.vhd \
+	../testbench/component/tb_input_receive.vhd \
+	../testbench/component/tb_hps_adder.vhd \
 	ram.vhd \
 	serial_to_parallel_instruction.vhd \
 	states_package.vhd \
