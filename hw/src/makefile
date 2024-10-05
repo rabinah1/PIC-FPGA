@@ -18,6 +18,7 @@ STYLE_CHECK_FILES = \
 	../testbench/component/tb_alu_input_mux.vhd \
 	../testbench/component/tb_alu_output_demux.vhd \
 	../testbench/component/tb_alu.vhd \
+	../testbench/component/tb_serial_to_parallel_instruction.vhd \
 	ram.vhd \
 	serial_to_parallel_instruction.vhd \
 	states_package.vhd \
