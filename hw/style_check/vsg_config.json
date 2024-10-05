@@ -4021,7 +4021,7 @@
       "severity": "Warning"
     },
     "length_003": {
-      "disable": false,
+      "disable": true,
       "fixable": false,
       "indentSize": 4,
       "length": 500,
