@@ -78,20 +78,48 @@ begin
 
         test_cases_loop : while test_suite loop
 
-            if run("test_addwf") then
+            if run("test_reset_is_enabled") then
+                info("--------------------------------------------------------------------------------");
+                info("TEST CASE: test_reset_is_enabled");
+                info("--------------------------------------------------------------------------------");
+                reset     <= '1';
+                wait until rising_edge(clk);
+                wait until rising_edge(clk);
+                check_equal(alu_output, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing alu_output against reference failed.");
+                check_equal(status_out, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing status_out against reference failed.");
+                check_sig <= 1;
+                info("===== TEST CASE FINISHED =====");
+            elsif run("test_addwf") then
                 info("--------------------------------------------------------------------------------");
                 info("TEST CASE: test_addwf");
                 info("--------------------------------------------------------------------------------");
                 reset       <= '1';
                 enable      <= '1';
-                wait for 1 ms;
+                wait until rising_edge(clk);
                 reset       <= '0';
                 opcode      <= "000111";
-                input_w_reg <= std_logic_vector(to_unsigned(5, 8));
-                output_mux  <= std_logic_vector(to_unsigned(12, 8));
-                wait for 1 ms;
-                check(alu_output = std_logic_vector(to_unsigned(17, 8)), "Expect alu_output to be 18.");
-                check(status_out = std_logic_vector(to_unsigned(2, 8)), "Expect status_out to be 2.");
+                input_w_reg <= std_logic_vector(to_unsigned(1, 8));
+                output_mux  <= std_logic_vector(to_unsigned(3, 8));
+                wait until rising_edge(clk);
+                wait until rising_edge(clk);
+                check_equal(alu_output, std_logic_vector(to_unsigned(4, 8)),
+                            "Comparing alu_output against reference failed.");
+                check_equal(status_out, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing status_out against reference failed.");
+                wait until rising_edge(clk);
+                reset       <= '1';
+                wait until rising_edge(clk);
+                reset       <= '0';
+                input_w_reg <= (others => '1');
+                output_mux  <= std_logic_vector(to_unsigned(1, 8));
+                wait until rising_edge(clk);
+                wait until rising_edge(clk);
+                check_equal(alu_output, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing alu_otuput against reference failed.");
+                check_equal(status_out, std_logic_vector(to_unsigned(7, 8)),
+                            "Comparing status_out against reference failed.");
                 check_sig   <= 1;
                 info("===== TEST CASE FINISHED =====");
             elsif run("test_andwf") then
@@ -100,14 +128,98 @@ begin
                 info("--------------------------------------------------------------------------------");
                 reset       <= '1';
                 enable      <= '1';
-                wait for 1 ms;
+                wait until rising_edge(clk);
                 reset       <= '0';
                 opcode      <= "000101";
                 input_w_reg <= std_logic_vector(to_unsigned(15, 8));
                 output_mux  <= std_logic_vector(to_unsigned(37, 8));
-                wait for 1 ms;
-                check(alu_output = std_logic_vector(to_unsigned(5, 8)), "Expect alu_output to be 5.");
-                check(status_out = std_logic_vector(to_unsigned(0, 8)), "Expect status_out to be 0.");
+                wait until rising_edge(clk);
+                wait until rising_edge(clk);
+                check_equal(alu_output, std_logic_vector(to_unsigned(5, 8)),
+                            "Comparing alu_output against reference failed.");
+                check_equal(status_out, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing status_out against reference failed.");
+                wait until rising_edge(clk);
+                reset       <= '1';
+                wait until rising_edge(clk);
+                reset       <= '0';
+                input_w_reg <= (others => '0');
+                output_mux  <= (others => '0');
+                wait until rising_edge(clk);
+                wait until rising_edge(clk);
+                check_equal(alu_output, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing alu_output against reference failed.");
+                check_equal(status_out, std_logic_vector(to_unsigned(4, 8)),
+                            "Comparing status_out against reference failed.");
+                check_sig   <= 1;
+                info("===== TEST CASE FINISHED =====");
+            elsif run("test_bcf") then
+                info("--------------------------------------------------------------------------------");
+                info("TEST CASE: test_bcf");
+                info("--------------------------------------------------------------------------------");
+                reset      <= '1';
+                enable     <= '1';
+                wait until rising_edge(clk);
+                reset      <= '0';
+                opcode     <= "010000";
+                output_mux <= std_logic_vector(to_unsigned(100, 8));
+                bit_idx    <= std_logic_vector(to_unsigned(2, 3));
+                wait until rising_edge(clk);
+                wait until rising_edge(clk);
+                check_equal(alu_output, std_logic_vector(to_unsigned(96, 8)),
+                            "Comparing alu_output against reference failed.");
+                check_equal(status_out, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing status_out against reference failed.");
+                wait until rising_edge(clk);
+                reset      <= '1';
+                wait until rising_edge(clk);
+                reset      <= '0';
+                output_mux <= std_logic_vector(to_unsigned(16, 8));
+                bit_idx    <= std_logic_vector(to_unsigned(4, 3));
+                wait until rising_edge(clk);
+                wait until rising_edge(clk);
+                check_equal(alu_output, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing alu_output against reference failed.");
+                check_equal(status_out, std_logic_vector(to_unsigned(4, 8)),
+                            "Comparing status_out against reference failed.");
+                check_sig  <= 1;
+                info("===== TEST CASE FINISHED =====");
+            elsif run("test_bsf") then
+                info("--------------------------------------------------------------------------------");
+                info("TEST CASE: test_bsf");
+                info("--------------------------------------------------------------------------------");
+                reset      <= '1';
+                enable     <= '1';
+                wait until rising_edge(clk);
+                reset      <= '0';
+                opcode     <= "010100";
+                output_mux <= std_logic_vector(to_unsigned(100, 8));
+                bit_idx    <= std_logic_vector(to_unsigned(0, 3));
+                wait until rising_edge(clk);
+                wait until rising_edge(clk);
+                check_equal(alu_output, std_logic_vector(to_unsigned(101, 8)),
+                            "Comparing alu_output against reference failed.");
+                check_equal(status_out, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing status_out against reference failed.");
+                check_sig  <= 1;
+                info("===== TEST CASE FINISHED =====");
+            elsif run("test_clr") then
+                info("--------------------------------------------------------------------------------");
+                info("TEST CASE: test_clr");
+                info("--------------------------------------------------------------------------------");
+                reset       <= '1';
+                enable      <= '1';
+                wait until rising_edge(clk);
+                reset       <= '0';
+                opcode      <= "000001";
+                input_w_reg <= std_logic_vector(to_unsigned(56, 8));
+                output_mux  <= std_logic_vector(to_unsigned(128, 8));
+                wait until rising_edge(clk);
+                wait until rising_edge(clk);
+                check_equal(alu_output, std_logic_vector(to_unsigned(0, 8)),
+                            "Comparing alu_output against reference failed.");
+                check_equal(status_out, std_logic_vector(to_unsigned(4, 8)),
+                            "Comparing status_out against reference failed.");
                 check_sig   <= 1;
                 info("===== TEST CASE FINISHED =====");
             end if;
