@@ -25,6 +25,7 @@ Below is a short description of the repository structure.
 - makefile: Top-level makefile.
 - run_tests.sh: Script for running test on real HW.
 - setup_env.sh: Environment setup script for GPIO usage. This must be executed on the Raspberry Pi before running the SW.
+- setup_py_env.sh: Script for activating Python virtual environment and installing needed dependencies.
 
 ## Hardware setup
 
