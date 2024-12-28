@@ -6,8 +6,11 @@ extern "C"
 #include "common_data.h"
 #include "defines.h"
 }
-#include "../cpputest/include/CppUTest/TestHarness.h"
-#include "../cpputest/include/CppUTestExt/MockSupport.h"
+#include "cpputest/include/CppUTest/TestHarness.h"
+#include "cpputest/include/CppUTestExt/MockSupport.h"
+
+#define NUM_SW_COMMANDS 10
+#define NUM_HW_COMMANDS 32
 
 TEST_GROUP(test_process_command_group)
 {
@@ -62,7 +65,7 @@ TEST(test_process_command_group, test_is_hw_command)
         char *command = (char *)commands[idx];
         strcpy(cmd.command_name, command);
         int expected_return_value = expected_return_values[idx];
-        int ret = is_expected_command_type(&cmd, "hw");
+        int ret = is_expected_command_type(&cmd, (char *)"hw");
         CHECK_EQUAL(ret, expected_return_value);
     }
 }
@@ -91,7 +94,7 @@ TEST(test_process_command_group, test_is_sw_command)
         char *command = (char *)commands[idx];
         strcpy(cmd.command_name, command);
         int expected_return_value = expected_return_values[idx];
-        int ret = is_expected_command_type(&cmd, "sw");
+        int ret = is_expected_command_type(&cmd, (char *)"sw");
         CHECK_EQUAL(ret, expected_return_value);
     }
 }

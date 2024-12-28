@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <errno.h>
+#include <string.h>
 #ifndef UNIT_TEST
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -13,23 +15,31 @@
 #include "defines.h"
 #include "gpio_setup.h"
 
+#define BLOCK_SIZE (4*20) // only using gpio registers region
+#define BCM2835_PERI_BASE 0xFE000000  // peripheral base address
+#define GPIO_BASE (BCM2835_PERI_BASE + 0x200000) // GPIO controller base address
+#ifndef UNIT_TEST
+#define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
+#define OUT_GPIO(g) *(gpio+((g)/10)) |=  (1<<(((g)%10)*3))
+#endif
+
 void init_pins(void *gpio_void)
 {
     volatile unsigned *gpio = (volatile unsigned *)gpio_void;
     (void) gpio;
     int out_pins[] = {CLK_PIN, TIMER_EXT_CLK_PIN, RESET_PIN, DATA_PIN, MOSI_PIN};
+    int in_pins[] = {RESULT_PIN, MISO_PIN, CLK_IN_PIN};
     size_t num_out_pins = sizeof(out_pins) / sizeof(out_pins[0]);
-    uint8_t idx = 0;
+    size_t num_in_pins = sizeof(in_pins) / sizeof(in_pins[0]);
+    size_t idx = 0;
 
-    while (idx < num_out_pins) {
+    for (idx = 0; idx < num_out_pins; idx++) {
         INP_GPIO(out_pins[idx]); // Pin cannot be set as output unless first set as input
         OUT_GPIO(out_pins[idx]);
-        idx++;
     }
 
-    INP_GPIO(RESULT_PIN);
-    INP_GPIO(MISO_PIN);
-    INP_GPIO(CLK_IN_PIN);
+    for (idx = 0; idx < num_in_pins; idx++)
+        INP_GPIO(in_pins[idx]);
 }
 
 volatile unsigned *init_gpio_map(void)
@@ -39,7 +49,7 @@ volatile unsigned *init_gpio_map(void)
     void *gpio_map;
 
     if ((mem_fd = open("/dev/mem", O_RDWR | O_SYNC)) < 0) {
-        printf("%s, Can't open /dev/mem \n", __func__);
+        printf("%s, Can't open /dev/mem: %s\n", __func__, strerror(errno));
         return NULL;
     }
 
@@ -49,7 +59,9 @@ volatile unsigned *init_gpio_map(void)
                     MAP_SHARED,             // Shared with other processes
                     mem_fd,                 // File to map
                     GPIO_BASE);             // Offset to GPIO peripheral
-    close(mem_fd);
+
+    if (close(mem_fd) < 0)
+        printf("%s, Can't close /dev/mem: %s\n", __func__, strerror(errno));
 
     if (gpio_map == MAP_FAILED) {
         printf("%s, mmap error %ld\n", __func__, (long unsigned int)gpio_map);

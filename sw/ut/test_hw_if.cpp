@@ -5,8 +5,10 @@ extern "C"
 #include "hw_if.h"
 #include "defines.h"
 }
-#include "../cpputest/include/CppUTest/TestHarness.h"
-#include "../cpputest/include/CppUTestExt/MockSupport.h"
+#include "cpputest/include/CppUTest/TestHarness.h"
+#include "cpputest/include/CppUTestExt/MockSupport.h"
+
+#define BINARY_COMMAND_SIZE 14
 
 TEST_GROUP(test_hw_if_group)
 {
@@ -119,7 +121,7 @@ TEST(test_hw_if_group, test_send_command_to_arduino_serial_connection_failed)
     struct command_and_args command = {"read_temperature", "read_temperature", {}};
     mock().expectOneCall("serialOpen").withParameter("serial_port", serial_port).
     withParameter("baud_rate", baud_rate).andReturnValue(-1);
-    int ret = send_command_to_arduino(&command, NULL, "/dev/ttyUSB0");
+    int ret = send_command_to_arduino(&command, NULL, (char *)"/dev/ttyUSB0");
     mock().checkExpectations();
     CHECK_FALSE(ret);
 }
@@ -136,7 +138,7 @@ TEST(test_hw_if_group, test_send_command_to_arduino_one_character)
     mock().expectOneCall("serialDataAvail").withParameter("fd", 0).andReturnValue(1);
     mock().expectOneCall("serialGetchar").withParameter("fd", 0).andReturnValue('\n');
     mock().expectOneCall("serialClose").withParameter("fd", 0);
-    int ret = send_command_to_arduino(&command, NULL, "/dev/ttyUSB0");
+    int ret = send_command_to_arduino(&command, NULL, (char *)"/dev/ttyUSB0");
     mock().checkExpectations();
     CHECK_TRUE(ret);
 }
@@ -156,7 +158,7 @@ TEST(test_hw_if_group, test_send_command_to_arduino_multiple_characters)
     mock().expectOneCall("serialDataAvail").withParameter("fd", 0).andReturnValue(1);
     mock().expectOneCall("serialGetchar").withParameter("fd", 0).andReturnValue('\n');
     mock().expectOneCall("serialClose").withParameter("fd", 0);
-    int ret = send_command_to_arduino(&command, NULL, "/dev/ttyUSB0");
+    int ret = send_command_to_arduino(&command, NULL, (char *)"/dev/ttyUSB0");
     mock().checkExpectations();
     CHECK_TRUE(ret);
 }

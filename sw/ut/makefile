@@ -9,11 +9,16 @@ LDFLAGS += -L$(CPPUTEST_HOME)/lib -I$(SRC_DIR) -I$(MOCK_DIR)
 OBJECTS = $(addprefix $(OBJ_DIR)/, mock_fcntl.o mock_gpio.o mock_hw_if.o mock_mman.o mock_wiringPi.o \
 	mock_wiringSerial.o process_command.o common_data.o gpio_setup.o hw_if.o test_common_data.o \
 	test_gpio_setup.o test_hw_if.o test_process_command.o main.o)
-CPPUTEST_LIBS = ../cpputest/src/CppUTest/libCppUTest.a ../cpputest/src/CppUTest/libCppUTestExt.a
+CPPUTEST_LIBS = cpputest/src/CppUTest/libCppUTest.a cpputest/src/CppUTest/libCppUTestExt.a
+
+.PHONY: clean
 
 all: PIC_FPGA
 
-PIC_FPGA: $(OBJECTS)
+cpputest:
+	./install_cpputest.sh
+
+PIC_FPGA: cpputest $(OBJECTS)
 	$(CXX) $(OBJECTS) $(CPPUTEST_LIBS) -o PIC_FPGA $(CPPFLAGS) $(CFLAGS) $(LDLIBS) $(LDFLAGS)
 
 $(OBJECTS): | $(OBJ_DIR)

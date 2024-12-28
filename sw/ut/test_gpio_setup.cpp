@@ -5,8 +5,8 @@ extern "C"
 #include "defines.h"
 #include "gpio_setup.h"
 }
-#include "../cpputest/include/CppUTest/TestHarness.h"
-#include "../cpputest/include/CppUTestExt/MockSupport.h"
+#include "cpputest/include/CppUTest/TestHarness.h"
+#include "cpputest/include/CppUTestExt/MockSupport.h"
 
 #define O_RDWR 1
 #define O_SYNC 2
@@ -14,6 +14,9 @@ extern "C"
 #define PROT_WRITE 3
 #define MAP_SHARED 1
 #define MAP_FAILED (void *)-1
+#define BLOCK_SIZE (4*20) // only using gpio registers region
+#define GPIO_BASE (BCM2835_PERI_BASE + 0x200000) // GPIO controller base address
+#define BCM2835_PERI_BASE 0xFE000000  // peripheral base address
 
 TEST_GROUP(test_gpio_setup_group)
 {

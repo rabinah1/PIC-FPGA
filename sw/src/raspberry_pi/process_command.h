@@ -1,6 +1,5 @@
 #include <stdio.h>
 
-void print_help(void);
 bool verify_command_syntax(char *command, struct command_and_args *cmd);
 bool is_command_valid(char *command);
 bool is_expected_command_type(struct command_and_args *command, char *type);

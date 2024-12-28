@@ -6,14 +6,12 @@
 #include "defines.h"
 #include "common_data.h"
 
+#define INVALID_NUM_ARGS -1
+#define CLK_FREQ_DEFAULT 4000
+
 struct command_to_binary {
     char *command;
     char *binary;
-};
-
-struct command_to_num_args {
-    char *command;
-    int num_args;
 };
 
 static int slave_id = SLAVE_ID_FPGA;
@@ -106,48 +104,6 @@ static struct command_to_binary slave_0_commands[] = {
     {"SET_CLK_FREQ",  "None"},
     {"SHOW_CLK_FREQ", "None"}
 };
-static struct command_to_num_args slave_0_commands_to_args[] = {
-    {"ADDWF",         2},
-    {"ANDWF",         2},
-    {"CLR",           2},
-    {"COMF",          2},
-    {"DECF",          2},
-    {"DECFSZ",        2},
-    {"INCF",          2},
-    {"INCFSZ",        2},
-    {"IORWF",         2},
-    {"MOVF",          2},
-    {"RLF",           2},
-    {"RRF",           2},
-    {"SUBWF",         2},
-    {"SWAPF",         2},
-    {"XORWF",         2},
-    {"ADDLW",         1},
-    {"ANDLW",         1},
-    {"IORLW",         1},
-    {"MOVLW",         1},
-    {"SUBLW",         1},
-    {"XORLW",         1},
-    {"BCF",           2},
-    {"BSF",           2},
-    {"READ_WREG",     0},
-    {"READ_STATUS",   0},
-    {"READ_ADDRESS",  1},
-    {"DUMP_RAM",      0},
-    {"DUMP_EEPROM",   0},
-    {"NOP",           0},
-    {"READ_FILE",     1},
-    {"ENABLE_CLOCK",  0},
-    {"DISABLE_CLOCK", 0},
-    {"ENABLE_RESET",  0},
-    {"DISABLE_RESET", 0},
-    {"EXIT",          0},
-    {"HELP",          0},
-    {"SELECT_SLAVE",  1},
-    {"SHOW_SLAVE",    0},
-    {"SET_CLK_FREQ",  0},
-    {"SHOW_CLK_FREQ", 0}
-};
 
 void set_clk_freq(int value)
 {
@@ -214,28 +170,7 @@ char *get_slave_0_regex_command(int idx)
     return slave_0_commands_regex[idx];
 }
 
-char *get_slave_1_command(int idx)
-{
-    return slave_1_commands[idx];
-}
-
 char *get_slave_1_regex_command(int idx)
 {
     return slave_1_commands_regex[idx];
-}
-
-int get_expected_num_of_arguments(char *instruction)
-{
-    int num_instructions = get_num_instructions_slave_0();
-    int idx = 0;
-
-    while (idx < num_instructions) {
-        if (strcmp(slave_0_commands_to_args[idx].command, instruction) == 0)
-            return slave_0_commands_to_args[idx].num_args;
-
-        idx++;
-    }
-
-    printf("%s, Instruction %s does not exist\n", __func__, instruction);
-    return INVALID_NUM_ARGS;
 }

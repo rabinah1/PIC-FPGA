@@ -10,6 +10,9 @@
 #include "hw_if.h"
 #include "process_command.h"
 
+#define NUM_SW_COMMANDS 10
+#define NUM_HW_COMMANDS 32
+
 static char hw_commands[NUM_HW_COMMANDS][MAX_STRING_SIZE] = {
     "ADDWF", "ANDWF", "CLR", "COMF", "DECF", "DECFSZ",
     "INCF", "INCFSZ", "IORWF", "MOVF", "RLF", "RRF",
@@ -25,7 +28,7 @@ static char sw_commands[NUM_SW_COMMANDS][MAX_STRING_SIZE] = {
     "SHOW_SLAVE", "SET_CLK_FREQ", "SHOW_CLK_FREQ"
 };
 
-void print_help(void)
+static void print_help(void)
 {
     printf("\nThere are two slaves: slave 0 (Terasic DE10-nano) and slave 1 (Arduino Nano)\n"
            "You can switch between these with command SELECT_SLAVE <slave_id>\n"
@@ -89,16 +92,42 @@ void print_help(void)
     return;
 }
 
-bool verify_command(char *command, struct command_and_args *cmd, int num_commands,
-                    char *(*verifier)(int idx))
+static void process_matched_command(struct command_and_args *cmd, size_t num_subexpr, char *command,
+                                    regmatch_t *groups)
+{
+    int arg_idx = 0;
+    char command_copy[strlen(command) + 1];
+    memset(cmd->command_name, '\0', sizeof(cmd->command_name));
+    memset(cmd->full_command, '\0', sizeof(cmd->full_command));
+
+    for (int i = 0; i <= num_subexpr; i++) {
+        memset(command_copy, '\0', sizeof(command_copy));
+        strcpy(command_copy, command);
+
+        if (groups[i].rm_so == (size_t) -1) {
+            break;
+        } else if (i == 0) { // Full string
+            strcpy(cmd->full_command, command);
+        } else if (i == 1) { // Command name
+            command_copy[groups[i].rm_eo] = '\0';
+            strcpy(cmd->command_name, command_copy + groups[i].rm_so);
+        } else { // Command args
+            command_copy[groups[i].rm_eo] = '\0';
+            memset(cmd->command_args[arg_idx], '\0', sizeof(cmd->command_args[arg_idx]));
+            strcpy(cmd->command_args[arg_idx], command_copy + groups[i].rm_so);
+            arg_idx += 1;
+        }
+    }
+}
+
+static bool verify_command(char *command, struct command_and_args *cmd, int num_commands,
+                           char *(*verifier)(int idx))
 {
     regex_t compiled;
     regmatch_t *groups;
     char ref_regex[MAX_STRING_SIZE];
     size_t num_subexpr;
     size_t num_groups;
-    int arg_idx = 0;
-    char command_copy[strlen(command) + 1];
     bool match_found = false;
 
     for (int idx = 0; idx < num_commands; idx++) {
@@ -117,28 +146,7 @@ bool verify_command(char *command, struct command_and_args *cmd, int num_command
 
         if (regexec(&compiled, command, num_groups, groups, 0) == 0) {
             match_found = true;
-            arg_idx = 0;
-            memset(cmd->command_name, '\0', sizeof(cmd->command_name));
-            memset(cmd->full_command, '\0', sizeof(cmd->full_command));
-
-            for (int i = 0; i <= num_subexpr; i++) {
-                memset(command_copy, '\0', sizeof(command_copy));
-                strcpy(command_copy, command);
-
-                if (groups[i].rm_so == (size_t) -1) {
-                    break;
-                } else if (i == 0) { // Full string
-                    strcpy(cmd->full_command, command);
-                } else if (i == 1) { // Command name
-                    command_copy[groups[i].rm_eo] = '\0';
-                    strcpy(cmd->command_name, command_copy + groups[i].rm_so);
-                } else { // Command args
-                    command_copy[groups[i].rm_eo] = '\0';
-                    memset(cmd->command_args[arg_idx], '\0', sizeof(cmd->command_args[arg_idx]));
-                    strcpy(cmd->command_args[arg_idx], command_copy + groups[i].rm_so);
-                    arg_idx += 1;
-                }
-            }
+            process_matched_command(cmd, num_subexpr, command, groups);
         }
 
         free(groups);
@@ -197,6 +205,17 @@ bool is_expected_command_type(struct command_and_args *command, char *type)
     return false;
 }
 
+static bool is_slave_valid(int *slave_id)
+{
+    if (*slave_id != SLAVE_ID_FPGA && *slave_id != SLAVE_ID_ARDUINO) {
+        printf("%s, Invalid slave_id %d, setting to %d\n", __func__, *slave_id, SLAVE_ID_FPGA);
+        *slave_id = SLAVE_ID_FPGA;
+        return false;
+    }
+
+    return true;
+}
+
 int process_sw_command(struct command_and_args *command, volatile unsigned *gpio)
 {
     char instruction[MAX_INSTRUCTION_SIZE];
@@ -207,12 +226,8 @@ int process_sw_command(struct command_and_args *command, volatile unsigned *gpio
     if (strcmp(command->command_name, "SELECT_SLAVE") == 0) {
         slave_id = atoi(command->command_args[0]);
 
-        if (slave_id != SLAVE_ID_FPGA && slave_id != SLAVE_ID_ARDUINO) {
-            printf("%s, Invalid slave_id %d, setting to %d\n", __func__, slave_id,
-                   SLAVE_ID_FPGA);
-            slave_id = SLAVE_ID_FPGA;
+        if (!is_slave_valid(&slave_id))
             return SW_FAILED;
-        }
 
         set_slave_id(slave_id);
         return SW_SUCCESS;
@@ -250,8 +265,8 @@ int process_sw_command(struct command_and_args *command, volatile unsigned *gpio
     return SW_FAILED;
 }
 
-bool process_one_command(struct command_and_args *command, volatile unsigned *gpio,
-                         FILE *result_file, bool write_to_file, char *serial_port)
+static bool process_one_fpga_command(struct command_and_args *command, volatile unsigned *gpio,
+                                     FILE *result_file, bool write_to_file, char *serial_port)
 {
     if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
                             serial_port)) {
@@ -262,17 +277,36 @@ bool process_one_command(struct command_and_args *command, volatile unsigned *gp
     return true;
 }
 
-bool process_commands_from_file(struct command_and_args *command, volatile unsigned *gpio,
-                                FILE *result_file, bool write_to_file, char *serial_port)
+static bool process_one_line(struct command_and_args *command, char *line, volatile unsigned *gpio,
+                             FILE *result_file, bool write_to_file, char *serial_port, FILE *input_file)
+{
+    memset(command, 0, sizeof(struct command_and_args));
+    line[strlen(line) - 1] = '\0';
+
+    if (verify_command_syntax(line, command)) {
+        if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
+                                serial_port)) {
+            printf("%s, Sending command %s to HW failed\n", __func__, command->command_name);
+            fclose(input_file);
+            return false;
+        }
+    }
+
+    usleep(PROCESS_COMMAND_DELAY_USEC);
+    return true;
+}
+
+static bool process_commands_from_file(struct command_and_args *command, volatile unsigned *gpio,
+                                       FILE *result_file, bool write_to_file, char *serial_port)
 {
     char instruction[MAX_INSTRUCTION_SIZE];
     char filename[MAX_STRING_SIZE];
+    char line[MAX_STRING_SIZE];
     memset(instruction, '\0', sizeof(instruction));
     memset(filename, '\0', sizeof(filename));
+    memset(line, '\0', sizeof(line));
     strcpy(filename, command->command_args[0]);
     FILE *input_file = fopen(filename, "r");
-    char line[MAX_STRING_SIZE];
-    memset(line, '\0', sizeof(line));
 
     if (!input_file) {
         printf("%s, Failed to open file %s\n", __func__, filename);
@@ -286,37 +320,25 @@ bool process_commands_from_file(struct command_and_args *command, volatile unsig
     rewind(input_file);
 
     while (fgets(line, sizeof(line), input_file)) {
-        memset(command, 0, sizeof(struct command_and_args));
-        line[strlen(line) - 1] = '\0';
-
-        if (verify_command_syntax(line, command)) {
-            if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
-                                    serial_port)) {
-                printf("%s, Sending command %s to HW failed\n", __func__, command->command_name);
-                fclose(input_file);
-                return false;
-            }
-        }
-
-        usleep(200000);
+        if (!process_one_line(command, line, gpio, result_file, write_to_file, serial_port, input_file))
+            return false;
     }
 
     fclose(input_file);
     return true;
 }
 
-bool process_fpga_command(struct command_and_args *command, volatile unsigned *gpio,
-                          FILE *result_file, bool write_to_file, char *serial_port)
+static bool process_fpga_command(struct command_and_args *command, volatile unsigned *gpio,
+                                 FILE *result_file, bool write_to_file, char *serial_port)
 {
     if (strcmp(command->command_name, "READ_FILE") != 0)
-        return process_one_command(command, gpio, result_file, write_to_file, serial_port);
+        return process_one_fpga_command(command, gpio, result_file, write_to_file, serial_port);
     else
         return process_commands_from_file(command, gpio, result_file, write_to_file, serial_port);
 }
 
-bool process_arduino_command(struct command_and_args *command, volatile unsigned *gpio,
-                             FILE *result_file,
-                             bool write_to_file, char *serial_port)
+static bool process_arduino_command(struct command_and_args *command, volatile unsigned *gpio,
+                                    FILE *result_file, bool write_to_file, char *serial_port)
 {
     if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
                             serial_port)) {

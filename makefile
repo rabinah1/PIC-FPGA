@@ -9,7 +9,7 @@ include .env
 export
 
 .DELETE_ON_ERROR:
-.PHONY: all clean sw hw build_sw check_sw sta_sw clean_sw load_arduino build_hw check_hw sta_hw netlist load_hw clean_hw help
+.PHONY: all clean full_clean sw hw build_sw check_sw sta_sw clean_sw load_arduino build_hw check_hw sta_hw netlist load_hw clean_hw help
 
 all: sw hw
 
@@ -18,6 +18,10 @@ sw: build_sw check_sw sta_sw
 hw: build_hw check_hw sta_hw
 
 clean: clean_hw clean_sw
+
+full_clean: clean
+	rm -rf venv
+	rm -rf $(SW_TEST_DIR)/cpputest
 
 build_sw:
 	@echo "===================================="
@@ -58,6 +62,7 @@ sta_sw:
 	@astyle --style=linux --max-code-length=100 --recursive --align-pointer=name --break-blocks \
 	--pad-oper --pad-header --delete-empty-lines --indent-col1-comments --squeeze-lines=1 \
 	--exclude="arduino\build" --exclude="de10_nano/adder/module/adder_driver.mod.c" \
+	--exclude="$(SW_TEST_DIR)/cpputest" \
 	-i "${SW_SRC_DIR}\*.c,*.cpp,*.h" "${SW_TEST_DIR}\*.cpp"
 	@echo "Done"
 	@echo ""
@@ -67,6 +72,7 @@ sta_sw:
 	@echo ""
 	@echo "Running flake8..."
 	@flake8 $(TEST_DATA_DIR)/*.py ./hw/run.py --max-line-length=100
+	@echo "Done"
 	@echo ""
 	@echo "===================================="
 	@echo "SW static analysis completed"
@@ -197,4 +203,5 @@ help:
 	@echo "'clean': Remove all makefile-generated files."
 	@echo "'clean_sw': Remove all makefile-generated files for SW design."
 	@echo "'clean_hw': Remove all makefile-generated files for HW design."
+	@echo "'full_clean': Same as 'clean', but also remove venv and sw/ut/cpputest folders."
 	@echo "'help': Print this help text."

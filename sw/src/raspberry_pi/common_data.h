@@ -11,6 +11,4 @@ int get_num_instructions_slave_1(void);
 char *get_slave_0_binary(int idx);
 char *get_slave_0_command(int idx);
 char *get_slave_0_regex_command(int idx);
-char *get_slave_1_command(int idx);
 char *get_slave_1_regex_command(int idx);
-int get_expected_num_of_arguments(char *instruction);
