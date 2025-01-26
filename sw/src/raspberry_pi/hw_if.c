@@ -17,6 +17,7 @@
 #include "hw_if.h"
 #include "defines.h"
 #include "common_data.h"
+#include "logger/src/log.h"
 
 #define ARDUINO_SERIAL_STABILIZE_SEC 2
 #define NUM_OTHER_INSTRUCTIONS 5
@@ -119,7 +120,7 @@ bool get_command_in_binary(char *instruction, char *opcode)
         }
     }
 
-    printf("%s, Invalid instruction %s\n", __func__, instruction);
+    log_error("Invalid instruction %s", instruction);
     return false;
 }
 
@@ -241,7 +242,7 @@ bool create_binary_command(struct command_and_args *command, char *binary_comman
     } else if (is_other_instruction(command)) { // Other instruction
         return create_other_instruction(command, instruction, binary_command);
     } else {
-        printf("%s, Invalid command %s\n", __func__, command->command_name);
+        log_error("Invalid command %s", command->command_name);
         return false;
     }
 }
@@ -274,7 +275,7 @@ static void *result_thread(void *arguments)
     int clk_in_pin_fd = open(clk_in_pin_file, O_RDONLY);
 
     if (clk_in_pin_fd < 0) {
-        printf("%s, Error with opening file for gpio %d\n", __func__, CLK_IN_PIN);
+        log_error("Error with opening file for gpio %d", CLK_IN_PIN);
         return NULL;
     }
 
@@ -288,11 +289,11 @@ static void *result_thread(void *arguments)
         poll_ret = poll(pfds, 1, poll_timeout);
 
         if (poll_ret == 0) {
-            printf("%s, Waiting for clock edge timed out\n", __func__);
+            log_error("Waiting for clock edge timed out");
             close(clk_in_pin_fd);
             return NULL;
         } else if (poll_ret < 0) {
-            printf("%s, Error %d happened for poll in thread result_thread\n", __func__, errno);
+            log_error("Error %d happened for poll in thread result_thread", errno);
             close(clk_in_pin_fd);
             return NULL;
         } else if (poll_ret > 0 && !(GET_GPIO(CLK_PIN)) && (pfds[0].revents & POLL_GPIO)) {
@@ -320,7 +321,7 @@ static void *result_thread(void *arguments)
     }
 
     if (timeout >= RESULT_TIMEOUT)
-        printf("%s, Error occured when executing instruction\n", __func__);
+        log_error("Error occured when executing instruction");
 
     close(clk_in_pin_fd);
     return NULL;
@@ -346,7 +347,7 @@ static void *mem_dump_thread(void *arguments)
     int clk_in_pin_fd = open(clk_in_pin_file, O_RDONLY);
 
     if (clk_in_pin_fd < 0) {
-        printf("%s, Error with opening file for gpio %d\n", __func__, CLK_IN_PIN);
+        log_error("Error with opening file for gpio %d", CLK_IN_PIN);
         return NULL;
     }
 
@@ -360,11 +361,11 @@ static void *mem_dump_thread(void *arguments)
         int poll_ret = poll(pfds, 1, poll_timeout);
 
         if (poll_ret == 0) {
-            printf("%s, Waiting for clock edge timed out\n", __func__);
+            log_error("Waiting for clock edge timed out");
             close(clk_in_pin_fd);
             return NULL;
         } else if (poll_ret < 0) {
-            printf("%s, Error %d happened for poll in thread mem_dump_thread\n", __func__, errno);
+            log_error("Error %d happened for poll in thread mem_dump_thread", errno);
             close(clk_in_pin_fd);
             return NULL;
         } else if (poll_ret > 0 && !(GET_GPIO(CLK_PIN)) && (pfds[0].revents & POLL_GPIO)) {
@@ -407,7 +408,7 @@ static void *mem_dump_thread(void *arguments)
     }
 
     if (timeout >= MEM_DUMP_TIMEOUT)
-        printf("%s, Error occured with dumping memory\n", __func__);
+        log_error("Error occured with dumping memory");
 
     close(clk_in_pin_fd);
     return NULL;
@@ -465,7 +466,7 @@ void *timer_ext_clk_thread(void *arguments)
 static bool open_serial_connection(int *fd, char *serial_port)
 {
     if ((*fd = serialOpen(serial_port, BAUD_RATE)) < 0) {
-        printf("%s, Failed to open serial connection to port %s, exiting...\n", __func__, serial_port);
+        log_error("Failed to open serial connection to port %s, exiting...", serial_port);
         return false;
     }
 
@@ -502,7 +503,7 @@ bool send_command_to_arduino(struct command_and_args *command, FILE *result_file
     serialPuts(fd, command->full_command);
     receive_response(fd, result_file);
     serialClose(fd);
-    printf("\n%s, Connection closed\n", __func__);
+    log_info("Connection closed");
     return true;
 }
 
@@ -513,7 +514,7 @@ static bool send_to_fpga(char *binary_command, volatile unsigned *gpio)
     int clk_in_pin_fd = open(clk_in_pin_file, O_RDONLY);
 
     if (clk_in_pin_fd < 0) {
-        printf("%s, Error with opening file for gpio %d\n", __func__, CLK_IN_PIN);
+        log_error("Error with opening file for gpio %d", CLK_IN_PIN);
         return false;
     }
 
@@ -534,11 +535,11 @@ static bool send_to_fpga(char *binary_command, volatile unsigned *gpio)
         poll_ret = poll(pfds, 1, poll_timeout);
 
         if (poll_ret == 0) {
-            printf("%s, Waiting for clock edge timed out\n", __func__);
+            log_error("Waiting for clock edge timed out");
             close(clk_in_pin_fd);
             return false;
         } else if (poll_ret < 0) {
-            printf("%s, Error %d happened for poll\n", __func__, errno);
+            log_error("Error %d happened for poll", errno);
             close(clk_in_pin_fd);
             return false;
         } else if (poll_ret > 0 && !(GET_GPIO(CLK_PIN)) && (pfds[0].revents & POLL_GPIO)) {
@@ -583,12 +584,12 @@ static bool send_command_to_fpga(void *arguments, struct command_and_args *comma
     mem_dump_args.gpio = gpio;
 
     if (!create_binary_command(command, binary_command, instruction)) {
-        printf("%s, Could not create binary command from command %s\n", __func__, command->command_name);
+        log_error("Could not create binary command from command %s", command->command_name);
         return false;
     }
 
     if (!get_clk_enable()) {
-        printf("%s, Clock is not enabled, please enable it first\n", __func__);
+        log_error("Clock is not enabled, please enable it first");
         return false;
     }
 
@@ -632,8 +633,8 @@ bool send_command_to_hw(struct command_and_args *command, void *arguments, FILE 
     } else if (get_slave_id() == SLAVE_ID_ARDUINO) {
         return send_command_to_arduino(command, result_file, serial_port);
     } else {
-        printf("%s, Invalid slave_id %d, cannot process command \"%s\"\n", __func__,
-               get_slave_id(), command->command_name);
+        log_error("Invalid slave_id %d, cannot process command \"%s\"",
+                  get_slave_id(), command->command_name);
         return false;
     }
 }

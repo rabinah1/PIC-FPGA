@@ -9,6 +9,7 @@
 #include "common_data.h"
 #include "hw_if.h"
 #include "process_command.h"
+#include "logger/src/log.h"
 
 #define NUM_SW_COMMANDS 10
 #define NUM_HW_COMMANDS 32
@@ -135,7 +136,7 @@ static bool verify_command(char *command, struct command_and_args *cmd, int num_
         strcpy(ref_regex, verifier(idx));
 
         if (regcomp(&compiled, ref_regex, REG_EXTENDED) != 0) {
-            printf("%s, Failed to compile regex '%s'\n", __func__, ref_regex);
+            log_error("Failed to compile regex '%s'", ref_regex);
             return false;
         }
 
@@ -190,7 +191,7 @@ bool is_expected_command_type(struct command_and_args *command, char *type)
         for (unsigned int i = 0; i < num_expected_commands; i++)
             strcpy(expected_commands[i], hw_commands[i]);
     } else {
-        printf("%s, Invalid command type %s\n", __func__, type);
+        log_error("Invalid command type %s", type);
         return false;
     }
 
@@ -208,7 +209,7 @@ bool is_expected_command_type(struct command_and_args *command, char *type)
 static bool is_slave_valid(int *slave_id)
 {
     if (*slave_id != SLAVE_ID_FPGA && *slave_id != SLAVE_ID_ARDUINO) {
-        printf("%s, Invalid slave_id %d, setting to %d\n", __func__, *slave_id, SLAVE_ID_FPGA);
+        log_warn("Invalid slave_id %d, setting to %d", *slave_id, SLAVE_ID_FPGA);
         *slave_id = SLAVE_ID_FPGA;
         return false;
     }
@@ -270,7 +271,7 @@ static bool process_one_fpga_command(struct command_and_args *command, volatile 
 {
     if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
                             serial_port)) {
-        printf("%s, Sending command %s to HW failed\n", __func__, command->command_name);
+        log_error("Sending command %s to HW failed", command->command_name);
         return false;
     }
 
@@ -286,7 +287,7 @@ static bool process_one_line(struct command_and_args *command, char *line, volat
     if (verify_command_syntax(line, command)) {
         if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
                                 serial_port)) {
-            printf("%s, Sending command %s to HW failed\n", __func__, command->command_name);
+            log_error("Sending command %s to HW failed", command->command_name);
             fclose(input_file);
             return false;
         }
@@ -309,7 +310,7 @@ static bool process_commands_from_file(struct command_and_args *command, volatil
     FILE *input_file = fopen(filename, "r");
 
     if (!input_file) {
-        printf("%s, Failed to open file %s\n", __func__, filename);
+        log_error("Failed to open file %s", filename);
         return false;
     }
 
@@ -342,7 +343,7 @@ static bool process_arduino_command(struct command_and_args *command, volatile u
 {
     if (!send_command_to_hw(command, (void *)gpio, result_file, write_to_file,
                             serial_port)) {
-        printf("%s, Sending command %s to HW failed\n", __func__, command->command_name);
+        log_error("Sending command %s to HW failed", command->command_name);
         return false;
     }
 
@@ -357,7 +358,7 @@ bool process_hw_command(struct command_and_args *command, volatile unsigned *gpi
     } else if (get_slave_id() == SLAVE_ID_ARDUINO) {
         return process_arduino_command(command, gpio, result_file, write_to_file, serial_port);
     } else {
-        printf("%s, Slave %d is not valid, cannot process command\n", __func__, get_slave_id());
+        log_error("Slave %d is not valid, cannot process command", get_slave_id());
         return false;
     }
 }

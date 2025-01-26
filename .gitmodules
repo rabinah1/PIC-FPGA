@@ -1,0 +1,3 @@
+[submodule "sw/src/raspberry_pi/logger"]
+	path = sw/src/raspberry_pi/logger
+	url = https://github.com/rxi/log.c

@@ -16,6 +16,7 @@
 #include "defines.h"
 #include "hw_if.h"
 #include "process_command.h"
+#include "logger/src/log.h"
 
 #define TESTING_MODE 1
 #define APPLICATION_MODE 0
@@ -55,7 +56,7 @@ static bool add_result_header(char *line, FILE *result_file)
 static bool check_file_open(FILE *file, const char *filename)
 {
     if (!file) {
-        printf("%s, Failed to open file %s\n", __func__, filename);
+        log_error("Failed to open file %s", filename);
         return false;
     }
 
@@ -71,20 +72,20 @@ static bool process_command(struct command_and_args *cmd, volatile unsigned *gpi
         sw_ret = process_sw_command(cmd, gpio);
 
         if (sw_ret == SW_EXIT) {
-            printf("%s, Exiting...\n", __func__);
+            log_info("Exiting...");
             return false;
         } else if (sw_ret == SW_FAILED) {
-            printf("%s, Failed to process command %s\n", __func__, cmd_str);
+            log_error("Failed to process command %s", cmd_str);
             return is_app;
         }
     } else if (is_expected_command_type(cmd, "hw")) {
         if (!process_hw_command(cmd, gpio, serial_port, result_file, !is_app)) {
-            printf("%s, Failed to process command %s\n", __func__, cmd_str);
+            log_error("Failed to process command %s", cmd_str);
             return is_app;
         }
     } else {
         cmd_str[strlen(cmd_str) - 1] = '\0';
-        printf("%s, Command %s was not recognized\n", __func__, cmd_str);
+        log_error("Command %s was not recognized", cmd_str);
         return is_app;
     }
 
@@ -103,7 +104,7 @@ static bool process_one_line_from_tb_file(char *line, FILE *result_file, volatil
     line[strlen(line) - 1] = '\0';
 
     if (!verify_command_syntax(line, &cmd)) {
-        printf("%s, Invalid command %s\n", __func__, line);
+        log_error("Invalid command %s", line);
         return false;
     }
 
@@ -116,7 +117,7 @@ static bool process_one_line_from_tb_file(char *line, FILE *result_file, volatil
 
 static void run_tests(char *serial_port, volatile unsigned *gpio)
 {
-    printf("%s, Running tests on HW, please wait...\n", __func__);
+    log_info("Running tests on HW, please wait...");
     char pwd[MAX_STRING_SIZE];
     char tb_input_file[3 * MAX_STRING_SIZE];
     char tb_result_file[3 * MAX_STRING_SIZE];
@@ -147,12 +148,12 @@ static void run_tests(char *serial_port, volatile unsigned *gpio)
 
     fclose(tb_input);
     fclose(result_file);
-    printf("%s, Tests finished\n", __func__);
+    log_info("Tests finished");
 }
 
 static void run_app(char *serial_port, volatile unsigned *gpio)
 {
-    printf("%s, Please enter command, or \"HELP\" for instructions\n", __func__);
+    log_info("Please enter command, or \"HELP\" for instructions");
     char command[MAX_STRING_SIZE];
     struct command_and_args cmd;
 
@@ -163,7 +164,7 @@ static void run_app(char *serial_port, volatile unsigned *gpio)
         command[strcspn(command, "\n")] = '\0';
 
         if (!verify_command_syntax(command, &cmd)) {
-            printf("%s, Invalid command %s\n", __func__, command);
+            log_warn("Invalid command %s", command);
             continue;
         }
 
@@ -216,12 +217,12 @@ static int parse_args(int argc, char *serial_port, char *argv[])
 static bool check_setup_succeeded(volatile unsigned *gpio)
 {
     if (wiringPiSetup() < 0) {
-        printf("%s, Setting up wiringPi failed, exiting...\n", __func__);
+        log_error("Setting up wiringPi failed, exiting...");
         return false;
     }
 
     if (!gpio) {
-        printf("%s, Failed to initialize GPIO, exiting...\n", __func__);
+        log_error("Failed to initialize GPIO, exiting...");
         return false;
     }
 
@@ -248,7 +249,7 @@ int main(int argc, char *argv[])
     else if (mode == APPLICATION_MODE)
         run_app(serial_port, gpio);
     else
-        printf("%s, Invalid mode %d was detected, exiting...\n", __func__, mode);
+        log_error("Invalid mode %d was detected, exiting...", mode);
 
     set_clk_exit(true);
     pthread_join(clk_thread_id, NULL);

@@ -14,6 +14,7 @@
 #endif
 #include "defines.h"
 #include "gpio_setup.h"
+#include "logger/src/log.h"
 
 #define BLOCK_SIZE (4*20) // only using gpio registers region
 #define BCM2835_PERI_BASE 0xFE000000  // peripheral base address
@@ -49,7 +50,7 @@ volatile unsigned *init_gpio_map(void)
     void *gpio_map;
 
     if ((mem_fd = open("/dev/mem", O_RDWR | O_SYNC)) < 0) {
-        printf("%s, Can't open /dev/mem: %s\n", __func__, strerror(errno));
+        log_error("Can't open /dev/mem: %s", strerror(errno));
         return NULL;
     }
 
@@ -61,10 +62,10 @@ volatile unsigned *init_gpio_map(void)
                     GPIO_BASE);             // Offset to GPIO peripheral
 
     if (close(mem_fd) < 0)
-        printf("%s, Can't close /dev/mem: %s\n", __func__, strerror(errno));
+        log_error("Can't close /dev/mem: %s", strerror(errno));
 
     if (gpio_map == MAP_FAILED) {
-        printf("%s, mmap error %ld\n", __func__, (long unsigned int)gpio_map);
+        log_error("mmap error %ld", (long unsigned int)gpio_map);
         return NULL;
     }
 

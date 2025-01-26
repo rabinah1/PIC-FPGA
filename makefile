@@ -62,7 +62,7 @@ sta_sw:
 	@astyle --style=linux --max-code-length=100 --recursive --align-pointer=name --break-blocks \
 	--pad-oper --pad-header --delete-empty-lines --indent-col1-comments --squeeze-lines=1 \
 	--exclude="arduino\build" --exclude="de10_nano/adder/module/adder_driver.mod.c" \
-	--exclude="$(SW_TEST_DIR)/cpputest" \
+	--exclude="$(SW_TEST_DIR)/cpputest" --exclude="raspberry_pi/logger/src" \
 	-i "${SW_SRC_DIR}\*.c,*.cpp,*.h" "${SW_TEST_DIR}\*.cpp"
 	@echo "Done"
 	@echo ""
