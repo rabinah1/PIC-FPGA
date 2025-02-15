@@ -12,4 +12,4 @@ main.o: main.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	-rm -f ${TARGET_BINARY} *.a *.o *~
+	@-rm -f ${TARGET_BINARY} *.a *.o *~

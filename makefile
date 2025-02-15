@@ -32,8 +32,7 @@ build_sw:
 	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/first_test
 	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/adder
 	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/adder/module
-	@arduino-cli compile --build-path $(SW_SRC_DIR)/arduino/build --fqbn \
-	arduino:avr:nano:cpu=atmega328 $(SW_SRC_DIR)/arduino/arduino.ino
+	@$(MAKE) -C $(SW_SRC_DIR)/arduino build
 	@echo ""
 	@echo "===================================="
 	@echo "SW build completed"
@@ -85,13 +84,10 @@ clean_sw:
 	@echo "===================================="
 	@echo ""
 	@$(MAKE) -C $(SW_TEST_DIR) clean
-	@-rm -f $(SW_SRC_DIR)/raspberry_pi/main
-	@-rm -rf $(OBJ_DIR)
-	@-rm -rf $(SW_SRC_DIR)/arduino/build
-	@-rm $(SW_SRC_DIR)/de10_nano/first_test/main.o
-	@-rm $(SW_SRC_DIR)/de10_nano/first_test/main
-	@-rm $(SW_SRC_DIR)/de10_nano/adder/main.o
-	@-rm $(SW_SRC_DIR)/de10_nano/adder/main
+	@$(MAKE) -C $(SW_SRC_DIR)/raspberry_pi clean
+	@$(MAKE) -C $(SW_SRC_DIR)/arduino clean
+	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/first_test clean
+	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/adder clean
 	@$(MAKE) -C $(SW_SRC_DIR)/de10_nano/adder/module clean
 	@echo ""
 	@echo "===================================="
@@ -116,8 +112,7 @@ load_arduino:
 	@echo "Loading design to Arduino starting"
 	@echo "===================================="
 	@echo ""
-	@arduino-cli upload --input-dir $(SW_SRC_DIR)/arduino/build -p $(PORT) --fqbn \
-	arduino:avr:nano:cpu=atmega328 $(SW_SRC_DIR)/arduino/arduino.ino
+	@$(MAKE) -C $(SW_SRC_DIR)/arduino load
 	@echo ""
 	@echo "===================================="
 	@echo "Loading design to Arduino completed"

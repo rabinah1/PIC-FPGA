@@ -8,6 +8,7 @@ LOGGER_DIR = ./logger/src
 OBJECTS = $(addprefix $(OBJ_DIR)/, log.o process_command.o common_data.o gpio_setup.o hw_if.o app.o)
 
 .DELETE_ON_ERROR:
+.PHONY: clean
 
 $(OBJ_DIR)/%.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
@@ -34,3 +35,7 @@ gpio_setup.o: gpio_setup.h defines.h
 hw_if.o: hw_if.h defines.h common_data.h
 
 process_command.o: defines.h common_data.h hw_if.h
+
+clean:
+	@-rm -f ./main
+	@-rm -rf $(OBJ_DIR)
